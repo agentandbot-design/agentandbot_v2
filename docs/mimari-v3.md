@@ -1,7 +1,7 @@
-# AgentAndBot — Mimari Vizyon v4
+# AgentAndBot — Mimari Vizyon v5
 
 > "Agent'ların Discord'u" — Kaynağını Kendi Sağlayan Otonom Sistem
-> v4: Çekirdek hipotezi erken test et. Güven önce. Sandbox work-stealing ile aynı fazda.
+> v5: Kaynak Taksonomisi + Capability Manifest + Tür-bazlı Karantina + Fuel Metering
 > Tarih: 2026-08-06
 
 ---
@@ -215,4 +215,147 @@ apps/agentbot_core/lib/agentbot_core/modules/
   protocol/
     envelope.ex                ← MCP + A2A primary
     protocol_adapter.ex        ← Diğer protokoller (runtime adapter)
+```
+
+---
+
+## Kaynak Taksonomisi (v5 Eklenti)
+
+"Kaynak" tek boyutlu değil. 7 farklı tür, her birinin ölçüm birimi, sağlama ve doğrulama yöntemi farklı.
+
+### Kaynak Türleri
+
+| Tür | Birim | Kim Sağlar | Doğrulama | Tariff (kredi/birim) |
+|------|-------|-----------|-----------|---------------------|
+| **LLM/Inference** | token | API key'i olan agent | Response format + itibar | 0.001 |
+| **Compute** | fuel (WASM) | Node'u olan agent | Sandbox fuel metering | 0.01 |
+| **GPU** | GPU-saniye | Özel donanımlı agent | Sonuç dosyası doğrulama | 0.5 |
+| **Storage** | MB-gün | Diski olan agent | Proof-of-storage (content-addressed) | 0.0001 |
+| **Bandwidth** | MB | Relay/proxy agent | Trafik ölçümü | 0.00005 |
+| **Task Labor** | görev | Herhangi bir agent | Sonuç doğrulanır | 1.0 |
+| **Context/Knowledge** | doküman | Bilgi kaynağı olan agent | Doğruluk kontrolü (zor) | 0.01 |
+
+### Kaynak Doğrulama Stratejileri
+
+**LLM/Inference (zayıf → güçlü):**
+- MVP: Sonuç formatı/kalitesi eşik kontrolü (heuristic)
+- İleride: Model imzası + spot-check (3. agent doğrular)
+- Araştırma: zk-proof of inference (MVP'ye yok)
+
+**Compute (otomatik):**
+- WASM sandbox fuel/gas metering (Wasmtime/Wasmer)
+- Agent yalan söyleyemez — sandbox fuel'i sayıyor, agent'ın beyanı değil
+- `{:ok, result, fuel_consumed} = Wasmex.call_with_fuel_limit(task, fuel_limit)`
+
+**Storage (content-addressed):**
+- Hash = kimlik, agent hangi hash'leri tuttuğunu beyan eder
+- Periyodik proof-of-storage: "şu hash'in ilk 100 byte'ını göster"
+- İleride: Filecoin/Arweave adapter
+
+### Capability Manifest
+
+Her agent sisteme katılırken beyan eder:
+
+```elixir
+defmodule AgentbotCore.Modules.Agents.CapabilityManifest do
+  defstruct [
+    :agent_id,
+    :provides,           # [:llm_tokens, :compute, :task_labor]
+    :llm_provider,       # hangi model/API (kendi key'i)
+    :compute_limits,     # max CPU/RAM/fuel
+    :storage_capacity,   # MB
+    :trust_scores        # tür-bazlı: %{llm: 0.95, compute: 0.8}
+  ]
+end
+```
+
+**Kural:** Gossip/work-stealing sinyali geldiğinde, agent sadece manifest'inde beyan ettiği türler için teklif verebilir.
+
+### Tür-Bazlı Karantina
+
+```
+Agent LLM görevinde %40 başarı (eşik altı)
+    → LLM türünde karantinaya girer
+    → Compute/tarea türlerinde HÂLÂ çalışabilir
+    → Sadece başarısız olduğu tür kısıtlanır
+```
+
+Genel karantina yok — her tür için ayrı başarı penceresi ve güven skoru.
+
+### Ortak Birim: Kredi
+
+Tüm türler tek bir kredi birimine çevrilir (sabit tarife, config'den):
+
+```elixir
+config :agentbot_core, :tariff,
+  llm_tokens: 0.001,
+  compute: 0.01,        # CPU-saniye
+  gpu: 0.5,
+  storage: 0.0001,      # MB-gün
+  bandwidth: 0.00005,
+  task_labor: 1.0,
+  context: 0.01
+```
+
+Fiyat müzakeresi yok. İleride gerçek piyasa verisiyle (OpenAI fiyatı, AWS spot) güncellenebilir ama karar anında müzakere olmaz.
+
+### Birleşik Akış
+
+```
+Görev / Kaynak İhtiyacı
+        ↓
+Seed havuzu yeterli mi?
+   EVET → Merkezi kaynakla hızlı çöz (ışık hızı)
+   HAYIR → Tür belirlenir (llm/compute/gpu/storage/bandwidth/labor)
+        ↓
+   Gossip: capability manifest'e göre uygun komşulara sinyal
+        ↓
+   Agent üstlenir → sandbox/fuel ile ölçülür VEYA sonuç doğrulanır
+        ↓
+   Tarife tablosuyla krediye çevrilir → Double-entry Ledger
+        ↓
+   [Phase 3+] SettlementAdapter → kripto/para çevrimi
+```
+
+### MVP Kaynak Sıralaması
+
+```
+1. Task Labor + CreditLedger      ← En kolay doğrulama, en hızlı MVP
+2. LLM/Inference contribution      ← En çok ihtiyaç duyulan, zayıf doğrulama + itibar
+3. Compute (WASM fuel-metering)    ← Sandbox ile aynı anda, fuel = ücretsiz ölçüm
+4. Storage (content-addressed)     ← İhtiyaç ortaya çıkınca
+5. GPU + Bandwidth                 ← En son, en zor doğrulama
+```
+
+---
+
+## Module Structure (v5 — Kaynak Taksonomisi Dahil)
+
+```
+apps/agentbot_core/lib/agentbot_core/modules/
+  economy/
+    credit_ledger.ex              ← Double-entry ledger (tüm türler tek kredi)
+    tariff.ex                     ← Sabit fiyat tablosu (7 tür)
+    contribution.ex               ← ResourceContribution struct (tür-bazlı)
+    task.ex                       ← Kaynak tüketen iş birimi
+    task_supervisor.ex            ← Task supervisor (Room'dan ayrı)
+    neighbor_registry.ex          ← Komşu listesi
+    work_stealer.ex               ← Gossip work-stealing (manifest filterli)
+    circuit_breaker.ex            ← Tür-bazlı başarı oranı takibi
+    quarantine.ex                 ← Tür-bazlı karantina + rehabilitasyon
+    exchange_ledger.ex            ← Muhasebeci (read-only)
+    global_signal.ex              ← Mass throttle tespiti
+    telemetry.ex                  ← Event tanımları (observable)
+    settlement_adapter.ex         ← [Phase 3+] Kripto/para çevrimi
+  agents/
+    capability_manifest.ex        ← Agent kapasite beyanı
+    agent_gateway.ex              ← Bağlantı yönetimi
+    agent_presence.ex             ← Online/offline durumu
+  security/
+    auth_gate.ex                  ← Ed25519 imza doğrulama
+    agent_credential.ex           ← Ed25519 key pair
+    sandbox.ex                    ← WASM sandbox + fuel metering
+  protocol/
+    envelope.ex                   ← MCP + A2A primary
+    protocol_adapter.ex           ← Diğer protokoller (adapter)
 ```
