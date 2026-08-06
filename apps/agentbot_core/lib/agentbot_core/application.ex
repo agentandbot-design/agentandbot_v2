@@ -13,7 +13,11 @@ defmodule AgentbotCore.Application do
       # Veritabanı repository'si
       AgentbotCore.Repo,
       # PubSub — gerçek zamanlı mesajlaşma için
-      {Phoenix.PubSub, name: AgentbotCore.PubSub}
+      {Phoenix.PubSub, name: AgentbotCore.PubSub},
+      # Oda süreç kayıt defteri
+      {Registry, keys: :unique, name: AgentbotCore.Modules.Chat.RoomRegistry},
+      # Oda dinamik süpervizörü — her oda için bir RoomServer başlatır
+      AgentbotCore.Modules.Chat.RoomSupervisor
     ]
 
     opts = [strategy: :one_for_one, name: AgentbotCore.Supervisor]

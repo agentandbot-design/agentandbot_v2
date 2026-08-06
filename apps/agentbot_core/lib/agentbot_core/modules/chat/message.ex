@@ -9,6 +9,7 @@ defmodule AgentbotCore.Modules.Chat.Message do
   import Ecto.Changeset
   import Ecto.Query
 
+  @derive {Jason.Encoder, only: [:id, :room_id, :sender_id, :sender_name, :content, :message_type, :event_type, :metadata, :inserted_at, :updated_at]}
   alias AgentbotCore.Repo
 
   schema "messages" do

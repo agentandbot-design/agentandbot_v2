@@ -10,6 +10,7 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
   import Ecto.Changeset
   import Ecto.Query
 
+  @derive {Jason.Encoder, only: [:id, :agent_id, :agent_name, :capabilities, :expires_at, :is_active, :inserted_at, :updated_at]}
   alias AgentbotCore.Repo
 
   schema "agent_credentials" do

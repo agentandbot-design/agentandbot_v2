@@ -65,11 +65,17 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
       joined_at: DateTime.utc_now()
     })
 
-    # PubSub'a katılım bildirimi yayınla
+    # PubSub'a katılım bildirimi yayınla — dual topic
     AgentbotCore.PubSub.broadcast(
       "room:#{state.room_id}",
       "agent_joined",
-      %{agent_id: agent_id, agent_name: agent_name}
+      %{agent_id: agent_id, agent_name: agent_name, room_id: state.room_id}
+    )
+    # Human topic — daha yavaş ama insan-okur format
+    AgentbotCore.PubSub.broadcast(
+      "human:#{state.room_id}",
+      "agent_joined",
+      %{agent_id: agent_id, agent_name: agent_name, room_id: state.room_id}
     )
 
     {:reply, :ok, %{state | agents: new_agents}}
@@ -82,9 +88,14 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
 
   @impl true
   def handle_cast({:send_message, message}, state) do
-    # PubSub'a mesaj yayınla
+    # PubSub'a mesaj yayınla — dual topic (agent hız + human okunur)
     AgentbotCore.PubSub.broadcast(
       "room:#{state.room_id}",
+      "new_message",
+      message
+    )
+    AgentbotCore.PubSub.broadcast(
+      "human:#{state.room_id}",
       "new_message",
       message
     )
@@ -96,11 +107,16 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
   def handle_cast({:leave, agent_id}, state) do
     new_agents = Map.delete(state.agents, agent_id)
 
-    # PubSub'a çıkış bildirimi yayınla
+    # PubSub'a çıkış bildirimi yayınla — dual topic
     AgentbotCore.PubSub.broadcast(
       "room:#{state.room_id}",
       "agent_left",
-      %{agent_id: agent_id}
+      %{agent_id: agent_id, room_id: state.room_id}
+    )
+    AgentbotCore.PubSub.broadcast(
+      "human:#{state.room_id}",
+      "agent_left",
+      %{agent_id: agent_id, room_id: state.room_id}
     )
 
     {:noreply, %{state | agents: new_agents}}

@@ -5,10 +5,10 @@ defmodule AgentbotWeb.Endpoint do
 
   use Phoenix.Endpoint, otp_app: :agentbot_web
 
-  # Kod yeniden yükleme (sadece geliştirme)
-  if code_reloading? do
-    socket "/live", Phoenix.LiveView.Socket
-  end
+  # WebSocket / LiveView socket
+  socket "/socket", AgentbotWeb.UserSocket,
+    websocket: [path: "/ws"],
+    longpoll: false
 
   # Plug pipeline
   plug Plug.RequestId

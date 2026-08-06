@@ -8,6 +8,7 @@ defmodule AgentbotCore.Modules.Chat.ApprovalRequest do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @derive {Jason.Encoder, only: [:id, :room_id, :requester_id, :requester_name, :title, :description, :status, :resolved_by, :resolution_note, :expires_at, :inserted_at, :updated_at]}
   alias AgentbotCore.Repo
 
   schema "approval_requests" do

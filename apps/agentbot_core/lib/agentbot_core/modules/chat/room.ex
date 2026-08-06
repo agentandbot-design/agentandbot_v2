@@ -9,6 +9,7 @@ defmodule AgentbotCore.Modules.Chat.Room do
   import Ecto.Changeset
   import Ecto.Query
 
+  @derive {Jason.Encoder, only: [:id, :name, :description, :room_type, :max_agents, :is_active, :inserted_at, :updated_at]}
   alias AgentbotCore.Repo
 
   schema "rooms" do
