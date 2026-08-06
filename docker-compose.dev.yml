@@ -1,0 +1,36 @@
+services:
+  dev:
+    build:
+      context: ./docker
+      dockerfile: dev.Dockerfile
+    container_name: agentbot-dev
+    volumes:
+      - ./apps:/app/apps
+      - ./config:/app/config
+      - ./lib:/app/lib
+      - ./test:/app/test
+      - ./priv:/app/priv
+      - ./mix.exs:/app/mix.exs
+      - mix-cache:/root/.mix
+      - node-cache:/root/.npm
+      - build-cache:/app/_build
+    environment:
+      - MIX_ENV=dev
+      - DATABASE_URL=ecto://postgres:postgres@core-postgres:5432/agentbot_dev
+    networks:
+      - internal-network
+    stdin_open: true
+    tty: true
+    working_dir: /app
+
+volumes:
+  mix-cache:
+    name: agentbot-mix-cache
+  node-cache:
+    name: agentbot-node-cache
+  build-cache:
+    name: agentbot-build-cache
+
+networks:
+  internal-network:
+    external: true

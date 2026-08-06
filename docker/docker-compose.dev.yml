@@ -1,0 +1,45 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    volumes:
+      - ./apps:/app/apps
+      - ./config:/app/config
+      - ./lib:/app/lib
+      - ./test:/app/test
+      - ./priv:/app/priv
+      - mix-cache:/root/.mix
+      - node-cache:/root/.npm
+      - build-cache:/app/_build
+    environment:
+      - MIX_ENV=dev
+      - DATABASE_URL=ecto://postgres:postgres@core-postgres:5432/agentbot_dev
+    depends_on:
+      - core-postgres
+    networks:
+      - internal-network
+    stdin_open: true
+    tty: true
+
+  core-postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agentbot_dev
+    volumes:
+      - agentbot-pg:/var/lib/postgresql/data
+    networks:
+      - internal-network
+    # Host port yok — sadece internal
+
+volumes:
+  mix-cache:
+  node-cache:
+  build-cache:
+  agentbot-pg:
+
+networks:
+  internal-network:
+    external: true

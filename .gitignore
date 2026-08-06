@@ -1,0 +1,48 @@
+# Elixir / Phoenix
+/_build/
+/cover/
+/deps/
+/doc/
+/.fetch
+erl_crash.dump
+*.ez
+*.beam
+.elixir_ls/
+.elixir/
+
+# Database
+/*.sql
+/tmp/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Docker
+docker/data/
+
+# Python (eski servisler)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Kadro Platform (ayrı proje, şimdilik hariç)
+ai_kadro/kadro_platform/_build/
+ai_kadro/kadro_platform/deps/
