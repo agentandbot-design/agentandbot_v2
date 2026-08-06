@@ -19,6 +19,7 @@ services:
       - DATABASE_URL=ecto://postgres:postgres@core-postgres:5432/agentbot_dev
     networks:
       - internal-network
+      - proxy-network
     stdin_open: true
     tty: true
     working_dir: /app
@@ -33,4 +34,6 @@ volumes:
 
 networks:
   internal-network:
+    external: true
+  proxy-network:
     external: true
