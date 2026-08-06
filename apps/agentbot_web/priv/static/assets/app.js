@@ -1,9 +1,25 @@
 // AgentAndBot — Phoenix LiveView init
-document.addEventListener('DOMContentLoaded', function() {
-  let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
-  let liveSocket = new LiveView.LiveSocket("/live", Phoenix.Socket, {
-    params: { _csrf_token: csrfToken }
-  });
-  liveSocket.connect();
-  window.liveSocket = liveSocket;
-});
+(function() {
+  function initLiveSocket() {
+    if (typeof LiveView === 'undefined' || typeof Phoenix === 'undefined') {
+      setTimeout(initLiveSocket, 50);
+      return;
+    }
+
+    var csrfToken = document.querySelector("meta[name='csrf-token']");
+    if (!csrfToken) return;
+
+    var liveSocket = new LiveView.LiveSocket("/live", Phoenix.Socket, {
+      params: { _csrf_token: csrfToken.getAttribute("content") }
+    });
+
+    liveSocket.connect();
+    window.liveSocket = liveSocket;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLiveSocket);
+  } else {
+    initLiveSocket();
+  }
+})();

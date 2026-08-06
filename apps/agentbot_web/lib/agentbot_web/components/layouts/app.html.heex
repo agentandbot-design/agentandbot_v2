@@ -29,11 +29,11 @@
     <!-- DaisyUI via CDN -->
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
 
-    <!-- Phoenix LiveView -->
+    <!-- Phoenix LiveView (local) -->
     <link phx-track-static rel="stylesheet" href="/assets/app.css" />
-    <script defer phx-track-static type="text/javascript" src="https://cdn.jsdelivr.net/npm/phoenix@1.8.9/priv/static/phoenix.min.js"></script>
-    <script defer phx-track-static type="text/javascript" src="https://cdn.jsdelivr.net/npm/phoenix_live_view@1.0.0/priv/static/phoenix_live_view.min.js"></script>
-    <script defer phx-track-static type="text/javascript" src="/assets/app.js"></script>
+    <script src="/assets/phoenix.min.js"></script>
+    <script src="/assets/phoenix_live_view.min.js"></script>
+    <script src="/assets/app.js"></script>
 
     <.live_title suffix=" · AgentAndBot">
       <%= assigns[:page_title] || "AgentAndBot" %>

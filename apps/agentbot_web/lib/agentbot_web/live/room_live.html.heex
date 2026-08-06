@@ -2,9 +2,7 @@
   <!-- Header -->
   <div class="flex items-center justify-between mb-4">
     <div>
-      <h1 class="text-2xl font-bold flex items-center gap-2">
-        💬 <%= @room.name %>
-      </h1>
+      <h1 class="text-2xl font-bold">💬 <%= @room.name %></h1>
       <p class="text-sm text-base-content/60">
         <%= if @room.description, do: @room.description, else: "Genel oda" %>
       </p>
@@ -15,82 +13,51 @@
     </div>
   </div>
 
-  <!-- Connection Status -->
-  <div class="flex items-center gap-2 mb-3 text-sm text-base-content/60">
-    <span class="inline-block w-2 h-2 rounded-full bg-success animate-pulse"></span>
-    Canlı bağlantı — mesajlar anlık görünür
-  </div>
-
   <!-- Messages -->
   <div id="messages" class="flex flex-col gap-3 mb-24 min-h-[300px]">
-    <div :for={msg <- @messages} id={"msg-#{msg.id}"} class={[
-      "chat",
-      if(msg.sender_id == "human-web", do: "chat-end", else: "chat-start")
-    ]}>
-      <div class="chat-image avatar placeholder">
-        <div class={[
-          "w-10 rounded-full",
-          if(msg.sender_id == "human-web", do: "bg-primary", else: "bg-accent")
-        ]}>
-          <span class="text-sm">
-            <%= String.at(msg.sender_name || msg.sender_id || "?", 0) %>
-          </span>
-        </div>
-      </div>
-      <div class="chat-header text-xs opacity-60 mb-1">
-        <%= msg.sender_name || msg.sender_id %>
-        <%= if msg.sender_id != "human-web" do %>
-          <span class="badge badge-xs badge-accent ml-1">AGENT</span>
-        <% end %>
-        <time class="ml-1"><%= format_time(msg.inserted_at) %></time>
-      </div>
-      <div class={[
-        "chat-bubble",
-        if(msg.sender_id == "human-web", do: "bg-primary text-primary-content", else: "bg-base-200")
-      ]}>
+    <div :for={msg <- @messages} id={"msg-#{msg.id}"} class="chat chat-start">
+      <div class="chat-bubble bg-base-200 text-base-content">
+        <div class="text-xs opacity-50 mb-1"><%= msg.sender_name || msg.sender_id %></div>
         <%= msg.content %>
+      </div>
+      <div class="chat-footer opacity-50 text-xs mt-1">
+        <%= format_time(msg.inserted_at) %>
       </div>
     </div>
   </div>
 
   <div :if={@messages == []} class="text-center py-12 text-base-content/50">
     <p class="text-xl mb-2">📭 Henüz mesaj yok</p>
-    <p>İlk mesajı sen gönder!</p>
   </div>
 
-  <!-- Message Input -->
+  <!-- Message Input — phx-click based -->
   <div class="fixed bottom-0 left-0 right-0 bg-base-200/95 backdrop-blur border-t border-base-300 p-4 z-40">
-    <div class="max-w-4xl mx-auto">
-      <.form for={@form} phx-submit="send_message" class="flex gap-2 items-end">
-        <input
-          type="text"
-          name="sender_name"
-          value={@form[:sender_name].value}
-          placeholder="Adın"
-          class="input input-bordered input-sm w-32"
-        />
-        <input
-          type="text"
-          name="content"
-          value={@form[:content].value}
-          placeholder="Mesajını yaz..."
-          class="input input-bordered flex-1"
-          required
-          autocomplete="off"
-          phx-window-keydown="maybe-send"
-          phx-key="enter"
-        />
-        <button type="submit" class="btn btn-primary">Gönder ⏎</button>
-      </.form>
+    <div class="max-w-4xl mx-auto flex gap-2 items-end">
+      <input
+        type="text"
+        id="sender-name"
+        value={@sender_name}
+        placeholder="Adın"
+        class="input input-bordered input-sm w-32"
+      />
+      <input
+        type="text"
+        id="msg-input"
+        placeholder="Mesajını yaz..."
+        class="input input-bordered flex-1"
+        phx-window-keydown="send"
+        phx-key="enter"
+      />
+      <button class="btn btn-primary" phx-click="send">Gönder</button>
     </div>
   </div>
 </div>
 
 <script>
-  // Auto-scroll to bottom on new messages
-  window.addEventListener("phx:new_message", () => {
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-    });
+  // Auto-scroll + clear input
+  window.addEventListener("phx:msg_sent", () => {
+    var input = document.getElementById("msg-input");
+    if (input) input.value = "";
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   });
 </script>

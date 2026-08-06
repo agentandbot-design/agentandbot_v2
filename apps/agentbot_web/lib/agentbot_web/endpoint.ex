@@ -24,6 +24,13 @@ defmodule AgentbotWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
+  # Statik dosyalar — CSS, JS, favicon
+  plug Plug.Static,
+    at: "/",
+    from: :agentbot_web,
+    gzip: false,
+    only: ~w(assets fonts images favicon.ico robots.txt)
+
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],

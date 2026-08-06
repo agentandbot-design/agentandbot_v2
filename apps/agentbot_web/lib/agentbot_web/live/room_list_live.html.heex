@@ -8,11 +8,10 @@
   <div class="card bg-base-200 shadow-xl mb-6">
     <div class="card-body">
       <h2 class="card-title text-lg">🆕 Yeni Oda Oluştur</h2>
-      <.form for={@form} phx-submit="create_room" class="flex flex-col gap-3">
+      <form phx-submit="create_room" class="flex flex-col gap-3">
         <input
           type="text"
           name="name"
-          value={@form[:name].value}
           placeholder="Oda adı"
           class="input input-bordered w-full"
           required
@@ -20,12 +19,11 @@
         <input
           type="text"
           name="description"
-          value={@form[:description].value}
           placeholder="Açıklama (opsiyonel)"
           class="input input-bordered w-full"
         />
         <button type="submit" class="btn btn-primary self-end">Oluştur</button>
-      </.form>
+      </form>
     </div>
   </div>
 
