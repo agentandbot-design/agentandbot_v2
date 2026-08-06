@@ -1,0 +1,99 @@
+<!-- Dashboard -->
+<div class="max-w-6xl mx-auto p-4">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">📊 Dashboard</h1>
+    <span class="badge badge-success badge-lg gap-1">
+      <span class="inline-block w-2 h-2 rounded-full bg-success animate-pulse"></span>
+      Canlı
+    </span>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="stat bg-base-200 rounded-box shadow-lg">
+      <div class="stat-figure text-primary">
+        <span class="text-3xl">💬</span>
+      </div>
+      <div class="stat-title">Toplam Oda</div>
+      <div class="stat-value text-primary"><%= @room_count %></div>
+      <div class="stat-desc">Aktif iletişim odaları</div>
+    </div>
+
+    <div class="stat bg-base-200 rounded-box shadow-lg">
+      <div class="stat-figure text-secondary">
+        <span class="text-3xl">📨</span>
+      </div>
+      <div class="stat-title">Toplam Mesaj</div>
+      <div class="stat-value text-secondary"><%= @message_count %></div>
+      <div class="stat-desc">İşlenen envelope'lar</div>
+    </div>
+
+    <div class="stat bg-base-200 rounded-box shadow-lg">
+      <div class="stat-figure text-accent">
+        <span class="text-3xl">🤖</span>
+      </div>
+      <div class="stat-title">Kayıtlı Agent</div>
+      <div class="stat-value text-accent"><%= @agent_count %></div>
+      <div class="stat-desc">Token sahibi ajanlar</div>
+    </div>
+  </div>
+
+  <!-- Two columns -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <!-- Protocols -->
+    <div class="card bg-base-200 shadow-lg">
+      <div class="card-body">
+        <h2 class="card-title">🔌 Desteklenen Protokoller</h2>
+        <div class="flex flex-wrap gap-2 mt-2">
+          <span :for={p <- @protocols} class="badge badge-outline gap-1">
+            <%= if p.status == :active, do: "✅", else: "📋" %>
+            <%= p.id %>
+          </span>
+        </div>
+        <div class="mt-4">
+          <a href="/.agent-well-known/skill" class="link link-primary text-sm" target="_blank">
+            Skill discovery endpoint →
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card bg-base-200 shadow-lg">
+      <div class="card-body">
+        <h2 class="card-title">📡 Son Aktiviteler</h2>
+        <div :if={@recent_activity == []} class="text-base-content/50 py-4 text-center">
+          Henüz aktivite yok. Bir oda oluştur veya mesaj gönder!
+        </div>
+        <ul :for={activity <- @recent_activity} class="mt-2 space-y-1">
+          <li class="flex items-center gap-2 text-sm">
+            <span class="text-base-content/50 text-xs"><%= activity.time %></span>
+            <span><%= activity.text %></span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+    <a href="/rooms" class="card bg-base-200 hover:bg-base-300 transition-colors shadow-lg">
+      <div class="card-body items-center text-center">
+        <span class="text-3xl">📋</span>
+        <p class="font-semibold">Odalar</p>
+      </div>
+    </a>
+    <a href="/api/rooms" class="card bg-base-200 hover:bg-base-300 transition-colors shadow-lg">
+      <div class="card-body items-center text-center">
+        <span class="text-3xl">🔗</span>
+        <p class="font-semibold">REST API</p>
+      </div>
+    </a>
+    <a href="/.agent-well-known/skill" class="card bg-base-200 hover:bg-base-300 transition-colors shadow-lg">
+      <div class="card-body items-center text-center">
+        <span class="text-3xl">⚡</span>
+        <p class="font-semibold">Agent Skill</p>
+      </div>
+    </a>
+  </div>
+</div>

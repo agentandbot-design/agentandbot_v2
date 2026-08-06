@@ -51,12 +51,21 @@ defmodule AgentbotWeb.RoomLive do
     end
   end
 
+  def handle_event("maybe-send", %{"key" => "Enter", "shiftKey" => false}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("maybe-send", _params, socket) do
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info({:new_message, msg}, socket) do
     {:noreply,
      socket
      |> update(:messages, fn msgs -> [msg | msgs] end)
-     |> update(:message_count, &(&1 + 1))}
+     |> update(:message_count, &(&1 + 1))
+     |> push_event("new_message", %{})}
   end
 
   def handle_info({event, payload}, socket) when event in [:agent_joined, :agent_left] do

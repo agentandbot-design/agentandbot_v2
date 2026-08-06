@@ -55,7 +55,7 @@ defmodule AgentbotWeb.Router do
   scope "/", AgentbotWeb do
     pipe_through :browser
 
-    live "/", RoomListLive, :index
+    live "/", DashboardLive, :index
     live "/rooms", RoomListLive, :index
     live "/rooms/:id", RoomLive, :show
   end
