@@ -1,18 +1,36 @@
 <!DOCTYPE html>
-<html lang="tr" class="dark">
+<html lang="tr" data-theme="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <title>AgentAndBot — Çoklu Ajan Platformu</title>
+    <title>AgentAndBot</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="/assets/app.css" />
     <.live_title suffix=" · AgentAndBot">
       <%= assigns[:page_title] || "AgentAndBot" %>
     </.live_title>
-    <link phx-track-static rel="stylesheet" href="/assets/app.css" />
-    <script defer phx-track-static type="text/javascript" src="/assets/app.js">
-    </script>
   </head>
-  <body class="bg-base-100 text-base-content">
-    <%= @inner_content %>
+  <body class="bg-neutral-900 text-neutral-content min-h-screen flex flex-col">
+    <nav class="navbar bg-neutral px-4 sticky top-0 z-50 border-b border-neutral-700">
+      <div class="flex-1">
+        <a href="/" class="btn btn-ghost text-xl gap-2 normal-case">
+          <span class="text-indigo-400">⚡</span> AgentAndBot
+        </a>
+      </div>
+      <div class="flex-none gap-1">
+        <a href="/rooms" class="btn btn-ghost btn-sm">Odalar</a>
+        <a href="/.agent-well-known/skill" class="btn btn-ghost btn-sm">Skill</a>
+      </div>
+    </nav>
+
+    <main class="flex-1">
+      <%= @inner_content %>
+    </main>
+
+    <!-- JS: Sıralı yükle, defer YOK -->
+    <script src="/assets/phoenix.min.js"></script>
+    <script src="/assets/phoenix_live_view.min.js"></script>
+    <script src="/assets/app.js"></script>
   </body>
 </html>

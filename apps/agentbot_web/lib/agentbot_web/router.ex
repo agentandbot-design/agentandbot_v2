@@ -43,6 +43,9 @@ defmodule AgentbotWeb.Router do
     get "/rooms/:id/messages", AgentbotWeb.RoomController, :messages
   end
 
+  # HTTP POST mesaj gönderme (LiveView fallback)
+  post "/rooms/:room_id/messages", AgentbotWeb.RoomController, :create_message
+
   # LiveView — Browser UI
   pipeline :browser do
     plug :accepts, ["html"]

@@ -38,19 +38,16 @@ defmodule AgentbotWeb.RoomLive do
     else
       room = socket.assigns.room
 
-      case Message.create(%{
-             room_id: room.id,
-             sender_id: "human-web",
-             sender_name: sender_name,
-             content: content,
-             message_type: "text"
-           }) do
-        {:ok, _msg} ->
-          {:noreply, socket}
+      {:ok, _msg} = Message.create(%{
+        room_id: room.id,
+        sender_id: "human-web",
+        sender_name: sender_name,
+        content: content,
+        message_type: "text"
+      })
 
-        {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Gönderilemedi")}
-      end
+      # PubSub yayınlar, handle_info yakalayacak
+      {:noreply, socket}
     end
   end
 
