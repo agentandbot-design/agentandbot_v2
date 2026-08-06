@@ -89,12 +89,30 @@ Default section order: Purpose, Ownership, Local Contracts, Work Guidance, Verif
 - User prefers practical action over lengthy explanations
 - Security is a priority (server was previously hacked)
 
-## Verification
+## Verification — Anti-Crash Manifesto
 
-- `mix compile --warnings-as-errors` — zero warnings required
-- `mix ecto.migrate` — all migrations must apply cleanly
-- `curl http://localhost:4000/health` — must return `{"status":"healthy","database":"ok"}`
-- `curl http://localhost:4000/.agent-well-known/skill` — must return skill card JSON
+**Quality Gate (her commit/PR'da zorunlu):**
+```bash
+mix compile --warnings-as-errors  # Sıfır warning
+mix credo --strict                 # Sıfır warning
+mix test                           # Sıfır failure
+```
+
+**CI/CD Pipeline (`.github/workflows/ci.yml`):**
+- PostgreSQL 15 service container
+- Elixir 1.19.5 / OTP 27
+- Otomatik: deps.get → format check → compile → ecto.migrate → credo → test
+
+**Test Coverage (34 test, 0 failure):**
+- `EnvelopeTest` — struct oluşturma, JSON round-trip, imza
+- `RoomTest` — changeset validation, CRUD, JSON serialization
+- `MessageTest` — changeset, create, list_by_room, ordering
+- `AuthGateTest` — register/authenticate flow, token failures, capability check
+
+**Test Kuralları:**
+- Yeni özellik = yeni test. Test'siz kod main'e merge edilmez.
+- DB testleri `AgentbotCore.Test.DataCase` ile sandbox modunda
+- `mix test` her test için izole DB kullanır
 
 ## Child DOX Index
 

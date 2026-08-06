@@ -17,7 +17,8 @@ defmodule AgentbotCore.Modules.Chat.ApprovalRequest do
     field :requester_name, :string
     field :title, :string
     field :description, :string
-    field :status, :string, default: "pending"  # pending, approved, rejected, expired
+    field :status, :string, default: "pending"
+    # pending, approved, rejected, expired
     field :resolved_by, :string
     field :resolution_note, :string
     field :expires_at, :utc_datetime

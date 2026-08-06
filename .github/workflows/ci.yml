@@ -1,0 +1,81 @@
+# Anti-Crash Manifesto: CI/CD Quality Gate
+#
+# Her push ve PR'da otomatik olarak:
+# 1. Dependency'leri kur
+# 2. Compile (warnings-as-errors)
+# 3. Credo lint
+# 4. Test (migrate + run)
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    name: Compile + Lint + Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: agentbot_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      MIX_ENV: test
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.19.5"
+          otp-version: "27"
+
+      - name: Restore deps cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+            mix.lock
+          key: ${{ runner.os }}-elixir-${{ hashFiles('**/mix.exs') }}
+          restore-keys: ${{ runner.os }}-elixir-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Check formatted
+        run: mix format --check-formatted
+
+      - name: Compile (warnings as errors)
+        run: mix compile --warnings-as-errors
+
+      - name: Setup database
+        run: |
+          mix ecto.create
+          mix ecto.migrate
+
+      - name: Run Credo lint
+        run: mix credo --strict
+
+      - name: Run tests
+        run: mix test --trace

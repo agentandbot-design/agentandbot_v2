@@ -45,24 +45,22 @@ defmodule AgentbotCore.Modules.Agents.AgentGateway do
       metadata: Map.get(params, "metadata", %{})
     ])
 
-    cond do
-      params["room_id"] == nil and params["recipient"] == nil ->
-        {:error, "room_id veya recipient zorunlu"}
+    if params["room_id"] == nil and params["recipient"] == nil do
+      {:error, "room_id veya recipient zorunlu"}
+    else
+      case envelope.room_id do
+        nil ->
+          AgentbotCore.PubSub.broadcast(
+            "agent:#{envelope.recipient}",
+            "outgoing",
+            envelope
+          )
+          {:ok, envelope.id}
 
-      true ->
-        case envelope.room_id do
-          nil ->
-            AgentbotCore.PubSub.broadcast(
-              "agent:#{envelope.recipient}",
-              "outgoing",
-              envelope
-            )
-            {:ok, envelope.id}
-
-          room_id ->
-            AgentbotCore.Modules.Chat.RoomServer.send_message(room_id, envelope)
-            {:ok, envelope.id}
-        end
+        room_id ->
+          AgentbotCore.Modules.Chat.RoomServer.send_message(room_id, envelope)
+          {:ok, envelope.id}
+      end
     end
   end
 
