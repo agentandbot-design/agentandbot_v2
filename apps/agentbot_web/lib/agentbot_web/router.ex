@@ -43,6 +43,23 @@ defmodule AgentbotWeb.Router do
     get "/rooms/:id/messages", AgentbotWeb.RoomController, :messages
   end
 
+  # LiveView — Browser UI
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, html: {AgentbotWeb.Layouts, :root}
+    plug :protect_from_forgery
+  end
+
+  scope "/", AgentbotWeb do
+    pipe_through :browser
+
+    live "/", RoomListLive, :index
+    live "/rooms", RoomListLive, :index
+    live "/rooms/:id", RoomLive, :show
+  end
+
   # 404 yakalayıcı
   match :*, "/*path", AgentbotWeb.ErrorController, :not_found
 end

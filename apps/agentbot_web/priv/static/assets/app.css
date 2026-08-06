@@ -1,0 +1,71 @@
+/* AgentAndBot — Dark theme base CSS */
+/* DaisyUI + Tailwind CDN yüklendi (app.js'de) */
+
+:root {
+  --a-color: #6366f1;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+/* Chat bubble animations */
+.chat-bubble {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+/* LiveView loading state */
+.phx-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.phx-connected {
+  transition: opacity 0.3s;
+}
+
+/* Flash messages */
+.flash {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

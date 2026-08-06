@@ -11,7 +11,7 @@ config :agentbot_web,
 config :agentbot_web, AgentbotWeb.Endpoint,
   url: [host: "localhost", port: 4000],
   http: [ip: {0, 0, 0, 0}, port: 4000],
-  secret_key_base: "WzX7kP2mQ8vR4nL6jF0hG3dY9sT5bC1aE8uI0oK7pM3xN6wV2jF4hD8gB5cA9eR",
+  secret_key_base: "WzX7kP2mQ8vR4nL6jF0hG3dY9sT5bC1aE8uI0oK7pM3xN6wV2jF4hD8gB5cA9eR7",
   render_errors: [view: AgentbotWeb.ErrorView, accepts: ~w(json), layout: false],
   pubsub_server: AgentbotWeb.PubSub,
   live_view: [signing_salt: "aB3cD4eF5gH6iJ7kL8mN"]

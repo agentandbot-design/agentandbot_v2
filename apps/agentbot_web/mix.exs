@@ -30,6 +30,7 @@ defmodule AgentbotWeb.MixProject do
       {:agentbot_core, in_umbrella: true},
       {:phoenix, "~> 1.8.0"},
       {:phoenix_html, "~> 4.1"},
+      {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_live_reload, "~> 1.5", only: :dev},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_pubsub, "~> 2.1"},
