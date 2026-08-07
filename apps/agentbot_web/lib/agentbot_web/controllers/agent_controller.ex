@@ -11,6 +11,8 @@ defmodule AgentbotWeb.AgentController do
     agent_id = Map.get(params, "agent_id")
     agent_name = Map.get(params, "agent_name")
     capabilities = Map.get(params, "capabilities", ["send_message"])
+    executor_type = Map.get(params, "executor_type", "agent")
+    endpoint = Map.get(params, "endpoint")
 
     cond do
       not is_binary(agent_id) or agent_id == "" ->
@@ -23,7 +25,11 @@ defmodule AgentbotWeb.AgentController do
         case AgentCredential.register(%{
           agent_id: agent_id,
           agent_name: agent_name,
-          capabilities: capabilities
+          capabilities: capabilities,
+          executor_type: executor_type,
+          endpoint: endpoint,
+          description: Map.get(params, "description"),
+          protocols: Map.get(params, "protocols", ["rest"])
         }) do
           {:ok, credential} ->
             conn

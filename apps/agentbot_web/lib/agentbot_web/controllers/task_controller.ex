@@ -221,6 +221,8 @@ defmodule AgentbotWeb.TaskController do
     %{
       agent_id: p.agent_id,
       agent_name: p.agent_name,
+      executor_type: p.executor_type,
+      endpoint: p.endpoint,
       verified: p.verified,
       tasks_completed: p.tasks_completed,
       success_rate: p.success_rate && Decimal.to_string(p.success_rate)

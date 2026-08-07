@@ -10,7 +10,7 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :agent_id, :agent_name, :capabilities, :protocols, :description, :expires_at, :is_active, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder, only: [:id, :agent_id, :agent_name, :executor_type, :endpoint, :capabilities, :protocols, :description, :expires_at, :is_active, :inserted_at, :updated_at]}
   alias AgentbotCore.Repo
 
   schema "agent_credentials" do
@@ -21,6 +21,10 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
     field :capabilities, {:array, :string}, default: []
     field :protocols, {:array, :string}, default: ["rest"]
     field :description, :string
+    field :executor_type, :string, default: "agent"
+    # agent | tool | script | workflow | mcp | api | container
+    field :endpoint, :string
+    # MCP: http://host:3001 | CLI: blender | API: https://... | n8n://workflow/183
     field :expires_at, :utc_datetime
     field :is_active, :boolean, default: true
 
@@ -30,7 +34,7 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
   @doc "Yeni credential oluşturmak için changeset"
   def changeset(credential, attrs) do
     credential
-    |> cast(attrs, [:agent_id, :agent_name, :token_hash, :public_key, :capabilities, :protocols, :description, :expires_at, :is_active])
+    |> cast(attrs, [:agent_id, :agent_name, :token_hash, :public_key, :capabilities, :protocols, :description, :executor_type, :endpoint, :expires_at, :is_active])
     |> validate_required([:agent_id, :agent_name, :token_hash])
     |> validate_length(:agent_id, min: 1, max: 100)
     |> validate_length(:agent_name, min: 1, max: 200)

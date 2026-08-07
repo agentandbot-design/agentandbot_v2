@@ -58,7 +58,7 @@ defmodule AgentbotCore.Modules.Registry.Capability do
     __MODULE__ |> where([c], c.category == ^category) |> Repo.all()
   end
 
-  @doc "Bir capability için provider'ları (agent'ları) listele"
+  @doc "Bir capability için provider'ları (executor'ları) listele"
   def providers(capability_name) do
     __MODULE__
     |> join(:inner, [c], ac in assoc(c, :agent_capabilities))
@@ -67,6 +67,8 @@ defmodule AgentbotCore.Modules.Registry.Capability do
     |> select([c, ac, cred], %{
       agent_id: cred.agent_id,
       agent_name: cred.agent_name,
+      executor_type: cred.executor_type,
+      endpoint: cred.endpoint,
       verified: ac.verified,
       tasks_completed: ac.tasks_completed,
       tasks_failed: ac.tasks_failed,
