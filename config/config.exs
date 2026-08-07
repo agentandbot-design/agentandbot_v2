@@ -16,6 +16,26 @@ config :agentbot_web, AgentbotWeb.Endpoint,
   pubsub_server: AgentbotWeb.PubSub,
   live_view: [signing_salt: "aB3cD4eF5gH6iJ7kL8mN"]
 
+# esbuild — JS bundler
+config :esbuild,
+  version: "0.25.0",
+  default: [
+    args: ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/assets),
+    cd: Path.expand("../apps/agentbot_web/assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
+
+# tailwind — CSS framework
+config :tailwind,
+  version: "3.4.10",
+  default: [
+    args: ~w(
+      --input=css/app.css
+      --output=../priv/static/assets/app.css
+    ),
+    cd: Path.expand("../apps/agentbot_web/assets", __DIR__)
+  ]
+
 # Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

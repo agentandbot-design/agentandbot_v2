@@ -4,53 +4,39 @@
     <span class="badge badge-primary"><%= length(@rooms) %> aktif</span>
   </div>
 
-  <!-- Create Room Form -->
-  <div class="card bg-base-200 shadow-xl mb-6">
+  <!-- Create Room -->
+  <div class="card bg-neutral-800 shadow-xl mb-6">
     <div class="card-body">
       <h2 class="card-title text-lg">🆕 Yeni Oda Oluştur</h2>
-      <form phx-submit="create_room" class="flex flex-col gap-3">
-        <input
-          type="text"
-          name="name"
-          placeholder="Oda adı"
-          class="input input-bordered w-full"
-          required
-        />
-        <input
-          type="text"
-          name="description"
-          placeholder="Açıklama (opsiyonel)"
-          class="input input-bordered w-full"
-        />
+      <.form for={@form} phx-submit="create_room" class="flex flex-col gap-3">
+        <input type="text" name="name" placeholder="Oda adı" class="input input-bordered w-full" required />
+        <input type="text" name="description" placeholder="Açıklama (opsiyonel)" class="input input-bordered w-full" />
         <button type="submit" class="btn btn-primary self-end">Oluştur</button>
-      </form>
+      </.form>
     </div>
   </div>
 
   <!-- Room List -->
   <div class="grid gap-3">
-    <div :for={room <- @rooms} class="card bg-base-100 shadow-md hover:shadow-xl transition-shadow">
+    <div :for={room <- @rooms} class="card bg-neutral-800 shadow-md hover:shadow-xl transition-shadow">
       <div class="card-body p-4 flex-row items-center justify-between">
         <div>
           <h3 class="font-semibold text-lg">
-            <a href={"/rooms/#{room.id}"} class="hover:text-primary">
-              💬 <%= room.name %>
-            </a>
+            <.link href={~p"/rooms/#{room.id}"} class="hover:text-primary">💬 <%= room.name %></.link>
           </h3>
-          <p class="text-sm text-base-content/60">
+          <p class="text-sm opacity-60">
             <%= if room.description, do: room.description, else: "Açıklama yok" %>
           </p>
         </div>
         <div class="flex items-center gap-2">
           <span class="badge badge-sm"><%= room.room_type %></span>
-          <a href={"/rooms/#{room.id}"} class="btn btn-sm btn-outline">Gir →</a>
+          <.link href={~p"/rooms/#{room.id}"} class="btn btn-sm btn-outline">Gir →</.link>
         </div>
       </div>
     </div>
   </div>
 
-  <div :if={@rooms == []} class="text-center py-12 text-base-content/50">
+  <div :if={@rooms == []} class="text-center py-12 opacity-50">
     <p class="text-xl mb-2">📭 Henüz oda yok</p>
-    <p>Yukarıdan ilk odanı oluştur!</p>
   </div>
 </div>

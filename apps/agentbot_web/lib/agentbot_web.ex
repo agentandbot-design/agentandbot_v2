@@ -47,6 +47,10 @@ defmodule AgentbotWeb do
       import Phoenix.HTML
       import Phoenix.Component
       use PhoenixHTMLHelpers
+      use Phoenix.VerifiedRoutes,
+        endpoint: AgentbotWeb.Endpoint,
+        router: AgentbotWeb.Router,
+        statics: ~w(assets fonts images favicon.ico robots.txt)
       alias Phoenix.LiveView.JS
     end
   end

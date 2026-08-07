@@ -2,19 +2,19 @@
   <div class="flex items-center justify-between mb-4">
     <div>
       <h1 class="text-2xl font-bold">💬 <%= @room.name %></h1>
-      <p class="text-sm text-neutral-400">
+      <p class="text-sm opacity-60">
         <%= if @room.description, do: @room.description, else: "Genel oda" %>
       </p>
     </div>
     <div class="flex items-center gap-2">
       <span class="badge badge-primary"><%= @message_count %> mesaj</span>
-      <a href="/rooms" class="btn btn-ghost btn-sm">← Odalar</a>
+      <.link href={~p"/rooms"} class="btn btn-ghost btn-sm">← Odalar</.link>
     </div>
   </div>
 
   <!-- Messages -->
-  <div class="flex flex-col gap-2 mb-24 min-h-[300px]">
-    <div :for={msg <- @messages} id={"msg-#{msg.id}"} class="chat chat-start">
+  <div id="messages" class="flex flex-col gap-2 mb-24 min-h-[300px]" phx-update="stream">
+    <div :for={{dom_id, msg} <- @streams.messages} id={dom_id} class="chat chat-start">
       <div class="chat-bubble bg-neutral-700">
         <div class="text-xs opacity-60 mb-1"><%= msg.sender_name || msg.sender_id %></div>
         <%= msg.content %>
@@ -23,19 +23,18 @@
     </div>
   </div>
 
-  <div :if={@messages == []} class="text-center py-12 text-neutral-500">
+  <div :if={@message_count == 0} class="text-center py-12 opacity-50">
     <p class="text-xl">📭 Henüz mesaj yok</p>
   </div>
 </div>
 
-<!-- Input — HTTP POST, kesin çalışır -->
+<!-- Input — phx-submit ile (esbuild derlenmiş JS ile çalışır) -->
 <div class="fixed bottom-0 left-0 right-0 bg-neutral-800 border-t border-neutral-700 p-4 z-40">
   <div class="max-w-4xl mx-auto">
-    <form action={"/rooms/#{@room.id}/messages"} method="post" class="flex gap-2">
-      <input type="hidden" name="_csrf_token" value={Phoenix.Controller.get_csrf_token()} />
-      <input type="text" name="sender_name" value="İnsan" class="input input-bordered input-sm w-28" />
+    <.form for={@form} phx-submit="send_message" class="flex gap-2">
+      <input type="text" name="sender_name" value={@sender_name} class="input input-bordered input-sm w-28" />
       <input type="text" name="content" placeholder="Mesajını yaz..." class="input input-bordered flex-1" required autocomplete="off" />
       <button type="submit" class="btn btn-primary">Gönder</button>
-    </form>
+    </.form>
   </div>
 </div>

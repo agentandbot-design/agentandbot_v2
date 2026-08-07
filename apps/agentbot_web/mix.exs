@@ -39,14 +39,21 @@ defmodule AgentbotWeb.MixProject do
       {:jason, "~> 1.4"},
       {:gettext, "~> 0.26"},
       {:telemetry_metrics, "~> 1.0"},
-      {:telemetry_poller, "~> 1.0"}
+      {:telemetry_poller, "~> 1.0"},
+      # Asset pipeline
+      {:esbuild, "~> 0.8", runtime: false},
+      {:tailwind, "~> 0.2", runtime: false},
+      {:heroicons, "~> 0.5"}
     ]
   end
 
   defp aliases do
     [
-      setup: ["deps.get"],
-      test: ["test"]
+      setup: ["deps.get", "assets.setup", "assets.build"],
+      test: ["test"],
+      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+      "assets.build": ["tailwind default", "esbuild default"],
+      "assets.deploy": ["tailwind default --minify", "esbuild default --minify"]
     ]
   end
 end

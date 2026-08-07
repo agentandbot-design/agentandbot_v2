@@ -1,12 +1,13 @@
 defmodule AgentbotWeb.Layouts do
-  @moduledoc """
-  Uygulama layout'ları — tüm sayfalar bu çerçeveyi kullanır.
-  """
+  @moduledoc "Uygulama layout'ları"
 
   use Phoenix.Component
 
   import Phoenix.Controller, only: [get_csrf_token: 0]
-  import PhoenixHTMLHelpers
+  use Phoenix.VerifiedRoutes,
+    endpoint: AgentbotWeb.Endpoint,
+    router: AgentbotWeb.Router,
+    statics: ~w(assets fonts images favicon.ico robots.txt)
 
   embed_templates "layouts/*"
 end

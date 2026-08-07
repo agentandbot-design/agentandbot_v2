@@ -23,8 +23,10 @@ defmodule AgentbotWeb.RoomLive do
         {:ok,
          socket
          |> assign(:room, room)
-         |> assign(:messages, messages)
-         |> assign(:message_count, length(messages))}
+         |> assign(:message_count, length(messages))
+         |> assign(:sender_name, "İnsan")
+         |> assign(:form, to_form(%{}))
+         |> stream(:messages, messages)}
     end
   end
 
@@ -46,8 +48,10 @@ defmodule AgentbotWeb.RoomLive do
         message_type: "text"
       })
 
-      # PubSub yayınlar, handle_info yakalayacak
-      {:noreply, socket}
+      {:noreply,
+       socket
+       |> assign(:form, to_form(%{}))
+       |> assign(:sender_name, sender_name)}
     end
   end
 
@@ -55,7 +59,7 @@ defmodule AgentbotWeb.RoomLive do
   def handle_info({:new_message, msg}, socket) do
     {:noreply,
      socket
-     |> update(:messages, fn m -> [msg | m] end)
+     |> stream_insert(:messages, msg, at: 0)
      |> update(:message_count, &(&1 + 1))}
   end
 

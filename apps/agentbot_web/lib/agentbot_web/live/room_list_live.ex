@@ -1,8 +1,5 @@
 defmodule AgentbotWeb.RoomListLive do
-  @moduledoc """
-  Oda listesi sayfası — tüm aktif odaları gösterir.
-  Yeni oda oluşturma formu içerir.
-  """
+  @moduledoc "Oda listesi — yeni oda oluşturma"
 
   use AgentbotWeb, :live_view
 
@@ -12,7 +9,10 @@ defmodule AgentbotWeb.RoomListLive do
   def mount(_params, _session, socket) do
     if connected?(socket), do: AgentbotCore.PubSub.subscribe("rooms")
 
-    {:ok, assign(socket, :rooms, list_rooms())}
+    {:ok,
+     socket
+     |> assign(:rooms, list_rooms())
+     |> assign(:form, to_form(%{}))}
   end
 
   @impl true
@@ -27,7 +27,8 @@ defmodule AgentbotWeb.RoomListLive do
         {:noreply,
          socket
          |> put_flash(:info, "Oda oluşturuldu: #{room.name}")
-         |> assign(:rooms, list_rooms())}
+         |> assign(:rooms, list_rooms())
+         |> assign(:form, to_form(%{}))}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Oda oluşturulamadı")}
