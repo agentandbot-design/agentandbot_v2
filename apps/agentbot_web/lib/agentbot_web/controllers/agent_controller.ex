@@ -52,6 +52,12 @@ defmodule AgentbotWeb.AgentController do
     end
   end
 
+  @doc "Çevrimiçi agent'ları listeler"
+  def online(conn, _params) do
+    agents = AgentbotCore.Modules.Agents.AgentPresence.list_online()
+    json(conn, %{agents: agents, count: length(agents)})
+  end
+
   def disconnect(conn, _params) do
     agent_id = conn.assigns.agent_id
     AgentGateway.disconnect(agent_id)

@@ -26,6 +26,12 @@ defmodule AgentbotWeb.RoomController do
     json(conn, %{messages: messages})
   end
 
+  @doc "Belirli ID'den sonraki mesajları döndürür (agent polling)"
+  def messages_since(conn, %{"id" => room_id, "last_id" => last_id}) do
+    messages = Message.list_since(room_id, last_id)
+    json(conn, %{messages: messages, count: length(messages)})
+  end
+
   # HTTP POST ile mesaj gönder — LiveView fallback
   def create_message(conn, %{"room_id" => room_id, "content" => content} = params) do
     sender_name = Map.get(params, "sender_name", "İnsan")

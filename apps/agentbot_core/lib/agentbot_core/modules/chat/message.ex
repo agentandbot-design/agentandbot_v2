@@ -40,6 +40,14 @@ defmodule AgentbotCore.Modules.Chat.Message do
     |> Repo.all()
   end
 
+  @doc "Belirli ID'den sonraki mesajları listeler (agent polling)"
+  def list_since(room_id, last_id) do
+    __MODULE__
+    |> where([m], m.room_id == ^room_id and m.id > ^last_id)
+    |> order_by([m], asc: m.inserted_at)
+    |> Repo.all()
+  end
+
   @doc "Mesaj oluşturur ve PubSub'a yayınlar"
   def create(attrs) do
     changeset = %__MODULE__{} |> changeset(attrs)

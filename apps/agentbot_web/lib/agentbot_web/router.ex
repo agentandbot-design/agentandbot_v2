@@ -41,6 +41,8 @@ defmodule AgentbotWeb.Router do
     get "/rooms", AgentbotWeb.RoomController, :index
     post "/rooms", AgentbotWeb.RoomController, :create
     get "/rooms/:id/messages", AgentbotWeb.RoomController, :messages
+    get "/rooms/:id/messages/since/:last_id", AgentbotWeb.RoomController, :messages_since
+    get "/agents/online", AgentbotWeb.AgentController, :online
   end
 
   # Agent registration — token üretir (auth yok)
