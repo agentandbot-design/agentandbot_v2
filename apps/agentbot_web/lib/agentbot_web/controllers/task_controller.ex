@@ -2,57 +2,35 @@ defmodule AgentbotWeb.TaskController do
   @moduledoc """
   Task API — oluştur, keşfet, delege et, tamamla.
 
-  Discover → Delegate → Collaborate → Verify
+  Kopukluk giderildi: Task ↔ Capability Registry bağlı.
+  Task create → auto-discover → auto-delegate (tek provider) veya gap kaydet.
+  Artifact submit → stats güncelle (record_completion).
   """
 
   use AgentbotWeb, :controller
 
   alias AgentbotCore.Modules.Marketplace.{Artifact, Task}
+  alias AgentbotCore.Modules.Registry.{Capability, AgentCapability, CapabilityGap}
+  alias AgentbotCore.Repo
   alias AgentbotCore.Modules.Security.AgentCredential
+
+  import Ecto.Query
+
+  # ── LIST ──────────────────────────────────────────
 
   @doc "Tüm task'ları listele (filtre: status, capability)"
   def index(conn, params) do
     tasks =
       case params do
-        %{"status" => status} when status != "" -> Task |> where_status(status)
-        %{"capability" => cap} when cap != "" -> Task.list_open_by_capability(cap)
-        _ -> Task |> order_all()
+        %{"status" => status} when status != "" ->
+          Task |> where([t], t.status == ^status) |> order_by([t], desc: t.inserted_at) |> Repo.all()
+        %{"capability" => cap} when cap != "" ->
+          Task.list_open_by_capability(cap)
+        _ ->
+          Task |> order_by([t], desc: t.inserted_at) |> Repo.all()
       end
 
     json(conn, %{tasks: tasks})
-  end
-
-  defp where_status(query, status) do
-    import Ecto.Query
-    query |> where([t], t.status == ^status) |> order_by([t], desc: t.inserted_at) |> AgentbotCore.Repo.all()
-  end
-
-  defp order_all(_query) do
-    import Ecto.Query
-    AgentbotCore.Modules.Marketplace.Task
-    |> order_by([t], desc: t.inserted_at)
-    |> AgentbotCore.Repo.all()
-  end
-
-  @doc "Task oluştur (human veya agent)"
-  def create(conn, params) do
-    created_by = Map.get(conn.assigns, :agent_id, "human")
-
-    case Task.create(%{
-      room_id: params["room_id"],
-      created_by: created_by,
-      capability: params["capability"],
-      title: params["title"],
-      description: params["description"],
-      input: params["input"] && Jason.encode!(params["input"]),
-      priority: params["priority"] || 0
-    }) do
-      {:ok, task} ->
-        conn |> put_status(201) |> json(%{task: task})
-
-      {:error, changeset} ->
-        conn |> put_status(422) |> json(%{errors: format_errors(changeset)})
-    end
   end
 
   @doc "Task detayı + artifact'ları"
@@ -62,22 +40,52 @@ defmodule AgentbotWeb.TaskController do
     json(conn, %{task: task, artifacts: artifacts})
   end
 
-  @doc "Capability'ye sahip agent'ları bul (Discovery)"
-  def discover(conn, %{"capability" => capability}) do
-    agents = AgentCredential.find_by_capability(capability)
+  # ── CREATE + AUTO-DISCOVER + AUTO-DELEGATE ─────────
 
-    json(conn, %{
-      capability: capability,
-      agents: Enum.map(agents, &strip_sensitive/1),
-      count: length(agents)
-    })
+  @doc """
+  Task oluştur → otomatik discovery → otomatik delegate.
+
+  Akış:
+  1. Task DB'ye kaydet (status: open)
+  2. Capability.providers ile sağlayıcıları ara
+  3. Tek provider varsa → otomatik ata (status: assigned)
+  4. Provider yoksa → CapabilityGap kaydet (status: open, gap: true)
+  """
+  def create(conn, params) do
+    created_by = Map.get(conn.assigns, :agent_id, "human")
+    capability_name = params["capability"]
+
+    case Task.create(%{
+      room_id: params["room_id"],
+      created_by: created_by,
+      capability: capability_name,
+      title: params["title"],
+      description: params["description"],
+      input: params["input"] && Jason.encode!(params["input"]),
+      priority: params["priority"] || 0
+    }) do
+      {:ok, task} ->
+        # ── AUTO-DISCOVER ──
+        result = auto_discover_and_delegate(task)
+
+        conn
+        |> put_status(201)
+        |> json(%{
+          task: Task.get!(task.id),
+          discovery: result.discovery,
+          auto_assigned: result.auto_assigned,
+          providers: result.providers,
+          gap: result.gap
+        })
+
+      {:error, changeset} ->
+        conn |> put_status(422) |> json(%{errors: format_errors(changeset)})
+    end
   end
 
-  def discover(conn, _params) do
-    conn |> put_status(400) |> json(%{error: "capability parametresi zorunlu"})
-  end
+  # ── MANUAL ASSIGN ─────────────────────────────────
 
-  @doc "Task'ı agent'a ata (Delegation)"
+  @doc "Task'ı manuel olarak agent'a ata"
   def assign(conn, %{"task_id" => task_id, "agent_id" => agent_id}) do
     case Task.assign(task_id, agent_id) do
       {:ok, task} ->
@@ -88,6 +96,8 @@ defmodule AgentbotWeb.TaskController do
     end
   end
 
+  # ── STATUS UPDATE ─────────────────────────────────
+
   @doc "Agent task durumunu güncelle"
   def update_status(conn, %{"task_id" => task_id, "status" => status}) do
     case Task.update_status(task_id, status) do
@@ -95,16 +105,24 @@ defmodule AgentbotWeb.TaskController do
         json(conn, %{task: task})
 
       {:error, _} ->
-        conn |> put_status(422) |> json(%{error: "Durum güncellenemedi"})
+        conn |> put_status(422) |> json(%{error: "Durum güuncellenemedi"})
     end
   end
 
-  @doc "Agent artifact submit (task çıktısı)"
+  # ── ARTIFACT SUBMIT + STATS UPDATE ────────────────
+
+  @doc """
+  Agent artifact submit → task completed + stats güncelle.
+
+  Kopukluk giderildi: Artifact üretince AgentCapability.record_completion
+  çağrılır. Success rate, tasks_completed güncellenir.
+  """
   def submit_artifact(conn, params) do
     produced_by = Map.get(conn.assigns, :agent_id, "unknown")
+    task_id = params["task_id"]
 
     case Artifact.create(%{
-      task_id: params["task_id"],
+      task_id: task_id,
       room_id: params["room_id"],
       produced_by: produced_by,
       artifact_type: params["artifact_type"] || "report",
@@ -114,7 +132,12 @@ defmodule AgentbotWeb.TaskController do
     }) do
       {:ok, artifact} ->
         # Task'ı tamamlandı olarak işaretle
-        Task.update_status(params["task_id"], "completed")
+        Task.update_status(task_id, "completed")
+
+        # ── STATS GÜNCELLE ──
+        # Agent'ın bu capability için başarı istatistiğini güncelle
+        task = Task.get!(task_id)
+        update_agent_stats(task, produced_by, true)
 
         conn |> put_status(201) |> json(%{artifact: artifact, status: "produced"})
 
@@ -122,6 +145,8 @@ defmodule AgentbotWeb.TaskController do
         conn |> put_status(422) |> json(%{errors: format_errors(changeset)})
     end
   end
+
+  # ── VERIFY ARTIFACT ───────────────────────────────
 
   @doc "Artifact'ı doğrula (human verification)"
   def verify_artifact(conn, %{"id" => artifact_id}) do
@@ -136,15 +161,69 @@ defmodule AgentbotWeb.TaskController do
     end
   end
 
-  # Helpers
+  # ── HELPERS ───────────────────────────────────────
 
-  defp strip_sensitive(agent) do
+  # Task oluştuktan sonra capability discovery + auto-delegate
+  defp auto_discover_and_delegate(task) do
+    case Capability.get_by_name(task.capability) do
+      nil ->
+        # Capability yok → gap kaydet
+        CapabilityGap.record_request(task.capability)
+        %{discovery: "gap", auto_assigned: false, providers: [], gap: true}
+
+      _capability ->
+        # Capability var → sağlayıcıları getir
+        providers = Capability.providers(task.capability)
+
+        case providers do
+          [] ->
+            # Provider yok → gap
+            CapabilityGap.record_request(task.capability)
+            %{discovery: "gap", auto_assigned: false, providers: [], gap: true}
+
+          [provider | _rest] ->
+            # Provider var → en iyi sağlayıcıya ata (ilk = en yüksek tasks_completed)
+            Task.assign(task.id, provider.agent_id)
+
+            %{
+              discovery: "found",
+              auto_assigned: true,
+              providers: Enum.map(providers, &strip_provider/1),
+              gap: false
+            }
+        end
+    end
+  end
+
+  # Agent stats güncelle — AgentCapability.record_completion
+  defp update_agent_stats(task, agent_id, success) do
+    # Agent'ın credential'ını bul
+    credential =
+      AgentCredential
+      |> where([c], c.agent_id == ^agent_id and c.is_active == true)
+      |> order_by([c], desc: c.inserted_at)
+      |> limit(1)
+      |> Repo.one()
+
+    if credential do
+      # Capability'yi bul (veya oluştur)
+      {:ok, capability} = Capability.find_or_create(task.capability)
+
+      # Provider ilişkisi yoksa oluştur
+      AgentCapability.provide(credential.id, capability.id)
+
+      # Stats güncelle
+      AgentCapability.record_completion(credential.id, capability.id, success)
+    end
+  end
+
+  defp strip_provider(p) do
     %{
-      agent_id: agent.agent_id,
-      agent_name: agent.agent_name,
-      capabilities: agent.capabilities,
-      protocols: agent.protocols,
-      description: agent.description
+      agent_id: p.agent_id,
+      agent_name: p.agent_name,
+      verified: p.verified,
+      tasks_completed: p.tasks_completed,
+      success_rate: p.success_rate && Decimal.to_string(p.success_rate)
     }
   end
 
