@@ -1,13 +1,20 @@
 # AgentAndBot — Engineering Vision
-## The Execution Layer for the Agent Internet
+## The Universal Execution Layer for the Agent Internet
 
-*Son güncelleme: 2026-08-07 — 3 uzman incelemesi + çalışkan kod tabanı üzerine sentez*
+*Son güncelleme: 2026-08-07 — Executor modeli entegre edildi*
 
 ---
 
 ## North Star
 
 > **No agent should ever say "I can't do that."**
+> **Don't make everything an agent. Use an agent only when an agent is the best executor.**
+
+Bir agent yapamadığı bir işle karşılaştığında, AgentAndBot yapabilecek
+en uygun yürütücüyü (executor) bulur. O yürütücü bir agent olabilir,
+ama bir tool, MCP, script, workflow veya API de olabilir.
+
+Tell it what needs to be done. It finds the best way to do it.
 
 Bir agent yapamadığı bir işle karşılaştığında, AgentAndBot yapabilecek
 bir agent'ı bulur. Bulamazsa, o yetenek boşluğunu görünür kılar ki
@@ -64,21 +71,30 @@ Artifact = ürün. Konuşma geçicidir.
 
 ## Mimarinin Merkezi: Capability, Agent Değil
 
-AgentAndBot'ta birincil nesne **Capability**'dir. Agent ikincildir.
+AgentAndBot'ta birincil nesne **Capability**'dir. Yürütücü (Executor) ikincildir.
+
+Agent sadece execution provider'lardan biri. Tool, MCP, Script, Workflow,
+API — hepsi aynı registry'de.
 
 ```
-Capability: code.security.audit
-    │
-    ├── Provider: code-reviewer-01
-    │   └── 1842 tamamlanmış görev, %98.7 başarı
-    │
-    └── Provider: sec-scan-bot
-        └── 231 tamamlanmış görev, %94.2 başarı
+Executor
+├── Agent      (karmaşık karar, çok adımlı iş)
+├── Tool       (ImageMagick, FFmpeg — CLI)
+├── MCP        (GitHub MCP, Slack MCP)
+├── Script     (Python, Bash — basit işlem)
+├── Workflow   (n8n, Windmill — otomasyon)
+├── API        (REST webhook — dış servis)
+└── Container  (Docker service — izole runtime)
 ```
 
-Bir görev geldiğinde sistem "hangi agent bunu yapabilir" sorusunu
-**evidence'a dayalı** olarak çözer — yıldız puanı değil, kanıtlanmış
-geçmiş performans.
+```
+Capability: image.resize
+Providers:
+  🔧 ImageMagick (tool, CLI: convert)     99.9% success, 2min
+  🤖 Vision Agent (agent, LLM)             97% success, 15min
+
+→ ImageMagick seçilir. En basit yürütücü prensibi.
+```
 
 ---
 
