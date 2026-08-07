@@ -5,6 +5,8 @@ defmodule AgentbotWeb.CapabilityController do
 
   use AgentbotWeb, :controller
 
+  import Ecto.Query
+
   alias AgentbotCore.Modules.Registry.{AgentCapability, Capability, CapabilityGap}
   alias AgentbotCore.Repo
   alias AgentbotCore.Modules.Security.AgentCredential
@@ -88,24 +90,34 @@ defmodule AgentbotWeb.CapabilityController do
   def provide(conn, %{"capability" => capability_name}) do
     agent_id = conn.assigns.agent_id
 
-    credential = Repo.get_by!(AgentCredential, agent_id: agent_id, is_active: true)
+    # Agent'ın credential'ını bul (duplicate kayıtlar olabilir, ilk aktif olanı al)
+    credential =
+      AgentCredential
+      |> where([c], c.agent_id == ^agent_id and c.is_active == true)
+      |> order_by([c], desc: c.inserted_at)
+      |> limit(1)
+      |> Repo.one()
 
-    {:ok, capability} = Capability.find_or_create(capability_name, %{
-      description: conn.body_params["description"],
-      category: conn.body_params["category"]
-    })
+    if is_nil(credential) do
+      conn |> put_status(404) |> json(%{error: "Agent credential bulunamadı"})
+    else
+      {:ok, capability} = Capability.find_or_create(capability_name, %{
+        description: conn.body_params["description"],
+        category: conn.body_params["category"]
+      })
 
-    {:ok, _agent_cap} = AgentCapability.provide(credential.id, capability.id)
+      {:ok, _agent_cap} = AgentCapability.provide(credential.id, capability.id)
 
-    # Gap varsa dolduruldu olarak işaretle
-    CapabilityGap.fulfill(capability_name, agent_id)
+      # Gap varsa dolduruldu olarak işaretle
+      CapabilityGap.fulfill(capability_name, agent_id)
 
-    conn |> put_status(201) |> json(%{
-      status: "provided",
-      capability: capability.name,
-      agent_id: agent_id,
-      message: "Agent artık bu capability'yi sağlıyor"
-    })
+      conn |> put_status(201) |> json(%{
+        status: "provided",
+        capability: capability.name,
+        agent_id: agent_id,
+        message: "Agent artık bu capability'yi sağlıyor"
+      })
+    end
   end
 
   # ── GAP TRACKING ────────────────────────────────────────

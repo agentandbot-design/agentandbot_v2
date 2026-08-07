@@ -33,11 +33,11 @@ defmodule AgentbotCore.Modules.Registry.Capability do
   end
 
   @doc "Capability oluştur (veya varsa getir)"
-  def find_or_create(name, opts \\ []) do
+  def find_or_create(name, opts \\ %{}) do
     case Repo.get_by(__MODULE__, name: name) do
       nil ->
         %__MODULE__{}
-        |> changeset(%{name: name, description: opts[:description], category: opts[:category]})
+        |> changeset(%{name: name, description: Map.get(opts, :description) || Map.get(opts, "description"), category: Map.get(opts, :category) || Map.get(opts, "category")})
         |> Repo.insert()
 
       existing ->
