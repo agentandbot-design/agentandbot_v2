@@ -18,6 +18,8 @@ defmodule AgentbotCore.Application do
       {Registry, keys: :unique, name: AgentbotCore.Modules.Chat.RoomRegistry},
       # Agent presence tracker — ETS tabanlı çevrimiçi takibi
       AgentbotCore.Modules.Agents.AgentPresence,
+      # Broadway pipeline — MCP event → human summary (back-pressure)
+      AgentbotCore.Modules.Chat.MessagePipeline,
       # Oda dinamik süpervizörü — her oda için bir RoomServer başlatır
       AgentbotCore.Modules.Chat.RoomSupervisor
     ]

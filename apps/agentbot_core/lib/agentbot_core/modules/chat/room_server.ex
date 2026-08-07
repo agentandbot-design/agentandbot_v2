@@ -160,7 +160,12 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
   # ── Helpers ─────────────────────────────────────────────────────
 
   defp broadcast_both(room_id, event, payload) do
+    # Raw broadcast — agent hızı (LiveView direkt izler)
     AgentbotCore.PubSub.broadcast("room:#{room_id}", event, payload)
     AgentbotCore.PubSub.broadcast("human:#{room_id}", event, payload)
+
+    # Pipeline feed — Broadway pipeline summary üretir (back-pressure)
+    enriched = Map.put(payload, :room_id, room_id)
+    AgentbotCore.PubSub.broadcast("pipeline_events", event, enriched)
   end
 end

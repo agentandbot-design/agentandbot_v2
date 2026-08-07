@@ -35,6 +35,8 @@ defmodule AgentbotCore.MixProject do
       {:ecto_sql, "~> 3.12"},
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.4"},
+      # Back-pressure pipeline — MCP event'leri → human summary
+      {:broadway, "~> 1.1"},
       # Test/Lint — Anti-Crash Manifesto
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:mox, "~> 1.2", only: :test}
