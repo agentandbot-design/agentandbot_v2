@@ -55,4 +55,23 @@ defmodule AgentbotCore.Modules.Chat.ApprovalRequest do
     |> changeset(%{status: "rejected", resolved_by: resolved_by, resolution_note: note})
     |> Repo.update()
   end
+
+  @doc "Bir odadaki bekleyen onay taleplerini listeler"
+  def list_pending_by_room(room_id) do
+    import Ecto.Query
+
+    __MODULE__
+    |> where([a], a.room_id == ^room_id and a.status == "pending")
+    |> order_by([a], desc: a.inserted_at)
+    |> Repo.all()
+  end
+
+  @doc "Toplam beklemedeki onay sayısı"
+  def count_pending do
+    import Ecto.Query
+
+    __MODULE__
+    |> where([a], a.status == "pending")
+    |> Repo.aggregate(:count)
+  end
 end

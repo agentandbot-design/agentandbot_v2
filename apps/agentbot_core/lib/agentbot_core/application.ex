@@ -16,6 +16,8 @@ defmodule AgentbotCore.Application do
       {Phoenix.PubSub, name: AgentbotCore.PubSub},
       # Oda süreç kayıt defteri
       {Registry, keys: :unique, name: AgentbotCore.Modules.Chat.RoomRegistry},
+      # Agent presence tracker — ETS tabanlı çevrimiçi takibi
+      AgentbotCore.Modules.Agents.AgentPresence,
       # Oda dinamik süpervizörü — her oda için bir RoomServer başlatır
       AgentbotCore.Modules.Chat.RoomSupervisor
     ]

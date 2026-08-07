@@ -2,12 +2,14 @@ defmodule AgentbotWeb.DashboardLive do
   @moduledoc """
   Dashboard — platform genel durumu.
 
-  Oda sayısı, mesaj sayısı, agent durumu, son aktiviteler.
+  Oda sayısı, mesaj sayısı, agent durumu, son aktiviteler,
+  çevrimiçi agent listesi ve beklemedeki onay talepleri.
   """
 
   use AgentbotWeb, :live_view
 
-  alias AgentbotCore.Modules.Chat.{Room, Message}
+  alias AgentbotCore.Modules.Agents.AgentPresence
+  alias AgentbotCore.Modules.Chat.{ApprovalRequest, Message, Room}
   alias AgentbotCore.Repo
 
   @impl true
@@ -21,12 +23,13 @@ defmodule AgentbotWeb.DashboardLive do
     {:ok,
      socket
      |> assign_stats()
-     |> assign(:recent_activity, [])}
+     |> assign(:recent_activity, [])
+     |> assign(:online_agents, AgentPresence.list_online())}
   end
 
   @impl true
   def handle_info(:tick, socket) do
-    {:noreply, assign_stats(socket)}
+    {:noreply, refresh_dynamic(socket)}
   end
 
   def handle_info({:room_created, room}, socket) do
@@ -52,33 +55,40 @@ defmodule AgentbotWeb.DashboardLive do
     {:noreply,
      socket
      |> assign_stats()
-     |> assign(:recent_activity, new_activity)}
+     |> assign(:recent_activity, new_activity)
+     |> assign(:online_agents, AgentPresence.list_online())}
   end
 
   def handle_info({:agent_offline, _}, socket) do
-    {:noreply, assign_stats(socket)}
+    {:noreply,
+     socket
+     |> assign_stats()
+     |> assign(:online_agents, AgentPresence.list_online())}
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
+
+  defp refresh_dynamic(socket) do
+    socket
+    |> assign_stats()
+    |> assign(:online_agents, AgentPresence.list_online())
+  end
 
   defp assign_stats(socket) do
     socket
     |> assign(:room_count, count_rooms())
     |> assign(:message_count, count_messages())
     |> assign(:agent_count, count_agents())
+    |> assign(:pending_approvals, ApprovalRequest.count_pending())
+    |> assign(:online_count, AgentPresence.count_online())
     |> assign(:protocols, list_protocols())
   end
 
-  defp count_rooms do
-    Repo.aggregate(Room, :count)
-  end
+  defp count_rooms, do: Repo.aggregate(Room, :count)
 
-  defp count_messages do
-    Repo.aggregate(Message, :count)
-  end
+  defp count_messages, do: Repo.aggregate(Message, :count)
 
   defp count_agents do
-    # Phase 1: agent kayıt sayısı ( aktif token)
     Repo.aggregate(AgentbotCore.Modules.Security.AgentCredential, :count)
   end
 

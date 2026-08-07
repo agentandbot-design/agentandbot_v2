@@ -3,12 +3,21 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
   Oda süreci (GenServer) — bir odanın yaşam döngüsünü yönetir.
 
   Her aktif oda için bir RoomServer süreci çalışır.
-  Mesaj yönlendirme, ajan katılım/çıkış ve oda durumu yönetimi.
+  Mesaj yönlendirme, ajan katılım/çıkış, oda durumu ve onay talepleri.
+
+  ## Durumlar
+
+  - `:active` — Mesaj akışı açık (varsayılan)
+  - `:paused` — Mesaj akışı durduruldu (insan müdahalesi için)
+
+  Paused durumunda gelen mesajlar buffer'lanır, resume'da flush edilir.
   """
 
   use GenServer
 
-  # Public API
+  @max_buffer 100
+
+  # ── Public API ──────────────────────────────────────────────────
 
   @doc "Oda sürecini başlatır"
   def start_link(opts) do
@@ -36,12 +45,23 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
     GenServer.call(via_tuple(room_id), :get_state)
   end
 
-  # Registry via tuple
+  @doc "Odayı duraklatır — mesaj akışını keser, buffer'a alır"
+  def pause(room_id) do
+    GenServer.call(via_tuple(room_id), :pause)
+  end
+
+  @doc "Odayı devam ettirir — buffer'daki mesajları flush eder"
+  def resume(room_id) do
+    GenServer.call(via_tuple(room_id), :resume)
+  end
+
+  # ── Registry ────────────────────────────────────────────────────
+
   defp via_tuple(room_id) do
     {:via, Registry, {AgentbotCore.Modules.Chat.RoomRegistry, room_id}}
   end
 
-  # GenServer Callbacks
+  # ── GenServer Callbacks ──────────────────────────────────────────
 
   @impl true
   def init(opts) do
@@ -51,8 +71,10 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
     state = %{
       room_id: room_id,
       room_name: room_name,
+      status: :active,
       agents: %{},       # agent_id => %{name: String.t(), joined_at: DateTime.t()}
-      message_count: 0
+      message_count: 0,
+      buffer: []
     }
 
     {:ok, state}
@@ -65,18 +87,11 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
       joined_at: DateTime.utc_now()
     })
 
-    # PubSub'a katılım bildirimi yayınla — dual topic
-    AgentbotCore.PubSub.broadcast(
-      "room:#{state.room_id}",
-      "agent_joined",
-      %{agent_id: agent_id, agent_name: agent_name, room_id: state.room_id}
-    )
-    # Human topic — daha yavaş ama insan-okur format
-    AgentbotCore.PubSub.broadcast(
-      "human:#{state.room_id}",
-      "agent_joined",
-      %{agent_id: agent_id, agent_name: agent_name, room_id: state.room_id}
-    )
+    broadcast_both(state.room_id, "agent_joined", %{
+      agent_id: agent_id,
+      agent_name: agent_name,
+      room_id: state.room_id
+    })
 
     {:reply, :ok, %{state | agents: new_agents}}
   end
@@ -87,38 +102,65 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
   end
 
   @impl true
-  def handle_cast({:send_message, message}, state) do
-    # PubSub'a mesaj yayınla — dual topic (agent hız + human okunur)
-    AgentbotCore.PubSub.broadcast(
-      "room:#{state.room_id}",
-      "new_message",
-      message
-    )
-    AgentbotCore.PubSub.broadcast(
-      "human:#{state.room_id}",
-      "new_message",
-      message
-    )
+  def handle_call(:pause, _from, state) do
+    new_state = %{state | status: :paused}
 
-    {:noreply, %{state | message_count: state.message_count + 1}}
+    broadcast_both(state.room_id, "room_paused", %{
+      room_id: state.room_id,
+      timestamp: DateTime.utc_now()
+    })
+
+    {:reply, :ok, new_state}
+  end
+
+  @impl true
+  def handle_call(:resume, _from, state) do
+    # Buffer'daki mesajları flush et
+    Enum.each(Enum.reverse(state.buffer), fn msg ->
+      broadcast_both(state.room_id, "new_message", msg)
+    end)
+
+    broadcast_both(state.room_id, "room_resumed", %{
+      room_id: state.room_id,
+      flushed_count: length(state.buffer),
+      timestamp: DateTime.utc_now()
+    })
+
+    new_state = %{state | status: :active, buffer: [], message_count: state.message_count + length(state.buffer)}
+
+    {:reply, :ok, new_state}
+  end
+
+  @impl true
+  def handle_cast({:send_message, message}, state) do
+    case state.status do
+      :paused ->
+        # Buffer'a ekle — max boyutu aşma
+        new_buffer = [message | state.buffer] |> Enum.take(@max_buffer)
+        {:noreply, %{state | buffer: new_buffer}}
+
+      :active ->
+        broadcast_both(state.room_id, "new_message", message)
+        {:noreply, %{state | message_count: state.message_count + 1}}
+    end
   end
 
   @impl true
   def handle_cast({:leave, agent_id}, state) do
     new_agents = Map.delete(state.agents, agent_id)
 
-    # PubSub'a çıkış bildirimi yayınla — dual topic
-    AgentbotCore.PubSub.broadcast(
-      "room:#{state.room_id}",
-      "agent_left",
-      %{agent_id: agent_id, room_id: state.room_id}
-    )
-    AgentbotCore.PubSub.broadcast(
-      "human:#{state.room_id}",
-      "agent_left",
-      %{agent_id: agent_id, room_id: state.room_id}
-    )
+    broadcast_both(state.room_id, "agent_left", %{
+      agent_id: agent_id,
+      room_id: state.room_id
+    })
 
     {:noreply, %{state | agents: new_agents}}
+  end
+
+  # ── Helpers ─────────────────────────────────────────────────────
+
+  defp broadcast_both(room_id, event, payload) do
+    AgentbotCore.PubSub.broadcast("room:#{room_id}", event, payload)
+    AgentbotCore.PubSub.broadcast("human:#{room_id}", event, payload)
   end
 end
