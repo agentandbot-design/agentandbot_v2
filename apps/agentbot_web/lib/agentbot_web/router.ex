@@ -43,6 +43,13 @@ defmodule AgentbotWeb.Router do
     get "/rooms/:id/messages", AgentbotWeb.RoomController, :messages
   end
 
+  # Agent registration — token üretir (auth yok)
+  scope "/api" do
+    pipe_through :api
+
+    post "/agents/register", AgentbotWeb.AgentController, :register
+  end
+
   # HTTP POST mesaj gönderme (LiveView fallback)
   post "/rooms/:room_id/messages", AgentbotWeb.RoomController, :create_message
 
