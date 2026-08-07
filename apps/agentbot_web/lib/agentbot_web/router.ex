@@ -47,7 +47,13 @@ defmodule AgentbotWeb.Router do
     # Task API — Discover → Delegate → Verify
     get "/tasks", AgentbotWeb.TaskController, :index
     get "/tasks/:id", AgentbotWeb.TaskController, :show
-    get "/discover", AgentbotWeb.TaskController, :discover
+
+    # Capability Registry — L1
+    get "/capabilities", AgentbotWeb.CapabilityController, :index
+    get "/capabilities/:name", AgentbotWeb.CapabilityController, :show
+    get "/discover", AgentbotWeb.CapabilityController, :discover
+    get "/gaps/top", AgentbotWeb.CapabilityController, :top_gaps
+    get "/gaps", AgentbotWeb.CapabilityController, :unfulfilled_gaps
   end
 
   # Authenticated API — agent işlemleri
@@ -59,6 +65,9 @@ defmodule AgentbotWeb.Router do
     post "/tasks/:task_id/status", AgentbotWeb.TaskController, :update_status
     post "/tasks/:task_id/artifact", AgentbotWeb.TaskController, :submit_artifact
     post "/artifacts/:id/verify", AgentbotWeb.TaskController, :verify_artifact
+
+    # Agent provides capability
+    post "/capabilities/provide", AgentbotWeb.CapabilityController, :provide
   end
 
   # Agent registration — token üretir (auth yok)
