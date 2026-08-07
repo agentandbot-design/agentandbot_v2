@@ -43,6 +43,22 @@ defmodule AgentbotWeb.Router do
     get "/rooms/:id/messages", AgentbotWeb.RoomController, :messages
     get "/rooms/:id/messages/since/:last_id", AgentbotWeb.RoomController, :messages_since
     get "/agents/online", AgentbotWeb.AgentController, :online
+
+    # Task API — Discover → Delegate → Verify
+    get "/tasks", AgentbotWeb.TaskController, :index
+    get "/tasks/:id", AgentbotWeb.TaskController, :show
+    get "/discover", AgentbotWeb.TaskController, :discover
+  end
+
+  # Authenticated API — agent işlemleri
+  scope "/api" do
+    pipe_through :authenticated
+
+    post "/tasks", AgentbotWeb.TaskController, :create
+    post "/tasks/:task_id/assign", AgentbotWeb.TaskController, :assign
+    post "/tasks/:task_id/status", AgentbotWeb.TaskController, :update_status
+    post "/tasks/:task_id/artifact", AgentbotWeb.TaskController, :submit_artifact
+    post "/artifacts/:id/verify", AgentbotWeb.TaskController, :verify_artifact
   end
 
   # Agent registration — token üretir (auth yok)

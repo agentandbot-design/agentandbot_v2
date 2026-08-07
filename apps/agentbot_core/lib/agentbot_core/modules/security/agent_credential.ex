@@ -10,15 +10,17 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :agent_id, :agent_name, :capabilities, :expires_at, :is_active, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder, only: [:id, :agent_id, :agent_name, :capabilities, :protocols, :description, :expires_at, :is_active, :inserted_at, :updated_at]}
   alias AgentbotCore.Repo
 
   schema "agent_credentials" do
     field :agent_id, :string
     field :agent_name, :string
     field :token_hash, :string
-    field :public_key, :string  # Ed25519 — gelecek phase
+    field :public_key, :string
     field :capabilities, {:array, :string}, default: []
+    field :protocols, {:array, :string}, default: ["rest"]
+    field :description, :string
     field :expires_at, :utc_datetime
     field :is_active, :boolean, default: true
 
@@ -28,7 +30,7 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
   @doc "Yeni credential oluşturmak için changeset"
   def changeset(credential, attrs) do
     credential
-    |> cast(attrs, [:agent_id, :agent_name, :token_hash, :public_key, :capabilities, :expires_at, :is_active])
+    |> cast(attrs, [:agent_id, :agent_name, :token_hash, :public_key, :capabilities, :protocols, :description, :expires_at, :is_active])
     |> validate_required([:agent_id, :agent_name, :token_hash])
     |> validate_length(:agent_id, min: 1, max: 100)
     |> validate_length(:agent_name, min: 1, max: 200)
@@ -47,6 +49,14 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
   def find_by_agent_id(agent_id) do
     __MODULE__
     |> where([c], c.agent_id == ^agent_id and c.is_active == true)
+    |> Repo.all()
+  end
+
+  @doc "Capability'ye sahip aktif agent'ları bulur (Discovery)"
+  def find_by_capability(capability) when is_binary(capability) do
+    __MODULE__
+    |> where([c], c.is_active == true and ^capability in c.capabilities)
+    |> order_by([c], desc: c.inserted_at)
     |> Repo.all()
   end
 
