@@ -76,6 +76,7 @@ defmodule AgentbotWeb.Router do
 
     post "/tasks", AgentbotWeb.TaskController, :create
     post "/tasks/:task_id/assign", AgentbotWeb.TaskController, :assign
+    post "/tasks/:task_id/claim", AgentbotWeb.TaskController, :claim
     post "/tasks/:task_id/status", AgentbotWeb.TaskController, :update_status
     post "/tasks/:task_id/artifact", AgentbotWeb.TaskController, :submit_artifact
     post "/artifacts/:id/verify", AgentbotWeb.TaskController, :verify_artifact

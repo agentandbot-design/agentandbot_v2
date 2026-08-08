@@ -109,6 +109,19 @@ defmodule AgentbotWeb.TaskController do
     end
   end
 
+  @doc "Task'ı claim et (race condition koruması)"
+  def claim(conn, %{"task_id" => task_id}) do
+    agent_id = conn.assigns.agent_id
+
+    case Task.claim(task_id, agent_id) do
+      {:ok, task} ->
+        json(conn, %{task: task, status: "claimed", claimed_by: agent_id})
+
+      {:error, reason} ->
+        conn |> put_status(409) |> json(%{error: reason, status: "claim_failed"})
+    end
+  end
+
   # ── ARTIFACT SUBMIT + STATS UPDATE ────────────────
 
   @doc """

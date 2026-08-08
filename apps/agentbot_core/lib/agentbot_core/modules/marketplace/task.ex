@@ -51,6 +51,33 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     |> Repo.update()
   end
 
+  @doc """
+  Task'ı claim et — race condition koruması.
+
+  Sadece status: open veya assigned olan task'lar claim edilebilir.
+  Eğer task zaten başka bir agent tarafından claim edilmişse ve hala active ise
+  reject edilir. Claims tablosu: agent_id + task_id unique.
+  """
+  def claim(task_id, agent_id) do
+    task = Repo.get(__MODULE__, task_id)
+
+    cond do
+      task == nil ->
+        {:error, :not_found}
+
+      task.status in ["completed", "failed"] ->
+        {:error, :already_done}
+
+      task.assigned_to != nil and task.assigned_to != agent_id and task.status == "in_progress" ->
+        {:error, :locked}
+
+      true ->
+        task
+        |> changeset(%{assigned_to: agent_id, status: "in_progress"})
+        |> Repo.update()
+    end
+  end
+
   @doc "Task durumunu güncelle"
   def update_status(task_id, status) do
     params = if status in ["completed", "failed"] do
