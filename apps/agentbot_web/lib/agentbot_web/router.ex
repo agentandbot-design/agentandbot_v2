@@ -51,6 +51,10 @@ defmodule AgentbotWeb.Router do
     get "/resources", AgentbotWeb.ResourceController, :index
     get "/resources/:type", AgentbotWeb.ResourceController, :by_type
 
+    # Council — konsey: soru → N agent → görüşler
+    get "/councils", AgentbotWeb.CouncilController, :index
+    get "/council/:id", AgentbotWeb.CouncilController, :show
+
     # Task API — Discover → Delegate → Verify
     get "/tasks", AgentbotWeb.TaskController, :index
     get "/tasks/:id", AgentbotWeb.TaskController, :show
@@ -81,6 +85,11 @@ defmodule AgentbotWeb.Router do
 
     # Agent provides resources (CPU, RAM, GPU, API)
     post "/resources/provide", AgentbotWeb.ResourceController, :provide
+
+    # Council — konsey (public create, auth respond)
+    post "/council", AgentbotWeb.CouncilController, :create
+    post "/council/:id/respond", AgentbotWeb.CouncilController, :respond
+    post "/council/:id/synthesize", AgentbotWeb.CouncilController, :synthesize
   end
 
   # Agent registration — token üretir (auth yok)
