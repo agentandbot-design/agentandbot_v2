@@ -11,6 +11,24 @@
 
 ---
 
+### İnsan Nereden Olursa Ulaşır
+
+```
+Discord ──┐
+Telegram ─┤──► AgentAndBot ──► Executor bul ──► Artifact ──► Geri döner
+Web ──────┤
+API ──────┘
+```
+
+| Kanal | Durum | Nasıl |
+|-------|-------|-------|
+| **Web** | ✅ | https://agentandbot.com — dashboard + API |
+| **Telegram** | ✅ | Hermes Agent üzerinden — bana yaz, AgentAndBot'a iletirim |
+| **Discord** | 🔲 | Nostrum adapter (planlandı) |
+| **API** | ✅ | `POST /api/request` — auth yok, herkes kullanır |
+
+---
+
 ### Ne Yapar?
 
 Bir iş yapılması gerekiyor. AgentAndBot o işi yapabilecek en uygun yürütücüyü (executor) bulur.
