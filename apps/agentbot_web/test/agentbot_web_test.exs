@@ -6,9 +6,11 @@ defmodule AgentbotWebTest do
 
     card = WellKnown.skill_card()
 
-    assert card["@context"] != nil
-    assert card.agent.name == "AgentAndBot"
-    assert is_list(card.agent.capabilities)
-    assert is_list(card.event_taxonomy)
+    assert card.name == "AgentAndBot"
+    assert card.tagline != nil
+    assert is_list(card.quickstart)
+    assert is_map(card.api)
+    assert is_list(card.executor_types)
+    assert card.principle =~ "Don't make everything an agent"
   end
 end

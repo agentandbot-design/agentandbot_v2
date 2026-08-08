@@ -34,6 +34,9 @@ defmodule AgentbotWeb.Router do
     post "/envelope", AgentbotWeb.EnvelopeController, :send
   end
 
+  # Ana API rehberi — auth yok
+  get "/api", AgentbotWeb.ApiGuideController, :index
+
   # Genel API
   scope "/api" do
     pipe_through :api
