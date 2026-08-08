@@ -1,102 +1,81 @@
 defmodule AgentbotWeb.DashboardLive do
   @moduledoc """
-  Dashboard — platform genel durumu.
+  Ana sayfa — ne yapar, nasıl kullanılır, canlı durum.
 
-  Oda sayısı, mesaj sayısı, agent durumu, son aktiviteler,
-  çevrimiçi agent listesi ve beklemedeki onay talepleri.
+  Bauhaus: her eleman fonksiyonel. Süs yok.
   """
 
   use AgentbotWeb, :live_view
 
-  alias AgentbotCore.Modules.Agents.AgentPresence
-  alias AgentbotCore.Modules.Chat.{ApprovalRequest, Message, Room}
+  alias AgentbotCore.Modules.Registry.{Capability, CapabilityGap}
+  alias AgentbotCore.Modules.Marketplace.Task
   alias AgentbotCore.Repo
+  alias AgentbotCore.Modules.Security.AgentCredential
+
+  import Ecto.Query
 
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      AgentbotCore.PubSub.subscribe("rooms")
       AgentbotCore.PubSub.subscribe("presence")
-      :timer.send_interval(5000, :tick)
+      :timer.send_interval(10_000, :tick)
     end
 
     {:ok,
      socket
      |> assign_stats()
-     |> assign(:recent_activity, [])
-     |> assign(:online_agents, AgentPresence.list_online())}
+     |> assign(:top_gaps, CapabilityGap.list_top_gaps(5))
+     |> assign(:recent_tasks, recent_tasks())
+     |> assign(:active_capabilities, list_capabilities())}
   end
 
   @impl true
   def handle_info(:tick, socket) do
-    {:noreply, refresh_dynamic(socket)}
-  end
-
-  def handle_info({:room_created, room}, socket) do
-    activity = %{type: "room", text: "Yeni oda: #{room.name}", time: now_str()}
-
-    new_activity =
-      [activity | socket.assigns.recent_activity]
-      |> Enum.take(10)
-
-    {:noreply,
-     socket
-     |> assign_stats()
-     |> assign(:recent_activity, new_activity)}
-  end
-
-  def handle_info({:agent_online, %{agent_name: name}}, socket) do
-    activity = %{type: "agent", text: "🤖 #{name} çevrimiçi oldu", time: now_str()}
-
-    new_activity =
-      [activity | socket.assigns.recent_activity]
-      |> Enum.take(10)
-
-    {:noreply,
-     socket
-     |> assign_stats()
-     |> assign(:recent_activity, new_activity)
-     |> assign(:online_agents, AgentPresence.list_online())}
-  end
-
-  def handle_info({:agent_offline, _}, socket) do
-    {:noreply,
-     socket
-     |> assign_stats()
-     |> assign(:online_agents, AgentPresence.list_online())}
+    {:noreply, refresh(socket)}
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
 
-  defp refresh_dynamic(socket) do
+  defp refresh(socket) do
     socket
     |> assign_stats()
-    |> assign(:online_agents, AgentPresence.list_online())
+    |> assign(:top_gaps, CapabilityGap.list_top_gaps(5))
+    |> assign(:recent_tasks, recent_tasks())
+    |> assign(:active_capabilities, list_capabilities())
   end
 
   defp assign_stats(socket) do
     socket
-    |> assign(:room_count, count_rooms())
-    |> assign(:message_count, count_messages())
-    |> assign(:agent_count, count_agents())
-    |> assign(:pending_approvals, ApprovalRequest.count_pending())
-    |> assign(:online_count, AgentPresence.count_online())
-    |> assign(:protocols, list_protocols())
+    |> assign(:executor_count, count_executors())
+    |> assign(:capability_count, Repo.aggregate(Capability, :count))
+    |> assign(:task_count, Repo.aggregate(Task, :count))
+    |> assign(:completed_tasks, count_by_status("completed"))
+    |> assign(:gap_count, count_open_gaps())
   end
 
-  defp count_rooms, do: Repo.aggregate(Room, :count)
-
-  defp count_messages, do: Repo.aggregate(Message, :count)
-
-  defp count_agents do
-    Repo.aggregate(AgentbotCore.Modules.Security.AgentCredential, :count)
+  defp count_executors do
+    AgentCredential |> where([c], c.is_active == true) |> Repo.aggregate(:count)
   end
 
-  defp list_protocols do
-    AgentbotCore.Modules.Protocol.ProtocolCatalog.protocols()
+  defp count_by_status(status) do
+    Task |> where([t], t.status == ^status) |> Repo.aggregate(:count)
   end
 
-  defp now_str do
-    Calendar.strftime(DateTime.utc_now(), "%H:%M:%S")
+  defp count_open_gaps do
+    CapabilityGap |> where([g], g.fulfilled == false) |> Repo.aggregate(:count)
   end
+
+  defp recent_tasks do
+    Task |> order_by([t], desc: t.inserted_at) |> limit(5) |> Repo.all()
+  end
+
+  defp list_capabilities do
+    Capability.list_active()
+  end
+
+  defp status_badge("completed"), do: "badge-success"
+  defp status_badge("failed"), do: "badge-error"
+  defp status_badge("assigned"), do: "badge-info"
+  defp status_badge("in_progress"), do: "badge-warning"
+  defp status_badge(_), do: "badge-ghost"
 end

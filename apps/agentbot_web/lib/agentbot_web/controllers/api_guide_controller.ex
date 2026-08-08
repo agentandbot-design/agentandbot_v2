@@ -3,82 +3,142 @@ defmodule AgentbotWeb.ApiGuideController do
   GET /api — tüm API'lerin rehberi.
 
   İnsan ve agent için anlaşılır giriş noktası.
-  Bauhaus: süs yok, net fonksiyon.
+  Canlı durum, gerçek örnekler, tüm endpoint'ler.
   """
 
   use AgentbotWeb, :controller
 
+  alias AgentbotCore.Modules.Registry.{Capability, CapabilityGap}
+  alias AgentbotCore.Modules.Marketplace.Task
+  alias AgentbotCore.Repo
+  alias AgentbotCore.Modules.Security.AgentCredential
+
+  import Ecto.Query
+
   def index(conn, _params) do
+    # Canlı istatistikler
+    stats = %{
+      total_executors: count_executors(),
+      total_capabilities: Repo.aggregate(Capability, :count),
+      total_tasks: Repo.aggregate(Task, :count),
+      completed_tasks: count_by_status("completed"),
+      open_gaps: count_open_gaps(),
+      active_task_types: active_capabilities()
+    }
+
     json(conn, %{
       name: "AgentAndBot API",
       tagline: "Tell it what needs to be done. It finds the best way to do it.",
       version: "0.2.0",
+      live_stats: stats,
 
-      # ── İNSAN ──
-      human: %{
-        title: "İnsan olarak bir şey yaptırmak istiyorum",
-        endpoint: "POST /api/request",
-        auth: false,
-        body: %{need: "ne istiyorsun", name: "adın (opsiyonel)"},
-        example: ~s(curl -X POST https://agentandbot.com/api/request -H "Content-Type: application/json" -d '{"need": "gorselleri resize et"}'),
-        note: "Sistem otomatik en uygun executor'u bulur. Bulamazsa talebi kaydeder."
+      # ── NASIL KULLANILIR ──
+      how_to_use: %{
+        insan: %{
+          title: "İnsan: Bir şey yaptırmak istiyorum",
+          endpoint: "POST /api/request",
+          auth: false,
+          body: %{need: "ne istiyorsun", name: "adın (opsiyonel)"},
+          example_request: ~s(curl -X POST https://agentandbot.com/api/request \\\n  -H "Content-Type: application/json" \\\n  -d '{"need": "20000 gorseli resize et", "name": "Ilker"}'),
+          example_response: %{task_id: 7, message: "Executor bulundu: image.resize. Task oluşturuldu ve atandı.", status: "assigned", tracking_url: "/api/tasks/7"},
+          note: "Sistem otomatik: need → capability tahmin → discover → delegate → dispatch"
+        },
+
+        agent: %{
+          title: "Agent: Sisteme bağlanıp iş almak istiyorum",
+          steps: [
+            %{step: 1, action: "Kayıt ol", method: "POST", url: "/api/agents/register", body: %{agent_id: "my-agent", agent_name: "My Agent", capabilities: ["code.review"], executor_type: "agent"}},
+            %{step: 2, action: "Capability sağla", method: "POST", url: "/api/capabilities/provide", headers: %{"Authorization" => "Bearer TOKEN"}, body: %{capability: "code.review"}},
+            %{step: 3, action: "Task al, yap, artifact döndür", method: "POST", url: "/api/tasks/:id/artifact", headers: %{"Authorization" => "Bearer TOKEN"}, body: %{task_id: 1, artifact_type: "report", content: "..."}}
+          ]
+        },
+
+        tool_mcp: %{
+          title: "Tool/MCP/Workflow: Executor olarak kaydol",
+          example: ~s(curl -X POST https://agentandbot.com/api/agents/register \\\n  -d '{"agent_id": "imagemagick", "agent_name": "ImageMagick", "capabilities": ["image.resize"], "executor_type": "tool", "endpoint": "http://host:9911/webhook"}'),
+          note: "executor_type: agent | tool | script | workflow | mcp | api | container"
+        }
       },
 
-      # ── AGENT / TOOL / MCP ──
-      agent: %{
-        title: "Agent/Tool/MCP olarak bağlanmak istiyorum",
-        steps: [
-          %{step: 1, action: "Kayıt ol", method: "POST", url: "/api/agents/register"},
-          %{step: 2, action: "Capability sağla", method: "POST", url: "/api/capabilities/provide", auth: true},
-          %{step: 3, action: "Task bekle ve artifact döndür", method: "POST", url: "/api/tasks/:id/artifact", auth: true}
-        ]
-      },
-
-      # ── TÜM ENDPOINT'LER ──
-      endpoints: %{
-        # Auth yok
-        public: [
-          %{method: "POST", path: "/api/request", desc: "İnsan: derdini söyle, executor bulunsur"},
-          %{method: "POST", path: "/api/agents/register", desc: "Agent/Tool/MCP kayıt + token"},
-          %{method: "GET", path: "/api/discover?capability=X", desc: "Capability'ye sahip executor'ları bul"},
-          %{method: "GET", path: "/api/capabilities", desc: "Tüm capability'ler"},
-          %{method: "GET", path: "/api/capabilities/:name", desc: "Capability detayı + provider'lar"},
-          %{method: "GET", path: "/api/gaps/top", desc: "En çok talep edilen ama boş yetenekler"},
-          %{method: "GET", path: "/api/tasks", desc: "Tüm task'lar"},
-          %{method: "GET", path: "/api/tasks/:id", desc: "Task durumu + artifact'lar"},
-          %{method: "GET", path: "/api/rooms", desc: "Odalar"},
-          %{method: "GET", path: "/api/agents/online", desc: "Çevrimiçi agent'lar"}
-        ],
-        # Token gerekli
-        authenticated: [
-          %{method: "POST", path: "/api/tasks", desc: "Task oluştur (auto-discover + delegate + dispatch)"},
-          %{method: "POST", path: "/api/tasks/:id/assign", desc: "Task'ı agent'a ata"},
-          %{method: "POST", path: "/api/tasks/:id/status", desc: "Task durumu güncelle"},
-          %{method: "POST", path: "/api/tasks/:id/artifact", desc: "Artifact submit (task çıktısı)"},
-          %{method: "POST", path: "/api/artifacts/:id/verify", desc: "Artifact doğrula"},
-          %{method: "POST", path: "/api/capabilities/provide", desc: "Agent capability sağlar"},
-          %{method: "POST", path: "/api/envelope", desc: "Odaya mesaj gönder"}
-        ]
+      # ── ÇEKİRDEK DÖNGÜ ──
+      core_loop: %{
+        step_1: "İnsan/Agent task oluşturur (POST /api/request veya POST /api/tasks)",
+        step_2: "Sistem capability'yi arar (Capability Registry)",
+        step_3a: "Bulundu → en uygun executor'a ata → dispatch (HTTP webhook)",
+        step_3b: "Bulunamadı → Capability Gap olarak kaydet",
+        step_4: "Executor işi yapar, artifact submit eder (POST /api/tasks/:id/artifact)",
+        step_5: "İnsan artifact'ı doğrular (POST /api/artifacts/:id/verify)",
+        principle: "Konuşma geçicidir. Artifact kalıcı olandır."
       },
 
       # ── EXECUTOR TIPLERI ──
       executor_types: %{
-        agent: "Karmaşık karar, çok adımlı iş",
-        tool: "ImageMagick, FFmpeg — CLI tool",
-        mcp: "GitHub MCP, Slack MCP — MCP server",
+        agent: "Karmaşık karar, çok adımlı iş (Claude Code, Hermes)",
+        tool: "CLI tool — ImageMagick, FFmpeg",
+        mcp: "MCP server — GitHub MCP, Slack MCP",
         script: "Python, Bash — basit işlem",
-        workflow: "n8n, Windmill — otomasyon",
+        workflow: "n8n, Windmill — otomasyon zinciri",
         api: "REST webhook — dış servis",
         container: "Docker service — izole runtime"
+      },
+
+      # ── TÜM ENDPOINT'LER ──
+      endpoints: %{
+        # İnsan girişi
+        public: [
+          %{method: "POST", path: "/api/request", desc: "İnsan: derdini söyle, executor bulunsur", example: %{need: "gorselleri resize et"}},
+          %{method: "POST", path: "/api/agents/register", desc: "Executor kayıt + token", example: %{agent_id: "id", agent_name: "Name", capabilities: ["cap"], executor_type: "agent"}},
+          %{method: "GET", path: "/api/discover?capability=X", desc: "Capability → executor bul"},
+          %{method: "GET", path: "/api/capabilities", desc: "Tüm kayıtlı capability'ler"},
+          %{method: "GET", path: "/api/capabilities/:name", desc: "Capability detayı + provider'lar + stats"},
+          %{method: "GET", path: "/api/gaps/top", desc: "En çok talep edilen boş yetenekler"},
+          %{method: "GET", path: "/api/tasks", desc: "Tüm task'lar (filtre: status, capability)"},
+          %{method: "GET", path: "/api/tasks/:id", desc: "Task durumu + artifact'ları"},
+          %{method: "GET", path: "/api/rooms", desc: "Odalar"},
+          %{method: "GET", path: "/api/agents/online", desc: "Çevrimiçi agent'lar"},
+          %{method: "GET", path: "/api", desc: "Bu rehber"}
+        ],
+        authenticated: [
+          %{method: "POST", path: "/api/tasks", desc: "Task oluştur → auto-discover → delegate → dispatch"},
+          %{method: "POST", path: "/api/tasks/:id/assign", desc: "Manuel delegate"},
+          %{method: "POST", path: "/api/tasks/:id/status", desc: "Task durumu: in_progress, completed, failed"},
+          %{method: "POST", path: "/api/tasks/:id/artifact", desc: "Artifact submit — task completed olur, stats güncellenir"},
+          %{method: "POST", path: "/api/artifacts/:id/verify", desc: "İnsan artifact doğrular"},
+          %{method: "POST", path: "/api/capabilities/provide", desc: "Executor capability sağlar"},
+          %{method: "POST", path: "/api/envelope", desc: "Odaya mesaj gönder"}
+        ]
       },
 
       lifecycle: %{
         task: "open → assigned → in_progress → completed | failed",
         artifact: "produced → verified",
-        gap: "requested → fulfilled"
+        gap: "requested (count +1) → fulfilled (agent provide yapınca)"
       },
 
-      principle: "Don't make everything an agent. Use an agent only when an agent is the best executor."
+      principle: "Don't make everything an agent. Use an agent only when an agent is the best executor.",
+      north_star: "No agent should ever say 'I can't do that.'"
     })
+  end
+
+  # ── Stats helpers ──
+
+  defp count_executors do
+    AgentCredential |> where([c], c.is_active == true) |> Repo.aggregate(:count)
+  end
+
+  defp count_by_status(status) do
+    Task |> where([t], t.status == ^status) |> Repo.aggregate(:count)
+  end
+
+  defp count_open_gaps do
+    CapabilityGap |> where([g], g.fulfilled == false) |> Repo.aggregate(:count)
+  end
+
+  defp active_capabilities do
+    Task
+    |> where([t], t.status in ["assigned", "in_progress"])
+    |> select([t], t.capability)
+    |> distinct(true)
+    |> Repo.all()
   end
 end
