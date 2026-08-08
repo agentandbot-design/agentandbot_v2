@@ -161,6 +161,88 @@ defmodule AgentbotWeb.TaskController do
     end
   end
 
+  # ── HUMAN ENTRY — auth yok, insan da gelir ═══════
+
+  @doc """
+  İnsan derdini söyler → sistem executor bulur.
+
+  POST /api/request
+  Body: { "need": "20K gorseli resize et", "name": "İlker" (opsiyonel) }
+
+  Sistem:
+  1. need'i capability'ye eşler (şimdilik direkt capability alanı, sonra NLP)
+  2. Capability ara → bulursa auto-delegate + dispatch
+  3. Bulamazsa → gap kaydet
+  4. Task ID döner — insan status'u takip eder
+  """
+  def human_request(conn, params) do
+    need = Map.get(params, "need", "")
+    name = Map.get(params, "name", "Anonim")
+    capability = Map.get(params, "capability")
+    title = String.slice(need, 0, 100)
+
+    cond do
+      need == "" ->
+        conn |> put_status(400) |> json(%{error: "need alani zorunlu"})
+
+      true ->
+        # Eğer capability belirtilmemişse, need'in ilk kelimesini kullan
+        # (geçici — sonra NLP ile capability extraction)
+        cap = capability || guess_capability(need)
+
+        case Task.create(%{
+          created_by: "human:#{name}",
+          capability: cap,
+          title: title,
+          description: need,
+          room_id: Map.get(params, "room_id")
+        }) do
+          {:ok, task} ->
+            result = auto_discover_and_delegate(task)
+
+            conn
+            |> put_status(201)
+            |> json(%{
+              task_id: task.id,
+              message: format_human_response(cap, result),
+              capability: cap,
+              status: Task.get!(task.id).status,
+              discovery: result.discovery,
+              tracking_url: "/api/tasks/#{task.id}"
+            })
+
+          {:error, changeset} ->
+            conn |> put_status(422) |> json(%{errors: format_errors(changeset)})
+        end
+    end
+  end
+
+  # need metninden capability tahmin et (basit keyword matching)
+  # Sonra: NLP / LLM ile geliştirilecek
+  defp guess_capability(need) do
+    need_lower = String.downcase(need)
+
+    cond do
+      String.contains?(need_lower, ["resize", "image", "gorsel", "foto"]) -> "image.resize"
+      String.contains?(need_lower, ["code", "kod", "review", "güvenlik"]) -> "code.review"
+      String.contains?(need_lower, ["pdf", "belge", "document"]) -> "document.process"
+      String.contains?(need_lower, ["report", "rapor", "analiz"]) -> "report.generate"
+      String.contains?(need_lower, ["sap", "fatura", "mutabakat"]) -> "sap.fi"
+      String.contains?(need_lower, ["translate", "çevir", "tercüme"]) -> "translate"
+      String.contains?(need_lower, ["github", "pr", "merge"]) -> "github.pr.read"
+      true -> "general"
+    end
+  end
+
+  defp format_human_response(cap, result) do
+    case result.discovery do
+      "found" ->
+        "İşini yapabilecek executor bulundu: #{cap}. Task oluşturuldu ve atandı."
+      "gap" ->
+        "Bu iş için henüz executor yok (#{cap}). Talebin kaydedildi — birisi doldurunca haber verilecek."
+    end
+  end
+
   # ── HELPERS ───────────────────────────────────────
 
   # Task oluştuktan sonra capability discovery + auto-delegate + dispatch

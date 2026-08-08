@@ -48,6 +48,9 @@ defmodule AgentbotWeb.Router do
     get "/tasks", AgentbotWeb.TaskController, :index
     get "/tasks/:id", AgentbotWeb.TaskController, :show
 
+    # Human entry — auth yok, insan da gelir derdini soyler
+    post "/request", AgentbotWeb.TaskController, :human_request
+
     # Capability Registry — L1
     get "/capabilities", AgentbotWeb.CapabilityController, :index
     get "/capabilities/:name", AgentbotWeb.CapabilityController, :show
