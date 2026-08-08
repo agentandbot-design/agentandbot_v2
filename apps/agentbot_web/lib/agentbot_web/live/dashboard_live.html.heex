@@ -93,7 +93,69 @@
     </div>
   </div>
 
-  <!-- Eksik Yetenekler -->
+  <!-- Capability Marketplace -->
+  <div class="card bg-base-200 shadow-lg mb-8">
+    <div class="card-body">
+      <h2 class="card-title">🔧 Mevcut Kapasiteler</h2>
+      <p class="text-xs opacity-60 mb-3">Sisteme kayıtlı tüm yetenekler ve sağlayıcıları. Yeni yetenek eklemek için POST /api/capabilities/provide</p>
+      <div :if={@capabilities == []} class="text-sm opacity-50 py-4">
+        Henüz kayıtlı capability yok
+      </div>
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Capability</th>
+              <th>Kategori</th>
+              <th>Sağlayıcı / Tip / İş</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :for={cap <- @capabilities}>
+              <td class="font-mono text-xs"><%= cap.name %></td>
+              <td><span class="badge badge-ghost badge-sm"><%= cap.category || "-" %></span></td>
+              <td>
+                <div :if={cap.providers == []} class="text-warning text-xs">
+                  ⚠ Sağlayıcı yok
+                </div>
+                <div :for={p <- cap.providers} class="flex items-center gap-2 text-xs mb-1">
+                  <span class="font-semibold"><%= p.agent_name %></span>
+                  <span class={"badge badge-xs #{executor_badge(p.executor_type)}"}><%= p.executor_type %></span>
+                  <span class="opacity-50"><%= p.tasks_completed %> iş</span>
+                  <%= if p.verified do %>
+                    <span class="badge badge-success badge-xs">✓</span>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resource Marketplace -->
+  <div class="card bg-base-200 shadow-lg mb-8">
+    <div class="card-body">
+      <h2 class="card-title">⚡ Kaynak Havuzu</h2>
+      <p class="text-xs opacity-60 mb-2">Gel CPU ver, para kazan. Gel API bagla, para kazan.</p>
+      <p class="text-xs opacity-50 mb-3">POST /api/resources/provide ile kaynak sagla — cpu, ram, gpu, storage, api, bandwidth</p>
+      <div :if={@resource_summary == []} class="text-sm opacity-50 py-4">
+        Henüz kaynak saglanmamis. Ilk sen ol!
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3" :if={@resource_summary != []}>
+        <div :for={r <- @resource_summary} class="stat bg-neutral rounded-lg">
+          <div class="stat-title text-xs"><%= String.upcase(r.resource_type) %></div>
+          <div class="stat-value text-lg">
+            <%= r.total_amount %> <span class="text-xs opacity-50"><%= r.unit %></span>
+          </div>
+          <div class="stat-desc text-xs"><%= r.provider_count %> saglayici</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Eksik Yetenekler + Son Task'lar -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
     <div class="card bg-base-200 shadow-lg">
       <div class="card-body">

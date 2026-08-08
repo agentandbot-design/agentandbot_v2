@@ -116,7 +116,21 @@ defmodule AgentbotWeb.ApiGuideController do
       },
 
       principle: "Don't make everything an agent. Use an agent only when an agent is the best executor.",
-      north_star: "No agent should ever say 'I can't do that.'"
+      north_star: "No agent should ever say 'I can't do that.'",
+
+      # ── CANLI CAPABILITY MARKETPLACE ──
+      marketplace: %{
+        description: "Mevcut kayıtlı capability'ler ve sağlayıcıları. Yeni capability sağlamak için POST /api/capabilities/provide",
+        capabilities: list_capability_marketplace(),
+        how_to_add: "POST /api/capabilities/provide { capability: \"yeni.cap\", category: \"kategori\" } — auth gerekli"
+      },
+
+      # ── EKSİK YETENEKLER (GAP) ──
+      demand: %{
+        description: "Talep edilen ama sağlayıcısı olmayan yetenekler. Burada para var — kim doldurursa kazanır.",
+        top_gaps: CapabilityGap.list_top_gaps(10),
+        how_to_fulfill: "Gap'i karşıla: register + provide capability → gap otomatik fulfilled olur"
+      }
     })
   end
 
@@ -141,4 +155,33 @@ defmodule AgentbotWeb.ApiGuideController do
     |> distinct(true)
     |> Repo.all()
   end
+
+  # Capability'leri provider'larıyla birlikte listele
+  defp list_capability_marketplace do
+    Capability.list_active()
+    |> Enum.map(fn cap ->
+      providers = Capability.providers(cap.name)
+      %{
+        name: cap.name,
+        category: cap.category,
+        description: cap.description,
+        provider_count: length(providers),
+        providers: Enum.map(providers, &format_provider/1)
+      }
+    end)
+  end
+
+  defp format_provider(p) do
+    %{
+      name: p.agent_name,
+      type: p.executor_type,
+      endpoint: p.endpoint,
+      verified: p.verified,
+      tasks_completed: p.tasks_completed,
+      success_rate: format_rate(p.success_rate)
+    }
+  end
+
+  defp format_rate(nil), do: nil
+  defp format_rate(rate), do: Decimal.to_string(rate)
 end

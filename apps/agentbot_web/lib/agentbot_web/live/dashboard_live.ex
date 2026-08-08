@@ -26,7 +26,8 @@ defmodule AgentbotWeb.DashboardLive do
      |> assign_stats()
      |> assign(:top_gaps, CapabilityGap.list_top_gaps(5))
      |> assign(:recent_tasks, recent_tasks())
-     |> assign(:active_capabilities, list_capabilities())}
+     |> assign(:capabilities, list_capabilities_with_providers())
+     |> assign(:resource_summary, AgentbotCore.Modules.Registry.ExecutorResource.summary())}
   end
 
   @impl true
@@ -41,7 +42,8 @@ defmodule AgentbotWeb.DashboardLive do
     |> assign_stats()
     |> assign(:top_gaps, CapabilityGap.list_top_gaps(5))
     |> assign(:recent_tasks, recent_tasks())
-    |> assign(:active_capabilities, list_capabilities())
+    |> assign(:capabilities, list_capabilities_with_providers())
+    |> assign(:resource_summary, AgentbotCore.Modules.Registry.ExecutorResource.summary())
   end
 
   defp assign_stats(socket) do
@@ -69,8 +71,17 @@ defmodule AgentbotWeb.DashboardLive do
     Task |> order_by([t], desc: t.inserted_at) |> limit(5) |> Repo.all()
   end
 
-  defp list_capabilities do
+  defp list_capabilities_with_providers do
     Capability.list_active()
+    |> Enum.map(fn cap ->
+      providers = Capability.providers(cap.name)
+      %{
+        name: cap.name,
+        category: cap.category,
+        description: cap.description,
+        providers: providers
+      }
+    end)
   end
 
   defp status_badge("completed"), do: "badge-success"
@@ -78,4 +89,12 @@ defmodule AgentbotWeb.DashboardLive do
   defp status_badge("assigned"), do: "badge-info"
   defp status_badge("in_progress"), do: "badge-warning"
   defp status_badge(_), do: "badge-ghost"
+
+  defp executor_badge("agent"), do: "badge-primary"
+  defp executor_badge("tool"), do: "badge-secondary"
+  defp executor_badge("mcp"), do: "badge-accent"
+  defp executor_badge("workflow"), do: "badge-info"
+  defp executor_badge("script"), do: "badge-warning"
+  defp executor_badge("api"), do: "badge-success"
+  defp executor_badge(_), do: "badge-ghost"
 end

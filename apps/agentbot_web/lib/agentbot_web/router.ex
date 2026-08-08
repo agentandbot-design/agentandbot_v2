@@ -47,6 +47,10 @@ defmodule AgentbotWeb.Router do
     get "/rooms/:id/messages/since/:last_id", AgentbotWeb.RoomController, :messages_since
     get "/agents/online", AgentbotWeb.AgentController, :online
 
+    # Resource Marketplace — CPU, RAM, GPU, API
+    get "/resources", AgentbotWeb.ResourceController, :index
+    get "/resources/:type", AgentbotWeb.ResourceController, :by_type
+
     # Task API — Discover → Delegate → Verify
     get "/tasks", AgentbotWeb.TaskController, :index
     get "/tasks/:id", AgentbotWeb.TaskController, :show
@@ -74,6 +78,9 @@ defmodule AgentbotWeb.Router do
 
     # Agent provides capability
     post "/capabilities/provide", AgentbotWeb.CapabilityController, :provide
+
+    # Agent provides resources (CPU, RAM, GPU, API)
+    post "/resources/provide", AgentbotWeb.ResourceController, :provide
   end
 
   # Agent registration — token üretir (auth yok)
