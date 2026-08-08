@@ -20,6 +20,8 @@ defmodule AgentbotCore.Application do
       AgentbotCore.Modules.Agents.AgentPresence,
       # Broadway pipeline — MCP event → human summary (back-pressure)
       AgentbotCore.Modules.Chat.MessagePipeline,
+      # Task async dispatch için — Execution HTTP istekleri
+      {Task.Supervisor, name: AgentbotCore.TaskSupervisor},
       # Oda dinamik süpervizörü — her oda için bir RoomServer başlatır
       AgentbotCore.Modules.Chat.RoomSupervisor
     ]

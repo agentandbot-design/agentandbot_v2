@@ -163,7 +163,7 @@ defmodule AgentbotWeb.TaskController do
 
   # ── HELPERS ───────────────────────────────────────
 
-  # Task oluştuktan sonra capability discovery + auto-delegate
+  # Task oluştuktan sonra capability discovery + auto-delegate + dispatch
   defp auto_discover_and_delegate(task) do
     case Capability.get_by_name(task.capability) do
       nil ->
@@ -183,13 +183,18 @@ defmodule AgentbotWeb.TaskController do
 
           [provider | _rest] ->
             # Provider var → en iyi sağlayıcıya ata (ilk = en yüksek tasks_completed)
-            Task.assign(task.id, provider.agent_id)
+            {:ok, _task} = Task.assign(task.id, provider.agent_id)
+
+            # ── DISPATCH ──
+            # Executor'ı çağır — task artık in_progress
+            dispatch_result = AgentbotCore.Modules.Execution.Dispatcher.dispatch(task.id)
 
             %{
               discovery: "found",
               auto_assigned: true,
               providers: Enum.map(providers, &strip_provider/1),
-              gap: false
+              gap: false,
+              dispatch: dispatch_result
             }
         end
     end
