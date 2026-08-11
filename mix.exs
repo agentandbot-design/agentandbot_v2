@@ -27,7 +27,9 @@ defmodule AgentbotUmbrella.MixProject do
       {:jason, "~> 1.4"},
       {:plug_cowboy, "~> 2.7"},
       {:telemetry_metrics, "~> 1.0"},
-      {:telemetry_poller, "~> 1.0"}
+      {:telemetry_poller, "~> 1.0"},
+      {:req, "~> 0.5.0"},
+      {:mox, "~> 1.1", only: :test}
     ]
   end
 

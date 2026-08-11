@@ -6,7 +6,9 @@ if config_env() == :prod do
     System.get_env("DATABASE_URL") ||
       raise("DATABASE_URL ortam değişkeni tanımlı değil!")
 
-  config :agentbot_core, AgentbotCore.Repo,
-    url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "15")
+  config :agentbot_core, LiteLLM.HTTPAdapter,
+    base_url: System.get_env("LITELLM_BASE_URL") || "http://litellm:4000",
+    master_key: System.get_env("LITELLM_MASTER_KEY")
+
+  config :agentbot_core, LiteLLM, adapter: LiteLLM.HTTPAdapter
 end
