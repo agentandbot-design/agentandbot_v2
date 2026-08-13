@@ -41,5 +41,11 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+# Oban konfigürasyonu
+config :agentbot_core, Oban,
+  repo: AgentbotCore.Repo,
+  plugins: [Oban.Plugins.Pruner],
+  queues: [default: 10]
+
 # Import ortam bazlı konfigürasyon
 import_config "#{config_env()}.exs"

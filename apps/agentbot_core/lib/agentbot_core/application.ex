@@ -23,7 +23,9 @@ defmodule AgentbotCore.Application do
       # Task async dispatch için — Execution HTTP istekleri
       {Task.Supervisor, name: AgentbotCore.TaskSupervisor},
       # Oda dinamik süpervizörü — her oda için bir RoomServer başlatır
-      AgentbotCore.Modules.Chat.RoomSupervisor
+      AgentbotCore.Modules.Chat.RoomSupervisor,
+      # Oban — Arka plan işleri
+      {Oban, Application.fetch_env!(:agentbot_core, Oban)}
     ]
 
     opts = [strategy: :one_for_one, name: AgentbotCore.Supervisor]

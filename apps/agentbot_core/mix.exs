@@ -36,6 +36,7 @@ defmodule AgentbotCore.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:jason, "~> 1.4"},
       {:req, "~> 0.5.0"},
+      {:oban, "~> 2.18"},
       # Back-pressure pipeline — MCP event'leri → human summary
       {:broadway, "~> 1.1"},
       # Test/Lint — Anti-Crash Manifesto

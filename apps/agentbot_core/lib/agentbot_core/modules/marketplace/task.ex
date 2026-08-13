@@ -45,10 +45,21 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
 
   @doc "Task'ı agent'a ata"
   def assign(task_id, agent_id) do
-    __MODULE__
+    task = __MODULE__
     |> Repo.get!(task_id)
     |> changeset(%{assigned_to: agent_id, status: "assigned"})
     |> Repo.update()
+
+    case task do
+      {:ok, t} -> 
+        # Oban işini kuyruğa at
+        %{task_id: t.id}
+        |> AgentbotCore.Workers.TaskProcessor.new()
+        |> Oban.insert()
+        
+        {:ok, t}
+      error -> error
+    end
   end
 
   @doc """
