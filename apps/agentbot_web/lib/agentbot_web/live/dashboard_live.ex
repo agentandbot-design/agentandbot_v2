@@ -27,6 +27,7 @@ defmodule AgentbotWeb.DashboardLive do
      |> assign(:top_gaps, CapabilityGap.list_top_gaps(5))
      |> assign(:recent_tasks, recent_tasks())
      |> assign(:capabilities, list_capabilities_with_providers())
+     |> assign(:logo_proposals, list_logo_proposals())
      |> assign(:resource_summary, AgentbotCore.Modules.Registry.ExecutorResource.summary())}
   end
 
@@ -43,7 +44,12 @@ defmodule AgentbotWeb.DashboardLive do
     |> assign(:top_gaps, CapabilityGap.list_top_gaps(5))
     |> assign(:recent_tasks, recent_tasks())
     |> assign(:capabilities, list_capabilities_with_providers())
+    |> assign(:logo_proposals, list_logo_proposals())
     |> assign(:resource_summary, AgentbotCore.Modules.Registry.ExecutorResource.summary())
+  end
+
+  defp list_logo_proposals do
+    AgentbotCore.Modules.Marketplace.Artifact.list_by_task(13)
   end
 
   defp assign_stats(socket) do
