@@ -1108,46 +1108,6 @@ video {
 }
 
 @layer daisyui.l1.l2.l3 {
-  .footer {
-    display: grid;
-    width: 100%;
-    grid-auto-flow: row;
-    place-items: start;
-    -moz-column-gap: calc(0.25rem * 4);
-         column-gap: calc(0.25rem * 4);
-    row-gap: calc(0.25rem * 10);
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-
-  .footer > :not(script, style, template) {
-    display: grid;
-    place-items: start;
-    gap: calc(0.25rem * 2);
-  }
-}
-
-@layer daisyui.l1.l2 {
-  .footer-center {
-    grid-auto-flow: column dense;
-    place-items: center;
-    text-align: center;
-  }
-
-  .footer-center > :not(script, style, template) {
-    place-items: center;
-  }
-
-  .footer-horizontal.footer-center {
-    grid-auto-flow: row dense;
-  }
-
-  .footer-vertical.footer-center {
-    grid-auto-flow: column dense;
-  }
-}
-
-@layer daisyui.l1.l2.l3 {
   .table {
     font-size: 0.875rem;
     position: relative;
@@ -1649,22 +1609,6 @@ video {
 .diff-item-2:after: [object Object];
 
 .diff-item-2:after: [object Object];
-
-@layer daisyui.l1.l2.l3 {
-  .navbar {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    padding: 0.5rem;
-    min-height: 4rem;
-  }
-}
-
-@layer daisyui.l1.l2 {
-  :where(.navbar) {
-    position: relative;
-  }
-}
 
 @layer daisyui.l1.l2.l3 {
   .chat {
@@ -2412,6 +2356,52 @@ video {
 
 .collapse-content: [object Object];
 
+@layer daisyui.l1.l2.l3 {
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .filter [type="radio"] {
+    width: auto;
+  }
+
+  .filter input {
+    overflow: hidden;
+    opacity: 100%;
+    scale: 1;
+    transition: visibility 0.1s allow-discrete, margin 0.1s, opacity 0.3s, padding 0.3s, border-width 0.1s;
+  }
+
+  .filter input.filter-reset {
+    aspect-ratio: 1 / 1;
+  }
+
+  .filter input.filter-reset::after {
+    --tw-content: "×";
+    content: var(--tw-content);
+  }
+
+  .filter > input:not(:last-child), .filter  > :not(:last-child) input {
+    margin-inline-end: 0.25rem;
+  }
+}
+
+@layer daisyui.l1 {
+  .filter:not(:has(:checked:not(.filter-reset))) :is(.filter-reset, [type="reset"]):not(:focus-visible) {
+    visibility: hidden;
+  }
+
+  .filter:not(:has(:checked:not(.filter-reset))) :is(.filter-reset, [type="reset"]):not(:focus-visible), .filter:not(:has(:focus-visible)):has(:checked:not(.filter-reset, [type="checkbox"])) :is(input, button):not(:checked, .filter-reset, [type="reset"]) {
+    margin-inline: 0px;
+    width: 0px;
+    padding-inline: 0px;
+    opacity: 0%;
+    scale: 0;
+    border-width: 0;
+  }
+}
+
 .fixed {
   position: fixed;
 }
@@ -2432,16 +2422,8 @@ video {
   right: 0px;
 }
 
-.top-0 {
-  top: 0px;
-}
-
 .z-40 {
   z-index: 40;
-}
-
-.z-50 {
-  z-index: 50;
 }
 
 .col-span-1 {
@@ -2572,10 +2554,6 @@ video {
   flex: 1 1 0%;
 }
 
-.flex-none {
-  flex: none;
-}
-
 @keyframes pulse {
   50% {
     opacity: .5;
@@ -2696,10 +2674,6 @@ video {
   border-width: 1px;
 }
 
-.border-b {
-  border-bottom-width: 1px;
-}
-
 .border-t {
   border-top-width: 1px;
 }
@@ -2735,11 +2709,6 @@ video {
 
 .p-6 {
   padding: 1.5rem;
-}
-
-.px-4 {
-  padding-left: 1rem;
-  padding-right: 1rem;
 }
 
 .py-12 {
@@ -2812,10 +2781,6 @@ video {
   font-weight: 600;
 }
 
-.normal-case {
-  text-transform: none;
-}
-
 .italic {
   font-style: italic;
 }
@@ -2836,6 +2801,10 @@ video {
 .text-indigo-400 {
   --tw-text-opacity: 1;
   color: rgb(129 140 248 / var(--tw-text-opacity));
+}
+
+.text-info {
+  color: var(--color-info);
 }
 
 .text-neutral-content {
@@ -2863,8 +2832,8 @@ video {
   color: var(--color-warning);
 }
 
-.text-info {
-  color: var(--color-info);
+.opacity-40 {
+  opacity: 0.4;
 }
 
 .opacity-50 {
@@ -2877,10 +2846,6 @@ video {
 
 .opacity-70 {
   opacity: 0.7;
-}
-
-.opacity-40 {
-  opacity: 0.4;
 }
 
 .shadow {
@@ -2905,6 +2870,10 @@ video {
   --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.filter {
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
 .transition-all {

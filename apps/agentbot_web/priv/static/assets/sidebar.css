@@ -1,0 +1,284 @@
+/*
+ * AgentAndBot — QM-esinli sol menü ve ortak ekran stilleri.
+ * Elle yazılmıştır (asset build gerektirmez); DaisyUI tema
+ * değişkenlerini (--b1/--b2/--bc/--p/...) kullanır, data-theme ile uyumludur.
+ */
+
+/* ── Sayça iskeleti: solda menü, sağda içerik ───────────── */
+.ab-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.ab-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--b2, #1d232a);
+  border-right: 1px solid var(--b3, #2a323c);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.ab-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem 0.9rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--bc, #a6adba);
+  text-decoration: none;
+}
+
+.ab-sidebar__brand:hover {
+  color: var(--p, #7c87f2);
+}
+
+.ab-sidebar__section {
+  padding: 0.35rem 0.85rem;
+  margin-top: 0.6rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--bc, #a6adba) 55%, transparent);
+}
+
+.ab-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem;
+  margin: 0.1rem 0.55rem;
+  border-radius: 0.5rem;
+  color: var(--bc, #a6adba);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ab-sidebar__link:hover {
+  background: var(--b3, #2a323c);
+  color: var(--bc, #a6adba);
+}
+
+.ab-sidebar__link.is-active {
+  background: color-mix(in oklab, var(--p, #7c87f2) 18%, transparent);
+  color: var(--p, #7c87f2);
+  font-weight: 600;
+}
+
+.ab-sidebar__spacer {
+  flex: 1;
+}
+
+.ab-sidebar__footer {
+  padding: 0.8rem 1.1rem;
+  font-size: 0.7rem;
+  color: color-mix(in oklab, var(--bc, #a6adba) 50%, transparent);
+  border-top: 1px solid var(--b3, #2a323c);
+}
+
+.ab-sidebar__sections {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── İçerik alanı ───────────────────────────────────────── */
+.ab-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ab-content {
+  flex: 1;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+}
+
+/* ── Ekran başlığı ──────────────────────────────────────── */
+.ab-page-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--b3, #2a323c);
+}
+
+.ab-page-head h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--bc, #a6adba);
+  margin: 0;
+}
+
+.ab-page-head p {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  opacity: 0.65;
+}
+
+/* ── Ortak tablo ────────────────────────────────────────── */
+.ab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.ab-table th {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: color-mix(in oklab, var(--bc, #a6adba) 55%, transparent);
+  border-bottom: 1px solid var(--b3, #2a323c);
+}
+
+.ab-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--b3, #2a323c) 55%, transparent);
+  color: var(--bc, #a6adba);
+  vertical-align: top;
+}
+
+.ab-table tr:hover td {
+  background: color-mix(in oklab, var(--b2, #1d232a) 60%, transparent);
+}
+
+.ab-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+/* ── Durum rozetleri (deployment/gap/task) ─────────────── */
+.ab-badge {
+  display: inline-block;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.ab-badge--ok {
+  color: var(--su, #4b6b52);
+  background: color-mix(in oklab, var(--su, #4b6b52) 16%, transparent);
+}
+
+.ab-badge--err {
+  color: var(--er, #d78484);
+  background: color-mix(in oklab, var(--er, #d78484) 16%, transparent);
+}
+
+.ab-badge--warn {
+  color: var(--wa, #e8c66c);
+  background: color-mix(in oklab, var(--wa, #e8c66c) 16%, transparent);
+}
+
+.ab-badge--info {
+  color: var(--in, #8ba7d8);
+  background: color-mix(in oklab, var(--in, #8ba7d8) 16%, transparent);
+}
+
+.ab-badge--ghost {
+  color: color-mix(in oklab, var(--bc, #a6adba) 60%, transparent);
+  background: transparent;
+  border-color: var(--b3, #2a323c);
+}
+
+/* ── Küçük buton (ekran içi aksiyonlar) ────────────────── */
+.ab-btn {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: color-mix(in oklab, var(--p, #7c87f2) 20%, transparent);
+  color: var(--p, #7c87f2);
+  border: 1px solid color-mix(in oklab, var(--p, #7c87f2) 45%, transparent);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.ab-btn:hover {
+  background: color-mix(in oklab, var(--p, #7c87f2) 32%, transparent);
+}
+
+/* ── Boş durum ──────────────────────────────────────────── */
+.ab-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+/* ── Flash mesajları ───────────────────────────────────── */
+.ab-flash {
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.ab-flash--info {
+  background: color-mix(in oklab, var(--in, #8ba7d8) 14%, transparent);
+  color: var(--in, #8ba7d8);
+}
+
+.ab-flash--error {
+  background: color-mix(in oklab, var(--er, #d78484) 14%, transparent);
+  color: var(--er, #d78484);
+}
+
+/* ── Mobil: sidebar üste, yatay kaydırmalı ──────────────── */
+@media (max-width: 767px) {
+  .ab-shell {
+    flex-direction: column;
+  }
+
+  .ab-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--b3, #2a323c);
+    overflow-x: auto;
+  }
+
+  .ab-sidebar__sections {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0 0.5rem 0.6rem;
+  }
+
+  .ab-sidebar__section {
+    margin: 0;
+    padding: 0 0.4rem;
+    white-space: nowrap;
+  }
+
+  .ab-sidebar__link {
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .ab-sidebar__spacer,
+  .ab-sidebar__footer {
+    display: none;
+  }
+}

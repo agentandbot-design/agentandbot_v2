@@ -1,0 +1,56 @@
+<div class="ab-content">
+  <%= if flash = Phoenix.Flash.get(@flash, :info) do %>
+    <div class="ab-flash ab-flash--info"><%= flash %></div>
+  <% end %>
+  <div class="ab-page-head">
+    <div>
+      <h1>🚀 Deployments</h1>
+      <p>Agent'ların kendi hesaplarında açtığı servisler — AB doğrular, attribüte eder.</p>
+    </div>
+  </div>
+
+  <%= if length(@deployments) == 0 do %>
+    <div class="ab-empty">
+      Deployment yok. Bir gap'i recipe ile doldurun — döngü buraya damlar.
+    </div>
+  <% else %>
+    <table class="ab-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Recipe</th>
+          <th>Provider</th>
+          <th>Endpoint</th>
+          <th>Durum</th>
+          <th>Attribution</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for dep <- @deployments do %>
+          <tr>
+            <td class="ab-mono"><%= dep.id %></td>
+            <td><strong><%= dep.recipe.name %></strong></td>
+            <td><%= dep.provider.name %></td>
+            <td class="ab-mono">
+              <%= if dep.endpoint_url do %>
+                <a href={dep.endpoint_url <> dep.health_path} target="_blank">
+                  <%= dep.endpoint_url %><%= dep.health_path %>
+                </a>
+              <% else %>
+                <span class="opacity-50">—</span>
+              <% end %>
+            </td>
+            <td><span class={"ab-badge #{status_badge(dep.status)}"}><%= dep.status %></span></td>
+            <td class="ab-mono"><%= dep.attribution_code %></td>
+            <td>
+              <button phx-click="verify" phx-value-id={dep.id} class="ab-btn">
+                Verify
+              </button>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

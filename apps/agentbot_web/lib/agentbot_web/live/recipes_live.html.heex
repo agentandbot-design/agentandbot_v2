@@ -1,0 +1,48 @@
+<div class="ab-content">
+  <div class="ab-page-head">
+    <div>
+      <h1>🍳 Recipes</h1>
+      <p>
+        Capability açmanın standart yolu — agent kendi hesabında deploy eder,
+        AB doğrular. <%= if @filter do %>
+          <span class="ab-mono">Filtre: <%= @filter %></span>
+        <% end %>
+      </p>
+    </div>
+  </div>
+
+  <%= if length(@recipes) == 0 do %>
+    <div class="ab-empty">
+      Recipe yok. Gap Market'ten öneri tetikleyin ya da seed çalıştırın.
+    </div>
+  <% else %>
+    <table class="ab-table">
+      <thead>
+        <tr>
+          <th>Recipe</th>
+          <th>Capability</th>
+          <th>Provider</th>
+          <th>Tahmini Maliyet</th>
+          <th>Content Hash</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for recipe <- @recipes do %>
+          <tr>
+            <td><strong><%= recipe.name %></strong></td>
+            <td class="ab-mono"><%= recipe.capability_name %></td>
+            <td><%= recipe.provider.name %></td>
+            <td><%= recipe.estimated_cost || "—" %></td>
+            <td class="ab-mono"><%= String.slice(recipe.content_hash, 0, 12) %>…</td>
+            <td>
+              <a href={"/api/recipes/#{recipe.id}"} class="ab-btn" target="_blank">
+                API'den al →
+              </a>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

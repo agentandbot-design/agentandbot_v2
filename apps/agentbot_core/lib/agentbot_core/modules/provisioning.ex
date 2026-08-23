@@ -24,6 +24,22 @@ defmodule AgentbotCore.Modules.Provisioning do
   end
 
   @doc """
+  Tüm aktif recipe'ler (provider ile)
+  """
+  def list_recipes do
+    Repo.all(from(r in Recipe, where: r.status == "active", preload: [:provider]))
+  end
+
+  @doc """
+  Tüm deployment'lar (provider + recipe + agent ile, en yeni önce)
+  """
+  def list_deployments do
+    Repo.all(
+      from(d in Deployment, order_by: [desc: d.inserted_at], preload: [:provider, :recipe])
+    )
+  end
+
+  @doc """
   Provider slug'ına göre getir
   """
   def get_provider_by_slug(slug) do

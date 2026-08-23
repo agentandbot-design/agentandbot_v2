@@ -137,6 +137,9 @@ defmodule AgentbotWeb.Router do
     live("/", DashboardLive, :index)
     live("/rooms", RoomListLive, :index)
     live("/rooms/:id", RoomLive, :show)
+    live("/gaps", GapsLive, :index)
+    live("/recipes", RecipesLive, :index)
+    live("/deployments", DeploymentsLive, :index)
   end
 
   # 404 yakalayıcı

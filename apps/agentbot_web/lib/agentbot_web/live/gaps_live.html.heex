@@ -1,0 +1,57 @@
+<div class="ab-content">
+  <%= if flash = Phoenix.Flash.get(@flash, :info) do %>
+    <div class="ab-flash ab-flash--info"><%= flash %></div>
+  <% end %>
+  <%= if flash = Phoenix.Flash.get(@flash, :error) do %>
+    <div class="ab-flash ab-flash--error"><%= flash %></div>
+  <% end %>
+  <div class="ab-page-head">
+    <div>
+      <h1>⚠ Gap Market</h1>
+      <p>Talep edilen ama sağlayıcısı olmayan yetenekler — ekosistem doldurur, AB bağlar.</p>
+    </div>
+  </div>
+
+  <%= if length(@gaps) == 0 do %>
+    <div class="ab-empty">Açık gap yok — her talep karşılanıyor. 🎉</div>
+  <% else %>
+    <table class="ab-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>Talep</th>
+          <th>Durum</th>
+          <th>Önerilen Recipe</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for gap <- @gaps do %>
+          <tr>
+            <td class="ab-mono"><%= gap.capability_name %></td>
+            <td><%= gap.requested_count %></td>
+            <td>
+              <%= if gap.fulfilled do %>
+                <span class="ab-badge ab-badge--ok">fulfilled</span>
+              <% else %>
+                <span class="ab-badge ab-badge--warn">açık</span>
+              <% end %>
+            </td>
+            <td>
+              <%= if gap.suggested_recipe do %>
+                <span class="ab-mono"><%= gap.suggested_recipe.name %></span>
+              <% else %>
+                <span class="opacity-50">—</span>
+              <% end %>
+            </td>
+            <td>
+              <button phx-click="suggest" phx-value-id={gap.id} class="ab-btn">
+                Recipe öner
+              </button>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
