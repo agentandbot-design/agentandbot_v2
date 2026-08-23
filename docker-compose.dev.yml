@@ -4,6 +4,20 @@ services:
       context: ./docker
       dockerfile: dev.Dockerfile
     container_name: agentbot-dev
+    # Canlıya hizmet veren süreç (agentandbot.com → NPM → agentbot-dev:4000):
+    # deps.get + migrate + phx.server — container recreate sonrası self-heal.
+    # DB henüz hazır değilse sınırlı retry ile yeniden dener.
+    command: >
+      bash -c "
+        cd /app
+        mix deps.get --only dev
+        for i in $$(seq 1 10); do
+          mix ecto.migrate && break
+          echo \"DB hazır değil, retry ($$i/10)...\"; sleep 5
+        done
+        exec mix phx.server
+      "
+    restart: unless-stopped
     volumes:
       - ./apps:/app/apps
       - ./config:/app/config
@@ -11,6 +25,7 @@ services:
       - ./test:/app/test
       - ./priv:/app/priv
       - ./mix.exs:/app/mix.exs
+      - ./deps:/app/deps
       - ./.formatter.exs:/app/.formatter.exs
       - ./.credo.exs:/app/.credo.exs
       - mix-cache:/root/.mix
