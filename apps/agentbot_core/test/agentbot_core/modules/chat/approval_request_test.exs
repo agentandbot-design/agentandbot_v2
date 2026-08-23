@@ -7,7 +7,8 @@ defmodule AgentbotCore.Modules.Chat.ApprovalRequestTest do
 
   use AgentbotCore.Test.DataCase, async: true
 
-  alias AgentbotCore.Modules.Chat.{ApprovalRequest, Room}
+  alias AgentbotCore.Modules.Chat.ApprovalRequest
+  alias AgentbotCore.Modules.Chat.Room
 
   setup do
     {:ok, room} = Room.create(%{name: "Test Odası", description: "Test açıklaması"})
@@ -47,11 +48,12 @@ defmodule AgentbotCore.Modules.Chat.ApprovalRequestTest do
 
   describe "approve/3" do
     test "onay talebini approved durumuna getirir", %{room: room} do
-      {:ok, approval} = ApprovalRequest.create(%{
-        room_id: room.id,
-        requester_id: "agent-1",
-        title: "Test izni"
-      })
+      {:ok, approval} =
+        ApprovalRequest.create(%{
+          room_id: room.id,
+          requester_id: "agent-1",
+          title: "Test izni"
+        })
 
       {:ok, approved} = ApprovalRequest.approve(approval.id, "human-admin", "Tamam, yap")
 
@@ -63,11 +65,12 @@ defmodule AgentbotCore.Modules.Chat.ApprovalRequestTest do
 
   describe "reject/3" do
     test "onay talebini rejected durumuna getirir", %{room: room} do
-      {:ok, approval} = ApprovalRequest.create(%{
-        room_id: room.id,
-        requester_id: "agent-1",
-        title: "Tehlikeli işlem"
-      })
+      {:ok, approval} =
+        ApprovalRequest.create(%{
+          room_id: room.id,
+          requester_id: "agent-1",
+          title: "Tehlikeli işlem"
+        })
 
       {:ok, rejected} = ApprovalRequest.reject(approval.id, "human-admin")
 
@@ -86,7 +89,9 @@ defmodule AgentbotCore.Modules.Chat.ApprovalRequestTest do
     end
 
     test "onaylanan talepleri listelemez", %{room: room} do
-      {:ok, a1} = ApprovalRequest.create(%{room_id: room.id, requester_id: "agent-1", title: "İzin 1"})
+      {:ok, a1} =
+        ApprovalRequest.create(%{room_id: room.id, requester_id: "agent-1", title: "İzin 1"})
+
       ApprovalRequest.approve(a1.id, "human")
 
       pending = ApprovalRequest.list_pending_by_room(room.id)

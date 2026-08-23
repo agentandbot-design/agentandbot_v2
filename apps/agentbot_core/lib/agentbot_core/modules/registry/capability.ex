@@ -10,17 +10,19 @@ defmodule AgentbotCore.Modules.Registry.Capability do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :name, :description, :category, :status, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [:id, :name, :description, :category, :status, :inserted_at, :updated_at]}
   alias AgentbotCore.Repo
 
   schema "capabilities" do
-    field :name, :string
-    field :description, :string
-    field :category, :string
-    field :status, :string, default: "active"
-    field :metadata, :string           # JSON
+    field(:name, :string)
+    field(:description, :string)
+    field(:category, :string)
+    field(:status, :string, default: "active")
+    # JSON
+    field(:metadata, :string)
 
-    has_many :agent_capabilities, AgentbotCore.Modules.Registry.AgentCapability
+    has_many(:agent_capabilities, AgentbotCore.Modules.Registry.AgentCapability)
 
     timestamps(type: :utc_datetime)
   end
@@ -37,7 +39,11 @@ defmodule AgentbotCore.Modules.Registry.Capability do
     case Repo.get_by(__MODULE__, name: name) do
       nil ->
         %__MODULE__{}
-        |> changeset(%{name: name, description: Map.get(opts, :description) || Map.get(opts, "description"), category: Map.get(opts, :category) || Map.get(opts, "category")})
+        |> changeset(%{
+          name: name,
+          description: Map.get(opts, :description) || Map.get(opts, "description"),
+          category: Map.get(opts, :category) || Map.get(opts, "category")
+        })
         |> Repo.insert()
 
       existing ->

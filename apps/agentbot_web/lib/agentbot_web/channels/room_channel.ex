@@ -11,13 +11,15 @@ defmodule AgentbotWeb.RoomChannel do
 
   alias AgentbotCore.Modules.Chat.Message
 
+  alias AgentbotCore.Modules.Chat.RoomSupervisor
+
   @impl true
   def join("room:" <> room_id, _params, socket) do
     AgentbotCore.PubSub.subscribe("room:#{room_id}")
     AgentbotCore.PubSub.subscribe("human:#{room_id}")
 
     # Oda sürecini başlat (yoksa)
-    AgentbotCore.Modules.Chat.RoomSupervisor.start_room(room_id)
+    RoomSupervisor.start_room(room_id)
 
     send(self(), {:after_join, room_id})
     {:ok, %{room_id: room_id, status: "joined"}, socket}
@@ -44,12 +46,12 @@ defmodule AgentbotWeb.RoomChannel do
     sender_name = Map.get(params, "sender_name", "Anonim")
 
     case Message.create(%{
-      room_id: room_id,
-      sender_id: sender_id,
-      sender_name: sender_name,
-      content: content,
-      message_type: Map.get(params, "message_type", "text")
-    }) do
+           room_id: room_id,
+           sender_id: sender_id,
+           sender_name: sender_name,
+           content: content,
+           message_type: Map.get(params, "message_type", "text")
+         }) do
       {:ok, message} ->
         broadcast!(socket, "new_message", %{
           id: message.id,
@@ -58,6 +60,7 @@ defmodule AgentbotWeb.RoomChannel do
           content: message.content,
           timestamp: message.inserted_at
         })
+
         {:reply, :ok, %{id: message.id}, socket}
 
       {:error, _changeset} ->

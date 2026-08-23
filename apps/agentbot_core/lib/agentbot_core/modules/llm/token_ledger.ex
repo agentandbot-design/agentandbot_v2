@@ -2,7 +2,6 @@ defmodule AgentbotCore.LLM.TokenLedger do
   @moduledoc """
   Context for token management and provider onboarding.
   """
-  alias AgentbotCore.Repo
   require Logger
 
   def onboard_provider(owner_id, _provider, _raw_api_key, opts \\ %{}) do
@@ -11,6 +10,7 @@ defmodule AgentbotCore.LLM.TokenLedger do
       {:ok, %{"key" => virtual_key}} ->
         Logger.info("Provider Onboarded for #{owner_id}: #{virtual_key}")
         {:ok, virtual_key}
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -25,10 +25,12 @@ defmodule AgentbotCore.LLM.TokenLedger do
   def sync_usage do
     case LiteLLM.fetch_usage() do
       {:ok, usage_data} ->
-        Enum.each(usage_data, fn event -> 
+        Enum.each(usage_data, fn event ->
           Logger.debug("Processing usage event: #{inspect(event)}")
         end)
+
         :ok
+
       {:error, reason} ->
         {:error, reason}
     end

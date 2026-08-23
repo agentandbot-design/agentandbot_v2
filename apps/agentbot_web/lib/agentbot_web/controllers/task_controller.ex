@@ -9,10 +9,14 @@ defmodule AgentbotWeb.TaskController do
 
   use AgentbotWeb, :controller
 
-  alias AgentbotCore.Modules.Marketplace.{Artifact, Task}
-  alias AgentbotCore.Modules.Registry.{Capability, AgentCapability, CapabilityGap}
-  alias AgentbotCore.Repo
+  alias AgentbotCore.Modules.Execution.Dispatcher
+  alias AgentbotCore.Modules.Marketplace.Artifact
+  alias AgentbotCore.Modules.Marketplace.Task
+  alias AgentbotCore.Modules.Registry.AgentCapability
+  alias AgentbotCore.Modules.Registry.Capability
+  alias AgentbotCore.Modules.Registry.CapabilityGap
   alias AgentbotCore.Modules.Security.AgentCredential
+  alias AgentbotCore.Repo
 
   import Ecto.Query
 
@@ -23,9 +27,14 @@ defmodule AgentbotWeb.TaskController do
     tasks =
       case params do
         %{"status" => status} when status != "" ->
-          Task |> where([t], t.status == ^status) |> order_by([t], desc: t.inserted_at) |> Repo.all()
+          Task
+          |> where([t], t.status == ^status)
+          |> order_by([t], desc: t.inserted_at)
+          |> Repo.all()
+
         %{"capability" => cap} when cap != "" ->
           Task.list_open_by_capability(cap)
+
         _ ->
           Task |> order_by([t], desc: t.inserted_at) |> Repo.all()
       end
@@ -56,14 +65,14 @@ defmodule AgentbotWeb.TaskController do
     capability_name = params["capability"]
 
     case Task.create(%{
-      room_id: params["room_id"],
-      created_by: created_by,
-      capability: capability_name,
-      title: params["title"],
-      description: params["description"],
-      input: params["input"] && Jason.encode!(params["input"]),
-      priority: params["priority"] || 0
-    }) do
+           room_id: params["room_id"],
+           created_by: created_by,
+           capability: capability_name,
+           title: params["title"],
+           description: params["description"],
+           input: params["input"] && Jason.encode!(params["input"]),
+           priority: params["priority"] || 0
+         }) do
       {:ok, task} ->
         # ── AUTO-DISCOVER ──
         result = auto_discover_and_delegate(task)
@@ -135,14 +144,14 @@ defmodule AgentbotWeb.TaskController do
     task_id = params["task_id"]
 
     case Artifact.create(%{
-      task_id: task_id,
-      room_id: params["room_id"],
-      produced_by: produced_by,
-      artifact_type: params["artifact_type"] || "report",
-      title: params["title"],
-      content: params["content"],
-      metadata: params["metadata"] && Jason.encode!(params["metadata"])
-    }) do
+           task_id: task_id,
+           room_id: params["room_id"],
+           produced_by: produced_by,
+           artifact_type: params["artifact_type"] || "report",
+           title: params["title"],
+           content: params["content"],
+           metadata: params["metadata"] && Jason.encode!(params["metadata"])
+         }) do
       {:ok, artifact} ->
         # Task'ı tamamlandı olarak işaretle
         Task.update_status(task_id, "completed")
@@ -194,39 +203,37 @@ defmodule AgentbotWeb.TaskController do
     capability = Map.get(params, "capability")
     title = String.slice(need, 0, 100)
 
-    cond do
-      need == "" ->
-        conn |> put_status(400) |> json(%{error: "need alani zorunlu"})
+    if need == "" do
+      conn |> put_status(400) |> json(%{error: "need alani zorunlu"})
+    else
+      # Eğer capability belirtilmemişse, need'in ilk kelimesini kullan
+      # (geçici — sonra NLP ile capability extraction)
+      cap = capability || guess_capability(need)
 
-      true ->
-        # Eğer capability belirtilmemişse, need'in ilk kelimesini kullan
-        # (geçici — sonra NLP ile capability extraction)
-        cap = capability || guess_capability(need)
+      case Task.create(%{
+             created_by: "human:#{name}",
+             capability: cap,
+             title: title,
+             description: need,
+             room_id: Map.get(params, "room_id")
+           }) do
+        {:ok, task} ->
+          result = auto_discover_and_delegate(task)
 
-        case Task.create(%{
-          created_by: "human:#{name}",
-          capability: cap,
-          title: title,
-          description: need,
-          room_id: Map.get(params, "room_id")
-        }) do
-          {:ok, task} ->
-            result = auto_discover_and_delegate(task)
+          conn
+          |> put_status(201)
+          |> json(%{
+            task_id: task.id,
+            message: format_human_response(cap, result),
+            capability: cap,
+            status: Task.get!(task.id).status,
+            discovery: result.discovery,
+            tracking_url: "/api/tasks/#{task.id}"
+          })
 
-            conn
-            |> put_status(201)
-            |> json(%{
-              task_id: task.id,
-              message: format_human_response(cap, result),
-              capability: cap,
-              status: Task.get!(task.id).status,
-              discovery: result.discovery,
-              tracking_url: "/api/tasks/#{task.id}"
-            })
-
-          {:error, changeset} ->
-            conn |> put_status(422) |> json(%{errors: format_errors(changeset)})
-        end
+        {:error, changeset} ->
+          conn |> put_status(422) |> json(%{errors: format_errors(changeset)})
+      end
     end
   end
 
@@ -251,6 +258,7 @@ defmodule AgentbotWeb.TaskController do
     case result.discovery do
       "found" ->
         "İşini yapabilecek executor bulundu: #{cap}. Task oluşturuldu ve atandı."
+
       "gap" ->
         "Bu iş için henüz executor yok (#{cap}). Talebin kaydedildi — birisi doldurunca haber verilecek."
     end
@@ -282,7 +290,7 @@ defmodule AgentbotWeb.TaskController do
 
             # ── DISPATCH ──
             # Executor'ı çağır — task artık in_progress
-            dispatch_result = AgentbotCore.Modules.Execution.Dispatcher.dispatch(task.id)
+            dispatch_result = Dispatcher.dispatch(task.id)
 
             %{
               discovery: "found",

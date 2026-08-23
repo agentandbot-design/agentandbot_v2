@@ -12,10 +12,11 @@ defmodule AgentbotWeb.CouncilController do
 
   import Ecto.Query
 
-  alias AgentbotCore.Modules.Council.{Council, CouncilResponse}
+  alias AgentbotCore.Modules.Council.Council
+  alias AgentbotCore.Modules.Council.CouncilResponse
   alias AgentbotCore.Modules.Registry.Capability
-  alias AgentbotCore.Repo
   alias AgentbotCore.Modules.Security.AgentCredential
+  alias AgentbotCore.Repo
 
   @doc "Tüm konseyleri listele"
   def index(conn, _params) do
@@ -64,22 +65,26 @@ defmodule AgentbotWeb.CouncilController do
   def create(conn, params) do
     question = Map.get(params, "question", "")
     capability = Map.get(params, "capability")
-    created_by = if Map.has_key?(conn.assigns, :agent_id),
-      do: conn.assigns.agent_id,
-      else: "human:#{Map.get(params, "name", "Anonim")}"
+
+    created_by =
+      if Map.has_key?(conn.assigns, :agent_id),
+        do: conn.assigns.agent_id,
+        else: "human:#{Map.get(params, "name", "Anonim")}"
+
     min_responses = Map.get(params, "min_responses", 2)
 
     if question == "" do
       conn |> put_status(400) |> json(%{error: "question zorunlu"})
     else
       # Konseyi oluştur
-      {:ok, council} = Council.create(%{
-        question: question,
-        capability: capability || "general",
-        created_by: created_by,
-        min_responses: min_responses,
-        room_id: Map.get(params, "room_id")
-      })
+      {:ok, council} =
+        Council.create(%{
+          question: question,
+          capability: capability || "general",
+          created_by: created_by,
+          min_responses: min_responses,
+          room_id: Map.get(params, "room_id")
+        })
 
       # Uygun agentları bul
       agents = find_agents(capability)
@@ -127,7 +132,7 @@ defmodule AgentbotWeb.CouncilController do
   """
   def respond(conn, %{"id" => council_id} = params) do
     agent_id = Map.get(conn.assigns, :agent_id, "unknown")
-    agent_name = Map.get(conn.assigns, :agent_info, %{}) |> Map.get(:agent_name, agent_id)
+    agent_name = Map.get(Map.get(conn.assigns, :agent_info, %{}), :agent_name, agent_id)
     content = Map.get(params, "content", "")
     stance = Map.get(params, "stance", "neutral")
     confidence = Map.get(params, "confidence")
@@ -141,20 +146,22 @@ defmodule AgentbotWeb.CouncilController do
       if CouncilResponse.already_responded?(cid, agent_id) do
         conn |> put_status(409) |> json(%{error: "Bu agent zaten yanıt verdi"})
       else
-        {:ok, response} = CouncilResponse.respond(%{
-          council_id: cid,
-          agent_id: agent_id,
-          agent_name: agent_name,
-          content: content,
-          stance: stance,
-          confidence: confidence && parse_decimal(confidence)
-        })
+        {:ok, response} =
+          CouncilResponse.respond(%{
+            council_id: cid,
+            agent_id: agent_id,
+            agent_name: agent_name,
+            content: content,
+            stance: stance,
+            confidence: confidence && parse_decimal(confidence)
+          })
 
         # Yeterli yanıt geldi mi?
         count = Council.response_count(cid)
-        council = Council |> Repo.get!(cid)
+        council = Repo.get!(Council, cid)
 
         status = if count >= council.min_responses, do: "ready", else: "gathering"
+
         if status == "ready" and council.status != "synthesized" do
           Council.update_status(cid, "ready")
         end
@@ -164,7 +171,11 @@ defmodule AgentbotWeb.CouncilController do
           status: "accepted",
           total_responses: count,
           council_status: status,
-          message: if(status == "ready", do: "Yeterli yanıt toplandı. Sentez için hazır.", else: "Yanıt kaydedildi. Daha fazla yanıt bekleniyor.")
+          message:
+            if(status == "ready",
+              do: "Yeterli yanıt toplandı. Sentez için hazır.",
+              else: "Yanıt kaydedildi. Daha fazla yanıt bekleniyor."
+            )
         })
       end
     end
@@ -229,6 +240,7 @@ defmodule AgentbotWeb.CouncilController do
 
   defp parse_decimal(val) when is_float(val), do: Decimal.from_float(val)
   defp parse_decimal(val) when is_integer(val), do: Decimal.new(val)
+
   defp parse_decimal(val) when is_binary(val) do
     case Decimal.parse(val) do
       {dec, _} -> dec

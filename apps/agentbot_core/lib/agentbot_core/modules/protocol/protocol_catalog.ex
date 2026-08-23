@@ -88,7 +88,16 @@ defmodule AgentbotCore.Modules.Protocol.ProtocolCatalog do
       purpose: "İnsan ve ajan istemcileri için HTTP API tanımı.",
       status: "supported",
       discovery_paths: ["/api/openapi.json"],
-      supported_by_runtimes: ["hermes", "agent_zero", "openclaw", "google_agent", "custom_webhook", "manus_style", "space_agent", "minimax_agent"]
+      supported_by_runtimes: [
+        "hermes",
+        "agent_zero",
+        "openclaw",
+        "google_agent",
+        "custom_webhook",
+        "manus_style",
+        "space_agent",
+        "minimax_agent"
+      ]
     },
     %{
       id: "json_schema",
@@ -97,7 +106,16 @@ defmodule AgentbotCore.Modules.Protocol.ProtocolCatalog do
       purpose: "Yetenekler ve araçlar için tip girişi/çıkışı sözleşmeleri.",
       status: "supported",
       discovery_paths: ["/skills.json", "/api/openapi.json"],
-      supported_by_runtimes: ["hermes", "agent_zero", "openclaw", "google_agent", "custom_webhook", "manus_style", "space_agent", "minimax_agent"]
+      supported_by_runtimes: [
+        "hermes",
+        "agent_zero",
+        "openclaw",
+        "google_agent",
+        "custom_webhook",
+        "manus_style",
+        "space_agent",
+        "minimax_agent"
+      ]
     },
     %{
       id: "x402",

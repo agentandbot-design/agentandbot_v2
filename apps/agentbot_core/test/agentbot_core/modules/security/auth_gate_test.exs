@@ -7,8 +7,8 @@ defmodule AgentbotCore.Modules.Security.AuthGateTest do
 
   use AgentbotCore.Test.DataCase, async: true
 
-  alias AgentbotCore.Modules.Security.AuthGate
   alias AgentbotCore.Modules.Security.AgentCredential
+  alias AgentbotCore.Modules.Security.AuthGate
 
   # Fake Plug.Conn for testing
   defp fake_conn(token) do
@@ -28,11 +28,12 @@ defmodule AgentbotCore.Modules.Security.AuthGateTest do
 
   describe "register → authenticate flow" do
     test "credential register eder ve token ile authenticate olur" do
-      {:ok, credential} = AgentCredential.register(%{
-        agent_id: "test-agent-1",
-        agent_name: "Test Agent",
-        capabilities: ["chat.rooms", "chat.messages"]
-      })
+      {:ok, credential} =
+        AgentCredential.register(%{
+          agent_id: "test-agent-1",
+          agent_name: "Test Agent",
+          capabilities: ["chat.rooms", "chat.messages"]
+        })
 
       token = credential.plain_token
       conn = fake_conn(token)
@@ -56,10 +57,11 @@ defmodule AgentbotCore.Modules.Security.AuthGateTest do
     end
 
     test "query param'den token okur" do
-      {:ok, credential} = AgentCredential.register(%{
-        agent_id: "query-agent",
-        agent_name: "Query Agent"
-      })
+      {:ok, credential} =
+        AgentCredential.register(%{
+          agent_id: "query-agent",
+          agent_name: "Query Agent"
+        })
 
       conn = fake_conn_query_token(credential.plain_token)
       assert {:ok, _} = AuthGate.authenticate(conn)
@@ -68,11 +70,12 @@ defmodule AgentbotCore.Modules.Security.AuthGateTest do
 
   describe "verify_token/1" do
     test "süresi dolmuş token reddedilir" do
-      {:ok, credential} = AgentCredential.register(%{
-        agent_id: "expired-agent",
-        agent_name: "Expired",
-        expires_at: DateTime.utc_now() |> DateTime.add(-3600, :second)
-      })
+      {:ok, credential} =
+        AgentCredential.register(%{
+          agent_id: "expired-agent",
+          agent_name: "Expired",
+          expires_at: DateTime.add(DateTime.utc_now(), -3600, :second)
+        })
 
       assert {:error, "Token süresi dolmuş"} = AuthGate.verify_token(credential.plain_token)
     end

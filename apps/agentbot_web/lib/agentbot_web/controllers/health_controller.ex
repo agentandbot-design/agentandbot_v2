@@ -7,17 +7,18 @@ defmodule AgentbotWeb.HealthController do
 
   def index(conn, _params) do
     # DB bağlantı kontrolü
-    db_status = try do
-      AgentbotCore.Repo.query!("SELECT 1")
-      "ok"
-    rescue
-      _ -> "error"
-    end
+    db_status =
+      try do
+        AgentbotCore.Repo.query!("SELECT 1")
+        "ok"
+      rescue
+        _ -> "error"
+      end
 
     json(conn, %{
       status: "healthy",
       version: "0.1.0",
-      timestamp: DateTime.utc_now() |> DateTime.to_iso8601(),
+      timestamp: DateTime.to_iso8601(DateTime.utc_now()),
       database: db_status,
       services: %{
         core: "up",

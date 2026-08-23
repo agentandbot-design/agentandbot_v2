@@ -7,10 +7,15 @@ defmodule AgentbotWeb.DashboardLive do
 
   use AgentbotWeb, :live_view
 
-  alias AgentbotCore.Modules.Registry.{Capability, CapabilityGap}
+  alias AgentbotCore.Modules.Marketplace.Artifact
   alias AgentbotCore.Modules.Marketplace.Task
-  alias AgentbotCore.Repo
+  alias AgentbotCore.Modules.Provisioning.Deployment
+  alias AgentbotCore.Modules.Provisioning.ReferralEvent
+  alias AgentbotCore.Modules.Registry.Capability
+  alias AgentbotCore.Modules.Registry.CapabilityGap
+  alias AgentbotCore.Modules.Registry.ExecutorResource
   alias AgentbotCore.Modules.Security.AgentCredential
+  alias AgentbotCore.Repo
 
   import Ecto.Query
 
@@ -27,8 +32,8 @@ defmodule AgentbotWeb.DashboardLive do
      |> assign(:top_gaps, CapabilityGap.list_top_gaps(5))
      |> assign(:recent_tasks, recent_tasks())
      |> assign(:capabilities, list_capabilities_with_providers())
-     |> assign(:logo_proposals, list_logo_proposals())
-     |> assign(:resource_summary, AgentbotCore.Modules.Registry.ExecutorResource.summary())}
+     |> assign(:logo_proposals, Artifact.list_by_task(13))
+     |> assign(:resource_summary, ExecutorResource.summary())}
   end
 
   @impl true
@@ -44,12 +49,8 @@ defmodule AgentbotWeb.DashboardLive do
     |> assign(:top_gaps, CapabilityGap.list_top_gaps(5))
     |> assign(:recent_tasks, recent_tasks())
     |> assign(:capabilities, list_capabilities_with_providers())
-    |> assign(:logo_proposals, list_logo_proposals())
-    |> assign(:resource_summary, AgentbotCore.Modules.Registry.ExecutorResource.summary())
-  end
-
-  defp list_logo_proposals do
-    AgentbotCore.Modules.Marketplace.Artifact.list_by_task(13)
+    |> assign(:logo_proposals, Artifact.list_by_task(13))
+    |> assign(:resource_summary, ExecutorResource.summary())
   end
 
   defp assign_stats(socket) do
@@ -59,18 +60,28 @@ defmodule AgentbotWeb.DashboardLive do
     |> assign(:task_count, Repo.aggregate(Task, :count))
     |> assign(:completed_tasks, count_by_status("completed"))
     |> assign(:gap_count, count_open_gaps())
+    |> assign(:deployment_count, count_deployments())
+    |> assign(:referral_count, count_referral_events())
   end
 
   defp count_executors do
-    AgentCredential |> where([c], c.is_active == true) |> Repo.aggregate(:count)
+    Repo.aggregate(where(AgentCredential, [c], c.is_active == true), :count)
   end
 
   defp count_by_status(status) do
-    Task |> where([t], t.status == ^status) |> Repo.aggregate(:count)
+    Repo.aggregate(where(Task, [t], t.status == ^status), :count)
   end
 
   defp count_open_gaps do
-    CapabilityGap |> where([g], g.fulfilled == false) |> Repo.aggregate(:count)
+    Repo.aggregate(where(CapabilityGap, [g], g.fulfilled == false), :count)
+  end
+
+  defp count_deployments do
+    Repo.aggregate(Deployment, :count)
+  end
+
+  defp count_referral_events do
+    Repo.aggregate(ReferralEvent, :count)
   end
 
   defp recent_tasks do
@@ -78,9 +89,9 @@ defmodule AgentbotWeb.DashboardLive do
   end
 
   defp list_capabilities_with_providers do
-    Capability.list_active()
-    |> Enum.map(fn cap ->
+    Enum.map(Capability.list_active(), fn cap ->
       providers = Capability.providers(cap.name)
+
       %{
         name: cap.name,
         category: cap.category,

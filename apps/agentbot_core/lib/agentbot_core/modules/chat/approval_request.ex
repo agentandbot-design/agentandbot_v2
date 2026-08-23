@@ -8,20 +8,34 @@ defmodule AgentbotCore.Modules.Chat.ApprovalRequest do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @derive {Jason.Encoder, only: [:id, :room_id, :requester_id, :requester_name, :title, :description, :status, :resolved_by, :resolution_note, :expires_at, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :room_id,
+             :requester_id,
+             :requester_name,
+             :title,
+             :description,
+             :status,
+             :resolved_by,
+             :resolution_note,
+             :expires_at,
+             :inserted_at,
+             :updated_at
+           ]}
   alias AgentbotCore.Repo
 
   schema "approval_requests" do
-    belongs_to :room, AgentbotCore.Modules.Chat.Room
-    field :requester_id, :string
-    field :requester_name, :string
-    field :title, :string
-    field :description, :string
-    field :status, :string, default: "pending"
+    belongs_to(:room, AgentbotCore.Modules.Chat.Room)
+    field(:requester_id, :string)
+    field(:requester_name, :string)
+    field(:title, :string)
+    field(:description, :string)
+    field(:status, :string, default: "pending")
     # pending, approved, rejected, expired
-    field :resolved_by, :string
-    field :resolution_note, :string
-    field :expires_at, :utc_datetime
+    field(:resolved_by, :string)
+    field(:resolution_note, :string)
+    field(:expires_at, :utc_datetime)
 
     timestamps(type: :utc_datetime)
   end
@@ -29,7 +43,17 @@ defmodule AgentbotCore.Modules.Chat.ApprovalRequest do
   @doc "Yeni onay talebi için changeset"
   def changeset(request, attrs) do
     request
-    |> cast(attrs, [:room_id, :requester_id, :requester_name, :title, :description, :status, :resolved_by, :resolution_note, :expires_at])
+    |> cast(attrs, [
+      :room_id,
+      :requester_id,
+      :requester_name,
+      :title,
+      :description,
+      :status,
+      :resolved_by,
+      :resolution_note,
+      :expires_at
+    ])
     |> validate_required([:requester_id, :title])
   end
 

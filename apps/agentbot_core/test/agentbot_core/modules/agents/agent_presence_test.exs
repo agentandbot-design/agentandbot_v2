@@ -59,7 +59,7 @@ defmodule AgentbotCore.Modules.Agents.AgentPresenceTest do
 
       room_x = AgentPresence.list_in_room("room-x")
       assert length(room_x) == 2
-      assert Enum.map(room_x, & &1.agent_id) |> Enum.sort() == ["agent-a", "agent-b"]
+      assert Enum.sort(Enum.map(room_x, & &1.agent_id)) == ["agent-a", "agent-b"]
     end
 
     test "boş oda boş liste döndürür" do

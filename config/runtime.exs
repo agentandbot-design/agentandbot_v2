@@ -2,7 +2,8 @@ import Config
 
 # Çalışma zamanı konfigürasyonu — Ortam değişkenleriyle override
 if config_env() == :prod do
-  database_url =
+  # Prod boot'ta DATABASE_URL varlık doğrulaması (bağlantı prod.exs'te DB_* ile kurulur)
+  _database_url =
     System.get_env("DATABASE_URL") ||
       raise("DATABASE_URL ortam değişkeni tanımlı değil!")
 

@@ -12,7 +12,10 @@ defmodule AgentbotWeb.RoomLive do
   use AgentbotWeb, :live_view
 
   alias AgentbotCore.Modules.Agents.AgentPresence
-  alias AgentbotCore.Modules.Chat.{ApprovalRequest, Message, Room, RoomServer}
+  alias AgentbotCore.Modules.Chat.ApprovalRequest
+  alias AgentbotCore.Modules.Chat.Message
+  alias AgentbotCore.Modules.Chat.Room
+  alias AgentbotCore.Modules.Chat.RoomServer
   alias AgentbotCore.Repo
 
   @impl true
@@ -51,7 +54,7 @@ defmodule AgentbotWeb.RoomLive do
 
   @impl true
   def handle_event("send_message", params, socket) do
-    content = (params["content"] || "") |> String.trim()
+    content = String.trim(params["content"] || "")
     sender_name = params["sender_name"] || "İnsan"
 
     if content == "" do
@@ -131,9 +134,12 @@ defmodule AgentbotWeb.RoomLive do
      |> update(:message_count, &(&1 + 1))}
   end
 
-  def handle_info({:presence_update, %{event: event, agent_name: name}}, socket) when event == "joined" do
+  def handle_info({:presence_update, %{event: event, agent_name: name}}, socket)
+      when event == "joined" do
     online_agents = AgentPresence.list_in_room(socket.assigns.room_id_str)
-    {:noreply, socket |> assign(:online_agents, online_agents) |> put_flash(:info, "🤖 #{name} katıldı")}
+
+    {:noreply,
+     socket |> assign(:online_agents, online_agents) |> put_flash(:info, "🤖 #{name} katıldı")}
   end
 
   def handle_info({:presence_update, %{event: event}}, socket) when event == "left" do

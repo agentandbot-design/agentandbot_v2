@@ -77,6 +77,7 @@ defmodule AgentbotCore.Modules.Agents.AgentPresence do
   @impl true
   def handle_call({:track, agent_id, agent_name, room_id}, _from, state) do
     key = {agent_id, room_id}
+
     entry = %{
       agent_id: agent_id,
       agent_name: agent_name,

@@ -10,23 +10,37 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :agent_id, :agent_name, :executor_type, :endpoint, :capabilities, :protocols, :description, :expires_at, :is_active, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :agent_id,
+             :agent_name,
+             :executor_type,
+             :endpoint,
+             :capabilities,
+             :protocols,
+             :description,
+             :expires_at,
+             :is_active,
+             :inserted_at,
+             :updated_at
+           ]}
   alias AgentbotCore.Repo
 
   schema "agent_credentials" do
-    field :agent_id, :string
-    field :agent_name, :string
-    field :token_hash, :string
-    field :public_key, :string
-    field :capabilities, {:array, :string}, default: []
-    field :protocols, {:array, :string}, default: ["rest"]
-    field :description, :string
-    field :executor_type, :string, default: "agent"
+    field(:agent_id, :string)
+    field(:agent_name, :string)
+    field(:token_hash, :string)
+    field(:public_key, :string)
+    field(:capabilities, {:array, :string}, default: [])
+    field(:protocols, {:array, :string}, default: ["rest"])
+    field(:description, :string)
+    field(:executor_type, :string, default: "agent")
     # agent | tool | script | workflow | mcp | api | container
-    field :endpoint, :string
+    field(:endpoint, :string)
     # MCP: http://host:3001 | CLI: blender | API: https://... | n8n://workflow/183
-    field :expires_at, :utc_datetime
-    field :is_active, :boolean, default: true
+    field(:expires_at, :utc_datetime)
+    field(:is_active, :boolean, default: true)
 
     timestamps(type: :utc_datetime)
   end
@@ -34,7 +48,19 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
   @doc "Yeni credential oluşturmak için changeset"
   def changeset(credential, attrs) do
     credential
-    |> cast(attrs, [:agent_id, :agent_name, :token_hash, :public_key, :capabilities, :protocols, :description, :executor_type, :endpoint, :expires_at, :is_active])
+    |> cast(attrs, [
+      :agent_id,
+      :agent_name,
+      :token_hash,
+      :public_key,
+      :capabilities,
+      :protocols,
+      :description,
+      :executor_type,
+      :endpoint,
+      :expires_at,
+      :is_active
+    ])
     |> validate_required([:agent_id, :agent_name, :token_hash])
     |> validate_length(:agent_id, min: 1, max: 100)
     |> validate_length(:agent_name, min: 1, max: 200)
@@ -88,11 +114,11 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
 
   # Token hash — SHA256
   defp hash_token(token) do
-    :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
+    Base.encode16(:crypto.hash(:sha256, token), case: :lower)
   end
 
   # Rastgele token üret — 32 byte
   defp generate_token do
-    :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
+    Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false)
   end
 end

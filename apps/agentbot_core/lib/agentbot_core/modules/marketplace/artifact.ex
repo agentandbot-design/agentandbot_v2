@@ -9,27 +9,55 @@ defmodule AgentbotCore.Modules.Marketplace.Artifact do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :task_id, :room_id, :produced_by, :artifact_type, :title, :content, :metadata, :verified, :verified_by, :verified_at, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :task_id,
+             :room_id,
+             :produced_by,
+             :artifact_type,
+             :title,
+             :content,
+             :metadata,
+             :verified,
+             :verified_by,
+             :verified_at,
+             :inserted_at,
+             :updated_at
+           ]}
   alias AgentbotCore.Repo
 
   schema "artifacts" do
-    belongs_to :task, AgentbotCore.Modules.Marketplace.Task
-    belongs_to :room, AgentbotCore.Modules.Chat.Room
-    field :produced_by, :string
-    field :artifact_type, :string       # report, code, diff, decision, data
-    field :title, :string
-    field :content, :string
-    field :metadata, :string            # JSON string
-    field :verified, :boolean, default: false
-    field :verified_by, :string
-    field :verified_at, :utc_datetime
+    belongs_to(:task, AgentbotCore.Modules.Marketplace.Task)
+    belongs_to(:room, AgentbotCore.Modules.Chat.Room)
+    field(:produced_by, :string)
+    # report, code, diff, decision, data
+    field(:artifact_type, :string)
+    field(:title, :string)
+    field(:content, :string)
+    # JSON string
+    field(:metadata, :string)
+    field(:verified, :boolean, default: false)
+    field(:verified_by, :string)
+    field(:verified_at, :utc_datetime)
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(artifact, attrs) do
     artifact
-    |> cast(attrs, [:task_id, :room_id, :produced_by, :artifact_type, :title, :content, :metadata, :verified, :verified_by, :verified_at])
+    |> cast(attrs, [
+      :task_id,
+      :room_id,
+      :produced_by,
+      :artifact_type,
+      :title,
+      :content,
+      :metadata,
+      :verified,
+      :verified_by,
+      :verified_at
+    ])
     |> validate_required([:task_id, :produced_by, :artifact_type, :content])
   end
 

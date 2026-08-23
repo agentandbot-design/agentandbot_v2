@@ -11,28 +11,58 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :room_id, :created_by, :assigned_to, :capability, :title, :description, :input, :status, :priority, :deadline_at, :completed_at, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :room_id,
+             :created_by,
+             :assigned_to,
+             :capability,
+             :title,
+             :description,
+             :input,
+             :status,
+             :priority,
+             :deadline_at,
+             :completed_at,
+             :inserted_at,
+             :updated_at
+           ]}
   alias AgentbotCore.Repo
+  alias AgentbotCore.Workers.TaskProcessor
 
   schema "tasks" do
-    belongs_to :room, AgentbotCore.Modules.Chat.Room
-    field :created_by, :string
-    field :assigned_to, :string
-    field :capability, :string
-    field :title, :string
-    field :description, :string
-    field :input, :string          # JSON string — task parametreleri
-    field :status, :string, default: "open"
-    field :priority, :integer, default: 0
-    field :deadline_at, :utc_datetime
-    field :completed_at, :utc_datetime
+    belongs_to(:room, AgentbotCore.Modules.Chat.Room)
+    field(:created_by, :string)
+    field(:assigned_to, :string)
+    field(:capability, :string)
+    field(:title, :string)
+    field(:description, :string)
+    # JSON string — task parametreleri
+    field(:input, :string)
+    field(:status, :string, default: "open")
+    field(:priority, :integer, default: 0)
+    field(:deadline_at, :utc_datetime)
+    field(:completed_at, :utc_datetime)
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(task, attrs) do
     task
-    |> cast(attrs, [:room_id, :created_by, :assigned_to, :capability, :title, :description, :input, :status, :priority, :deadline_at, :completed_at])
+    |> cast(attrs, [
+      :room_id,
+      :created_by,
+      :assigned_to,
+      :capability,
+      :title,
+      :description,
+      :input,
+      :status,
+      :priority,
+      :deadline_at,
+      :completed_at
+    ])
     |> validate_required([:created_by, :capability, :title])
   end
 
@@ -45,20 +75,21 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
 
   @doc "Task'ı agent'a ata"
   def assign(task_id, agent_id) do
-    task = __MODULE__
-    |> Repo.get!(task_id)
-    |> changeset(%{assigned_to: agent_id, status: "assigned"})
-    |> Repo.update()
+    task =
+      __MODULE__
+      |> Repo.get!(task_id)
+      |> changeset(%{assigned_to: agent_id, status: "assigned"})
+      |> Repo.update()
 
     case task do
-      {:ok, t} -> 
+      {:ok, t} ->
         # Oban işini kuyruğa at
-        %{task_id: t.id}
-        |> AgentbotCore.Workers.TaskProcessor.new()
-        |> Oban.insert()
-        
+        Oban.insert(TaskProcessor.new(%{task_id: t.id}))
+
         {:ok, t}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -91,11 +122,12 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
 
   @doc "Task durumunu güncelle"
   def update_status(task_id, status) do
-    params = if status in ["completed", "failed"] do
-      %{status: status, completed_at: DateTime.utc_now()}
-    else
-      %{status: status}
-    end
+    params =
+      if status in ["completed", "failed"] do
+        %{status: status, completed_at: DateTime.utc_now()}
+      else
+        %{status: status}
+      end
 
     __MODULE__
     |> Repo.get!(task_id)
@@ -107,7 +139,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   def list_open_by_capability(capability) do
     __MODULE__
     |> where([t], t.capability == ^capability and t.status == "open")
-    |> order_by([t], [desc: t.priority, asc: t.inserted_at])
+    |> order_by([t], desc: t.priority, asc: t.inserted_at)
     |> Repo.all()
   end
 

@@ -13,12 +13,13 @@ defmodule AgentbotCore.Modules.Marketplace.TaskRequirement do
   alias AgentbotCore.Repo
 
   schema "task_requirements" do
-    belongs_to :task, AgentbotCore.Modules.Marketplace.Task
+    belongs_to(:task, AgentbotCore.Modules.Marketplace.Task)
 
-    field :resource_type, :string    # cpu, ram, gpu, storage, api, bandwidth
-    field :min_amount, :integer
-    field :unit, :string
-    field :optional, :boolean, default: false
+    # cpu, ram, gpu, storage, api, bandwidth
+    field(:resource_type, :string)
+    field(:min_amount, :integer)
+    field(:unit, :string)
+    field(:optional, :boolean, default: false)
 
     timestamps(type: :utc_datetime)
   end

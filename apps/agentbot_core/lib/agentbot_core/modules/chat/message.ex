@@ -9,17 +9,30 @@ defmodule AgentbotCore.Modules.Chat.Message do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :room_id, :sender_id, :sender_name, :content, :message_type, :event_type, :metadata, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :room_id,
+             :sender_id,
+             :sender_name,
+             :content,
+             :message_type,
+             :event_type,
+             :metadata,
+             :inserted_at,
+             :updated_at
+           ]}
   alias AgentbotCore.Repo
 
   schema "messages" do
-    belongs_to :room, AgentbotCore.Modules.Chat.Room
-    field :sender_id, :string
-    field :sender_name, :string
-    field :content, :string
-    field :message_type, :string, default: "text"  # text, system, command
-    field :event_type, :string
-    field :metadata, :map, default: %{}
+    belongs_to(:room, AgentbotCore.Modules.Chat.Room)
+    field(:sender_id, :string)
+    field(:sender_name, :string)
+    field(:content, :string)
+    # text, system, command
+    field(:message_type, :string, default: "text")
+    field(:event_type, :string)
+    field(:metadata, :map, default: %{})
 
     timestamps(type: :utc_datetime)
   end
@@ -27,7 +40,15 @@ defmodule AgentbotCore.Modules.Chat.Message do
   @doc "Yeni mesaj oluşturmak için changeset"
   def changeset(message, attrs) do
     message
-    |> cast(attrs, [:room_id, :sender_id, :sender_name, :content, :message_type, :event_type, :metadata])
+    |> cast(attrs, [
+      :room_id,
+      :sender_id,
+      :sender_name,
+      :content,
+      :message_type,
+      :event_type,
+      :metadata
+    ])
     |> validate_required([:room_id, :sender_id, :content])
   end
 
@@ -50,7 +71,7 @@ defmodule AgentbotCore.Modules.Chat.Message do
 
   @doc "Mesaj oluşturur ve PubSub'a yayınlar"
   def create(attrs) do
-    changeset = %__MODULE__{} |> changeset(attrs)
+    changeset = changeset(%__MODULE__{}, attrs)
 
     with {:ok, message} <- Repo.insert(changeset) do
       # PubSub'a yayınla
@@ -59,6 +80,7 @@ defmodule AgentbotCore.Modules.Chat.Message do
         "new_message",
         message
       )
+
       {:ok, message}
     end
   end

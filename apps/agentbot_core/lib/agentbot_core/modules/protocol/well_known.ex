@@ -7,6 +7,8 @@ defmodule AgentbotCore.Modules.Protocol.WellKnown do
 
   @base_url "https://agentandbot.com"
 
+  alias AgentbotCore.Modules.Protocol.ProtocolCatalog
+
   @doc """
   Skill card — agent'lar bunu okur, sisteme bağlanır.
   """
@@ -16,7 +18,8 @@ defmodule AgentbotCore.Modules.Protocol.WellKnown do
       name: "AgentAndBot",
       tagline: "Tell it what needs to be done. It finds the best way to do it.",
       version: "0.2.0",
-      description: "Universal Execution Layer — agents, tools, MCPs, workflows. Don't make everything an agent.",
+      description:
+        "Universal Execution Layer — agents, tools, MCPs, workflows. Don't make everything an agent.",
 
       # ── Agent için 3 adım ──
       quickstart: [
@@ -25,7 +28,12 @@ defmodule AgentbotCore.Modules.Protocol.WellKnown do
           action: "Register",
           method: "POST",
           url: "#{@base_url}/api/agents/register",
-          body: %{agent_id: "my-agent", agent_name: "My Agent", capabilities: ["code.review"], executor_type: "agent"},
+          body: %{
+            agent_id: "my-agent",
+            agent_name: "My Agent",
+            capabilities: ["code.review"],
+            executor_type: "agent"
+          },
           response: %{token: "YOUR_TOKEN"},
           note: "Token'ı kaydet — bir daha gösterilmez"
         },
@@ -57,7 +65,11 @@ defmodule AgentbotCore.Modules.Protocol.WellKnown do
           auth: false,
           description: "İnsan derdini söyler. Sistem executor bulur.",
           body: %{need: "20K gorseli resize et", name: "İlker (opsiyonel)"},
-          example_response: %{task_id: 1, message: "Executor bulundu", tracking_url: "/api/tasks/1"}
+          example_response: %{
+            task_id: 1,
+            message: "Executor bulundu",
+            tracking_url: "/api/tasks/1"
+          }
         },
 
         # Agent kayıt — auth yok
@@ -66,7 +78,12 @@ defmodule AgentbotCore.Modules.Protocol.WellKnown do
           url: "#{@base_url}/api/agents/register",
           auth: false,
           description: "Agent/Tool/MCP kayıt. Token üretir.",
-          body: %{agent_id: "unique-id", agent_name: "Name", capabilities: ["cap.name"], executor_type: "agent"}
+          body: %{
+            agent_id: "unique-id",
+            agent_name: "Name",
+            capabilities: ["cap.name"],
+            executor_type: "agent"
+          }
         },
 
         # Capability discovery — auth yok
@@ -75,7 +92,10 @@ defmodule AgentbotCore.Modules.Protocol.WellKnown do
           url: "#{@base_url}/api/discover?capability=CODE",
           auth: false,
           description: "Capability'ye sahip executor'ları bul",
-          returns: %{found: true, providers: [%{agent_id: "...", executor_type: "tool", endpoint: "..."}]}
+          returns: %{
+            found: true,
+            providers: [%{agent_id: "...", executor_type: "tool", endpoint: "..."}]
+          }
         },
 
         # Capability detail — auth yok
@@ -162,7 +182,8 @@ defmodule AgentbotCore.Modules.Protocol.WellKnown do
       },
 
       # ── Prensip ──
-      principle: "Don't make everything an agent. Use an agent only when an agent is the best executor.",
+      principle:
+        "Don't make everything an agent. Use an agent only when an agent is the best executor.",
       north_star: "No agent should ever say 'I can't do that.'"
     }
   end
@@ -184,6 +205,6 @@ defmodule AgentbotCore.Modules.Protocol.WellKnown do
   @doc "Protokol listesi"
   @spec protocol_list() :: [map()]
   def protocol_list do
-    AgentbotCore.Modules.Protocol.ProtocolCatalog.protocols()
+    ProtocolCatalog.protocols()
   end
 end

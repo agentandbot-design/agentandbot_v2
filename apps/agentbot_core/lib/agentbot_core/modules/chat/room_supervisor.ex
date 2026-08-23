@@ -14,7 +14,9 @@ defmodule AgentbotCore.Modules.Chat.RoomSupervisor do
   def start_room(room_id, room_name \\ nil) do
     spec = %{
       id: AgentbotCore.Modules.Chat.RoomServer,
-      start: {AgentbotCore.Modules.Chat.RoomServer, :start_link, [room_id: room_id, room_name: room_name]}
+      start:
+        {AgentbotCore.Modules.Chat.RoomServer, :start_link,
+         [room_id: room_id, room_name: room_name]}
     }
 
     DynamicSupervisor.start_child(__MODULE__, spec)

@@ -25,7 +25,9 @@ defmodule AgentbotCore.Application do
       # Oda dinamik süpervizörü — her oda için bir RoomServer başlatır
       AgentbotCore.Modules.Chat.RoomSupervisor,
       # Oban — Arka plan işleri
-      {Oban, Application.fetch_env!(:agentbot_core, Oban)}
+      {Oban, Application.fetch_env!(:agentbot_core, Oban)},
+      # Deployment Verifier — provisioning broker için health check + state machine
+      AgentbotCore.Modules.Provisioning.DeploymentVerifier
     ]
 
     opts = [strategy: :one_for_one, name: AgentbotCore.Supervisor]

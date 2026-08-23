@@ -11,8 +11,8 @@ defmodule AgentbotWeb.UserSocket do
 
   use Phoenix.Socket
 
-  channel "room:*", AgentbotWeb.RoomChannel
-  channel "agent:*", AgentbotWeb.AgentChannel
+  channel("room:*", AgentbotWeb.RoomChannel)
+  channel("agent:*", AgentbotWeb.AgentChannel)
 
   @impl true
   def connect(%{"token" => token}, socket, _connect_info) do

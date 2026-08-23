@@ -16,13 +16,17 @@ defmodule AgentbotCore.Modules.Registry.ExecutorResource do
   alias AgentbotCore.Repo
 
   schema "executor_resources" do
-    belongs_to :agent_credential, AgentbotCore.Modules.Security.AgentCredential
+    belongs_to(:agent_credential, AgentbotCore.Modules.Security.AgentCredential)
 
-    field :resource_type, :string    # cpu, ram, gpu, storage, api, bandwidth
-    field :amount, :integer          # MB, cores, GB, calls, mbps
-    field :unit, :string             # MB, cores, GB, calls/day, mbps
-    field :cost_per_unit, :decimal   # kredi/ünit (şimdilik 0 — economy sonra)
-    field :available, :boolean, default: true
+    # cpu, ram, gpu, storage, api, bandwidth
+    field(:resource_type, :string)
+    # MB, cores, GB, calls, mbps
+    field(:amount, :integer)
+    # MB, cores, GB, calls/day, mbps
+    field(:unit, :string)
+    # kredi/ünit (şimdilik 0 — economy sonra)
+    field(:cost_per_unit, :decimal)
+    field(:available, :boolean, default: true)
 
     timestamps(type: :utc_datetime)
   end
@@ -31,7 +35,14 @@ defmodule AgentbotCore.Modules.Registry.ExecutorResource do
 
   def changeset(resource, attrs) do
     resource
-    |> cast(attrs, [:agent_credential_id, :resource_type, :amount, :unit, :cost_per_unit, :available])
+    |> cast(attrs, [
+      :agent_credential_id,
+      :resource_type,
+      :amount,
+      :unit,
+      :cost_per_unit,
+      :available
+    ])
     |> validate_required([:agent_credential_id, :resource_type, :amount])
     |> validate_inclusion(:resource_type, @resource_types)
   end
@@ -60,7 +71,11 @@ defmodule AgentbotCore.Modules.Registry.ExecutorResource do
   def find_providers(resource_type, min_amount \\ 0) do
     __MODULE__
     |> join(:inner, [r], c in assoc(r, :agent_credential))
-    |> where([r, c], r.resource_type == ^resource_type and r.amount >= ^min_amount and r.available == true and c.is_active == true)
+    |> where(
+      [r, c],
+      r.resource_type == ^resource_type and r.amount >= ^min_amount and r.available == true and
+        c.is_active == true
+    )
     |> select([r, c], %{
       agent_id: c.agent_id,
       agent_name: c.agent_name,

@@ -10,23 +10,42 @@ defmodule AgentbotCore.Modules.Registry.CapabilityGap do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :capability_name, :requested_count, :last_requested_at, :fulfilled, :fulfilled_by, :inserted_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :capability_name,
+             :requested_count,
+             :last_requested_at,
+             :fulfilled,
+             :fulfilled_by,
+             :inserted_at
+           ]}
   alias AgentbotCore.Repo
 
   schema "capability_gaps" do
-    field :capability_name, :string
-    field :requested_count, :integer, default: 1
-    field :last_requested_at, :utc_datetime
-    field :fulfilled, :boolean, default: false
-    field :fulfilled_by, :string
-    field :fulfilled_at, :utc_datetime
+    field(:capability_name, :string)
+    field(:requested_count, :integer, default: 1)
+    field(:last_requested_at, :utc_datetime)
+    field(:fulfilled, :boolean, default: false)
+    field(:fulfilled_by, :string)
+    field(:fulfilled_at, :utc_datetime)
+
+    belongs_to(:suggested_recipe, AgentbotCore.Modules.Provisioning.Recipe)
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(gap, attrs) do
     gap
-    |> cast(attrs, [:capability_name, :requested_count, :last_requested_at, :fulfilled, :fulfilled_by, :fulfilled_at])
+    |> cast(attrs, [
+      :capability_name,
+      :requested_count,
+      :last_requested_at,
+      :fulfilled,
+      :fulfilled_by,
+      :fulfilled_at,
+      :suggested_recipe_id
+    ])
     |> validate_required([:capability_name])
     |> unique_constraint(:capability_name)
   end
@@ -52,7 +71,9 @@ defmodule AgentbotCore.Modules.Registry.CapabilityGap do
   @doc "Gap'i dolduruldu olarak işaretle"
   def fulfill(capability_name, agent_id) do
     case Repo.get_by(__MODULE__, capability_name: capability_name) do
-      nil -> {:error, :not_found}
+      nil ->
+        {:error, :not_found}
+
       gap ->
         gap
         |> changeset(%{fulfilled: true, fulfilled_by: agent_id, fulfilled_at: DateTime.utc_now()})

@@ -9,15 +9,26 @@ defmodule AgentbotCore.Modules.Chat.Room do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :name, :description, :room_type, :max_agents, :is_active, :inserted_at, :updated_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :name,
+             :description,
+             :room_type,
+             :max_agents,
+             :is_active,
+             :inserted_at,
+             :updated_at
+           ]}
   alias AgentbotCore.Repo
 
   schema "rooms" do
-    field :name, :string
-    field :description, :string
-    field :room_type, :string, default: "general"  # general, task, approval
-    field :max_agents, :integer, default: 50
-    field :is_active, :boolean, default: true
+    field(:name, :string)
+    field(:description, :string)
+    # general, task, approval
+    field(:room_type, :string, default: "general")
+    field(:max_agents, :integer, default: 50)
+    field(:is_active, :boolean, default: true)
 
     timestamps(type: :utc_datetime)
   end

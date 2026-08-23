@@ -3,8 +3,8 @@ defmodule AgentbotWeb.RoomController do
 
   use AgentbotWeb, :controller
 
-  alias AgentbotCore.Modules.Chat.Room
   alias AgentbotCore.Modules.Chat.Message
+  alias AgentbotCore.Modules.Chat.Room
 
   def index(conn, _params) do
     rooms = Room.list_active()
@@ -36,13 +36,14 @@ defmodule AgentbotWeb.RoomController do
   def create_message(conn, %{"room_id" => room_id, "content" => content} = params) do
     sender_name = Map.get(params, "sender_name", "İnsan")
 
-    {:ok, _msg} = Message.create(%{
-      room_id: room_id,
-      sender_id: "human-web",
-      sender_name: sender_name,
-      content: content,
-      message_type: "text"
-    })
+    {:ok, _msg} =
+      Message.create(%{
+        room_id: room_id,
+        sender_id: "human-web",
+        sender_name: sender_name,
+        content: content,
+        message_type: "text"
+      })
 
     redirect(conn, to: "/rooms/#{room_id}")
   end

@@ -33,6 +33,39 @@
       <div class="stat-title">Eksik Yetenek</div>
       <div class="stat-value text-error text-2xl"><%= @gap_count %></div>
     </div>
+    <div class="stat bg-base-200 rounded-box shadow">
+      <div class="stat-title">Deployment</div>
+      <div class="stat-value text-info text-2xl"><%= @deployment_count %></div>
+    </div>
+    <div class="stat bg-base-200 rounded-box shadow">
+      <div class="stat-title">Referral</div>
+      <div class="stat-value text-warning text-2xl"><%= @referral_count %></div>
+    </div>
+  </div>
+
+  <!-- Provisioning Broker Döngüsü -->
+  <div class="card bg-base-200 shadow-lg mb-8">
+    <div class="card-body">
+      <h2 class="card-title">🍳 Provisioning Broker</h2>
+      <p class="text-sm opacity-70 mb-3">
+        Gap → Recipe → Deploy → Verify → Fulfilled — agent eksik yeteneği
+        <span class="font-mono">kendi hesabında</span> açar, AB doğrular ve attribüte eder.
+      </p>
+      <div class="flex flex-wrap gap-2 text-xs">
+        <div class="badge badge-outline gap-1">⚠ Gap</div>
+        <span class="opacity-40">→</span>
+        <div class="badge badge-outline gap-1">📋 Recipe</div>
+        <span class="opacity-40">→</span>
+        <div class="badge badge-outline gap-1">🚀 Deploy</div>
+        <span class="opacity-40">→</span>
+        <div class="badge badge-outline gap-1">✅ Verify</div>
+        <span class="opacity-40">→</span>
+        <div class="badge badge-success gap-1">🎉 Fulfilled</div>
+      </div>
+      <div class="mt-3 text-xs opacity-60 font-mono">
+        GET /api/gaps/:id/recipes · GET /api/recipes/:id · POST /api/deployments · POST /api/deployments/:id/verify
+      </div>
+    </div>
   </div>
 
   <!-- Nasıl Kullanılır -->

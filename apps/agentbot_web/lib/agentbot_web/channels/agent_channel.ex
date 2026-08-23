@@ -26,11 +26,12 @@ defmodule AgentbotWeb.AgentChannel do
       # PubSub'a abone ol — bu agent'a gelen tüm bildirimleri dinle
       AgentbotCore.PubSub.subscribe("agent:#{agent_id}")
 
-      {:ok, %{
-        status: "connected",
-        agent_id: agent_id,
-        channels: ["council_invitation", "task_assigned", "task_dispatch"]
-      }, socket}
+      {:ok,
+       %{
+         status: "connected",
+         agent_id: agent_id,
+         channels: ["council_invitation", "task_assigned", "task_dispatch"]
+       }, socket}
     else
       {:error, %{reason: "Bu kanala yetkin yok"}}
     end

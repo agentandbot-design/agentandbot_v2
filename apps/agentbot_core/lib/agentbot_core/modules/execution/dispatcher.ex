@@ -135,7 +135,12 @@ defmodule AgentbotCore.Modules.Execution.Dispatcher do
       {"user-agent", "AgentAndBot/1.0"}
     ]
 
-    case :httpc.request(:post, {String.to_charlist(url), headers, ~c"application/json", body}, [{:timeout, 25_000}], []) do
+    case :httpc.request(
+           :post,
+           {String.to_charlist(url), headers, ~c"application/json", body},
+           [{:timeout, 25_000}],
+           []
+         ) do
       {:ok, {{_, status, _}, _resp_headers, resp_body}} ->
         {:ok, %{status: status, body: to_string(resp_body)}}
 

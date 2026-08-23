@@ -8,6 +8,8 @@ defmodule AgentbotCore.Modules.Agents.AgentGateway do
   Phase 1'de tam WebSocket desteği eklenecek.
   """
 
+  alias AgentbotCore.Modules.Agents.AgentPresence
+  alias AgentbotCore.Modules.Chat.Message
   alias AgentbotCore.Modules.Protocol.Envelope
 
   @doc """
@@ -19,13 +21,14 @@ defmodule AgentbotCore.Modules.Agents.AgentGateway do
     agent_name = Map.get(params, "agent_name")
 
     if agent_id && agent_name do
-      # TODO: AgentPresence ile kayıt
-      {:ok, %{
-        agent_id: agent_id,
-        agent_name: agent_name,
-        connected_at: DateTime.utc_now(),
-        status: "connected"
-      }}
+      # Not: AgentPresence ile kayıt (Phase 1)
+      {:ok,
+       %{
+         agent_id: agent_id,
+         agent_name: agent_name,
+         connected_at: DateTime.utc_now(),
+         status: "connected"
+       }}
     else
       {:error, "agent_id ve agent_name zorunlu"}
     end
@@ -38,14 +41,15 @@ defmodule AgentbotCore.Modules.Agents.AgentGateway do
   def send_envelope(agent_id, params, agent_info) do
     agent_name = Map.get(agent_info, :agent_name, agent_id)
 
-    envelope = Envelope.new([
-      type: Map.get(params, "type", "message"),
-      sender: agent_id,
-      recipient: Map.get(params, "recipient"),
-      payload: Map.get(params, "payload", %{}),
-      room_id: Map.get(params, "room_id"),
-      metadata: Map.get(params, "metadata", %{})
-    ])
+    envelope =
+      Envelope.new(
+        type: Map.get(params, "type", "message"),
+        sender: agent_id,
+        recipient: Map.get(params, "recipient"),
+        payload: Map.get(params, "payload", %{}),
+        room_id: Map.get(params, "room_id"),
+        metadata: Map.get(params, "metadata", %{})
+      )
 
     cond do
       params["room_id"] == nil and params["recipient"] == nil ->
@@ -57,18 +61,23 @@ defmodule AgentbotCore.Modules.Agents.AgentGateway do
 
         content = extract_content(envelope.payload)
 
-        case AgentbotCore.Modules.Chat.Message.create(%{
-          room_id: room_id,
-          sender_id: agent_id,
-          sender_name: agent_name,
-          content: content,
-          message_type: "text",
-          event_type: envelope.type,
-          metadata: %{envelope_id: envelope.id}
-        }) do
+        case Message.create(%{
+               room_id: room_id,
+               sender_id: agent_id,
+               sender_name: agent_name,
+               content: content,
+               message_type: "text",
+               event_type: envelope.type,
+               metadata: %{envelope_id: envelope.id}
+             }) do
           {:ok, _msg} ->
             # AgentPresence track
-            AgentbotCore.Modules.Agents.AgentPresence.track(agent_id, agent_name, to_string(room_id))
+            AgentPresence.track(
+              agent_id,
+              agent_name,
+              to_string(room_id)
+            )
+
             {:ok, envelope.id}
 
           {:error, _reason} ->
@@ -82,6 +91,7 @@ defmodule AgentbotCore.Modules.Agents.AgentGateway do
           "outgoing",
           envelope
         )
+
         {:ok, envelope.id}
     end
   end
@@ -104,6 +114,7 @@ defmodule AgentbotCore.Modules.Agents.AgentGateway do
       "disconnected",
       %{agent_id: agent_id}
     )
+
     :ok
   end
 end

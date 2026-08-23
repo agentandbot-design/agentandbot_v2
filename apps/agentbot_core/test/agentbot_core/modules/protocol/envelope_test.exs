@@ -25,13 +25,14 @@ defmodule AgentbotCore.Modules.Protocol.EnvelopeTest do
     end
 
     test "metadata ve content_type override edilebilir" do
-      env = Envelope.new(
-        type: "mcp",
-        sender: "bot",
-        payload: %{},
-        content_type: "application/protobuf",
-        metadata: %{"trace_id" => "abc"}
-      )
+      env =
+        Envelope.new(
+          type: "mcp",
+          sender: "bot",
+          payload: %{},
+          content_type: "application/protobuf",
+          metadata: %{"trace_id" => "abc"}
+        )
 
       assert env.content_type == "application/protobuf"
       assert env.metadata == %{"trace_id" => "abc"}
@@ -47,14 +48,15 @@ defmodule AgentbotCore.Modules.Protocol.EnvelopeTest do
 
   describe "to_json/1 ve from_json/1" do
     test "round-trip serialize/deserialize başarılı" do
-      env = Envelope.new(
-        type: "task",
-        sender: "agent-x",
-        recipient: "agent-y",
-        payload: %{action: "compute", params: [1, 2, 3]},
-        room_id: "room-1",
-        metadata: %{"priority" => "high"}
-      )
+      env =
+        Envelope.new(
+          type: "task",
+          sender: "agent-x",
+          recipient: "agent-y",
+          payload: %{action: "compute", params: [1, 2, 3]},
+          room_id: "room-1",
+          metadata: %{"priority" => "high"}
+        )
 
       json = Envelope.to_json(env)
       {:ok, restored} = Envelope.from_json(json)

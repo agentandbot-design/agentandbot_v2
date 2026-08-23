@@ -21,17 +21,17 @@ defmodule AgentbotCore.Modules.Protocol.Envelope do
   ]
 
   @type t :: %__MODULE__{
-    id: String.t() | nil,
-    type: String.t(),
-    sender: String.t(),
-    recipient: String.t() | nil,
-    payload: map() | nil,
-    timestamp: DateTime.t() | nil,
-    room_id: String.t() | nil,
-    metadata: map() | nil,
-    signature: String.t() | nil,
-    content_type: String.t() | nil
-  }
+          id: String.t() | nil,
+          type: String.t(),
+          sender: String.t(),
+          recipient: String.t() | nil,
+          payload: map() | nil,
+          timestamp: DateTime.t() | nil,
+          room_id: String.t() | nil,
+          metadata: map() | nil,
+          signature: String.t() | nil,
+          content_type: String.t() | nil
+        }
 
   @doc """
   Yeni bir zarf oluşturur. Timestamp otomatik atanır.
@@ -40,7 +40,10 @@ defmodule AgentbotCore.Modules.Protocol.Envelope do
   def new(attrs) when is_list(attrs) do
     attrs = Keyword.put(attrs, :id, generate_id())
     attrs = Keyword.put(attrs, :timestamp, DateTime.utc_now())
-    attrs = Keyword.put(attrs, :content_type, Keyword.get(attrs, :content_type, "application/json"))
+
+    attrs =
+      Keyword.put(attrs, :content_type, Keyword.get(attrs, :content_type, "application/json"))
+
     attrs = Keyword.put(attrs, :metadata, Keyword.get(attrs, :metadata, %{}))
 
     struct!(__MODULE__, attrs)
@@ -51,7 +54,7 @@ defmodule AgentbotCore.Modules.Protocol.Envelope do
   """
   @spec sign(t(), String.t()) :: t()
   def sign(%__MODULE__{} = envelope, _private_key) do
-    # TODO: Ed25519 implementasyonu gelecek phase'de
+    # Not: Ed25519 implementasyonu gelecek phase'de
     %{envelope | signature: "pending_ed25519"}
   end
 
@@ -86,6 +89,6 @@ defmodule AgentbotCore.Modules.Protocol.Envelope do
 
   # Benzersiz ID üretici
   defp generate_id do
-    :crypto.strong_rand_bytes(16) |> Base.encode16(case: :lower)
+    Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
   end
 end

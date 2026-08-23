@@ -72,7 +72,8 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
       room_id: room_id,
       room_name: room_name,
       status: :active,
-      agents: %{},       # agent_id => %{name: String.t(), joined_at: DateTime.t()}
+      # agent_id => %{name: String.t(), joined_at: DateTime.t()}
+      agents: %{},
       message_count: 0,
       buffer: []
     }
@@ -82,10 +83,11 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
 
   @impl true
   def handle_call({:join, agent_id, agent_name}, _from, state) do
-    new_agents = Map.put(state.agents, agent_id, %{
-      name: agent_name,
-      joined_at: DateTime.utc_now()
-    })
+    new_agents =
+      Map.put(state.agents, agent_id, %{
+        name: agent_name,
+        joined_at: DateTime.utc_now()
+      })
 
     broadcast_both(state.room_id, "agent_joined", %{
       agent_id: agent_id,
@@ -126,7 +128,12 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
       timestamp: DateTime.utc_now()
     })
 
-    new_state = %{state | status: :active, buffer: [], message_count: state.message_count + length(state.buffer)}
+    new_state = %{
+      state
+      | status: :active,
+        buffer: [],
+        message_count: state.message_count + length(state.buffer)
+    }
 
     {:reply, :ok, new_state}
   end
@@ -136,7 +143,7 @@ defmodule AgentbotCore.Modules.Chat.RoomServer do
     case state.status do
       :paused ->
         # Buffer'a ekle — max boyutu aşma
-        new_buffer = [message | state.buffer] |> Enum.take(@max_buffer)
+        new_buffer = Enum.take([message | state.buffer], @max_buffer)
         {:noreply, %{state | buffer: new_buffer}}
 
       :active ->

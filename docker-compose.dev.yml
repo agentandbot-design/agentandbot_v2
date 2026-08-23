@@ -11,6 +11,8 @@ services:
       - ./test:/app/test
       - ./priv:/app/priv
       - ./mix.exs:/app/mix.exs
+      - ./.formatter.exs:/app/.formatter.exs
+      - ./.credo.exs:/app/.credo.exs
       - mix-cache:/root/.mix
       - node-cache:/root/.npm
       - build-cache:/app/_build

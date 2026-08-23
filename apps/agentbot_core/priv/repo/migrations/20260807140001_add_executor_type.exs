@@ -10,9 +10,9 @@ defmodule AgentbotCore.Repo.Migrations.AddExecutorType do
 
   def change do
     alter table(:agent_credentials) do
-      add :executor_type, :string, default: "agent"
+      add(:executor_type, :string, default: "agent")
       # agent | tool | script | workflow | mcp | api | container
-      add :endpoint, :string
+      add(:endpoint, :string)
       # MCP: http://localhost:3001
       # API: https://api.example.com/webhook
       # CLI: blender
@@ -20,6 +20,8 @@ defmodule AgentbotCore.Repo.Migrations.AddExecutorType do
     end
 
     # Executor type'a göre index — discovery hızlandır
-    execute "CREATE INDEX IF NOT EXISTS agent_credentials_executor_type_idx ON agent_credentials (executor_type) WHERE is_active = true"
+    execute(
+      "CREATE INDEX IF NOT EXISTS agent_credentials_executor_type_idx ON agent_credentials (executor_type) WHERE is_active = true"
+    )
   end
 end

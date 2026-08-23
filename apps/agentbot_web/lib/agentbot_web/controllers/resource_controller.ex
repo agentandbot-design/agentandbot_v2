@@ -62,7 +62,9 @@ defmodule AgentbotWeb.ResourceController do
 
       case ExecutorResource.add(credential.id, resource_type, amount, unit, cost) do
         {:ok, resource} ->
-          conn |> put_status(201) |> json(%{
+          conn
+          |> put_status(201)
+          |> json(%{
             status: "provided",
             resource_type: resource.resource_type,
             amount: resource.amount,

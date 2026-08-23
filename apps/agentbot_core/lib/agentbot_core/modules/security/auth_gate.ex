@@ -27,17 +27,20 @@ defmodule AgentbotCore.Modules.Security.AuthGate do
   @spec verify_token(String.t()) :: {:ok, map()} | {:error, String.t()}
   def verify_token(token) do
     case AgentCredential.find_by_token(token) do
-      nil -> {:error, "Geçersiz token"}
+      nil ->
+        {:error, "Geçersiz token"}
+
       credential ->
         # Token süresi kontrolü
         if expired?(credential) do
           {:error, "Token süresi dolmuş"}
         else
-          {:ok, %{
-            agent_id: credential.agent_id,
-            agent_name: credential.agent_name,
-            capabilities: credential.capabilities
-          }}
+          {:ok,
+           %{
+             agent_id: credential.agent_id,
+             agent_name: credential.agent_name,
+             capabilities: credential.capabilities
+           }}
         end
     end
   end
@@ -61,7 +64,9 @@ defmodule AgentbotCore.Modules.Security.AuthGate do
     conn.req_headers
     |> List.keyfind("authorization", 0)
     |> case do
-      {"authorization", "Bearer " <> token} -> token
+      {"authorization", "Bearer " <> token} ->
+        token
+
       _ ->
         conn.query_params["token"]
     end

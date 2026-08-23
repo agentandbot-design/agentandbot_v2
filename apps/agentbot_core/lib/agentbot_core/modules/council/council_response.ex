@@ -7,24 +7,43 @@ defmodule AgentbotCore.Modules.Council.CouncilResponse do
   import Ecto.Changeset
   import Ecto.Query
 
-  @derive {Jason.Encoder, only: [:id, :council_id, :agent_id, :agent_name, :content, :stance, :confidence, :inserted_at]}
+  @derive {Jason.Encoder,
+           only: [
+             :id,
+             :council_id,
+             :agent_id,
+             :agent_name,
+             :content,
+             :stance,
+             :confidence,
+             :inserted_at
+           ]}
   alias AgentbotCore.Repo
 
   schema "council_responses" do
-    belongs_to :council, AgentbotCore.Modules.Council.Council
-    field :agent_id, :string
-    field :agent_name, :string
-    field :content, :string
-    field :stance, :string          # support, oppose, neutral, alternative
-    field :confidence, :decimal
-    field :metadata, :string
+    belongs_to(:council, AgentbotCore.Modules.Council.Council)
+    field(:agent_id, :string)
+    field(:agent_name, :string)
+    field(:content, :string)
+    # support, oppose, neutral, alternative
+    field(:stance, :string)
+    field(:confidence, :decimal)
+    field(:metadata, :string)
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(response, attrs) do
     response
-    |> cast(attrs, [:council_id, :agent_id, :agent_name, :content, :stance, :confidence, :metadata])
+    |> cast(attrs, [
+      :council_id,
+      :agent_id,
+      :agent_name,
+      :content,
+      :stance,
+      :confidence,
+      :metadata
+    ])
     |> validate_required([:council_id, :agent_id, :content])
   end
 

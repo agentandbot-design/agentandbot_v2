@@ -20,7 +20,8 @@ config :agentbot_web, AgentbotWeb.Endpoint,
 config :esbuild,
   version: "0.25.0",
   default: [
-    args: ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/assets),
+    args:
+      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/assets),
     cd: Path.expand("../apps/agentbot_web/assets", __DIR__),
     env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
   ]

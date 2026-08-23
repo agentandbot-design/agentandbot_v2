@@ -109,5 +109,4 @@ defmodule AgentbotCore.Modules.Chat.MessageProducer do
         {[], state}
     end
   end
-
 end

@@ -2,7 +2,7 @@ defmodule LiteLLM do
   @moduledoc """
   Facade for LiteLLM operations.
   """
-  
+
   def create_key(user_id, model, opts \\ %{}) do
     adapter().create_key(user_id, model, opts, config())
   end

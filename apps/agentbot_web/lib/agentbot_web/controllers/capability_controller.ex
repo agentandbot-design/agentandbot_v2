@@ -7,9 +7,11 @@ defmodule AgentbotWeb.CapabilityController do
 
   import Ecto.Query
 
-  alias AgentbotCore.Modules.Registry.{AgentCapability, Capability, CapabilityGap}
-  alias AgentbotCore.Repo
+  alias AgentbotCore.Modules.Registry.AgentCapability
+  alias AgentbotCore.Modules.Registry.Capability
+  alias AgentbotCore.Modules.Registry.CapabilityGap
   alias AgentbotCore.Modules.Security.AgentCredential
+  alias AgentbotCore.Repo
 
   # ── CAPABILITY CRUD ─────────────────────────────────────
 
@@ -32,7 +34,12 @@ defmodule AgentbotWeb.CapabilityController do
 
       capability ->
         providers = Capability.providers(name)
-        json(conn, %{capability: capability, providers: providers, provider_count: length(providers)})
+
+        json(conn, %{
+          capability: capability,
+          providers: providers,
+          provider_count: length(providers)
+        })
     end
   end
 
@@ -101,17 +108,20 @@ defmodule AgentbotWeb.CapabilityController do
     if is_nil(credential) do
       conn |> put_status(404) |> json(%{error: "Agent credential bulunamadı"})
     else
-      {:ok, capability} = Capability.find_or_create(capability_name, %{
-        description: conn.body_params["description"],
-        category: conn.body_params["category"]
-      })
+      {:ok, capability} =
+        Capability.find_or_create(capability_name, %{
+          description: conn.body_params["description"],
+          category: conn.body_params["category"]
+        })
 
       {:ok, _agent_cap} = AgentCapability.provide(credential.id, capability.id)
 
       # Gap varsa dolduruldu olarak işaretle
       CapabilityGap.fulfill(capability_name, agent_id)
 
-      conn |> put_status(201) |> json(%{
+      conn
+      |> put_status(201)
+      |> json(%{
         status: "provided",
         capability: capability.name,
         agent_id: agent_id,

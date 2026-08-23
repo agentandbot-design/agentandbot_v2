@@ -4,6 +4,7 @@ defmodule AgentbotWeb.AgentController do
   use AgentbotWeb, :controller
 
   alias AgentbotCore.Modules.Agents.AgentGateway
+  alias AgentbotCore.Modules.Agents.AgentPresence
   alias AgentbotCore.Modules.Security.AgentCredential
 
   @doc "Yeni agent kaydı — token üretir (auth gerektirmez)"
@@ -23,14 +24,14 @@ defmodule AgentbotWeb.AgentController do
 
       true ->
         case AgentCredential.register(%{
-          agent_id: agent_id,
-          agent_name: agent_name,
-          capabilities: capabilities,
-          executor_type: executor_type,
-          endpoint: endpoint,
-          description: Map.get(params, "description"),
-          protocols: Map.get(params, "protocols", ["rest"])
-        }) do
+               agent_id: agent_id,
+               agent_name: agent_name,
+               capabilities: capabilities,
+               executor_type: executor_type,
+               endpoint: endpoint,
+               description: Map.get(params, "description"),
+               protocols: Map.get(params, "protocols", ["rest"])
+             }) do
           {:ok, credential} ->
             conn
             |> put_status(201)
@@ -60,7 +61,7 @@ defmodule AgentbotWeb.AgentController do
 
   @doc "Çevrimiçi agent'ları listeler"
   def online(conn, _params) do
-    agents = AgentbotCore.Modules.Agents.AgentPresence.list_online()
+    agents = AgentPresence.list_online()
     json(conn, %{agents: agents, count: length(agents)})
   end
 

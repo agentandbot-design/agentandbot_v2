@@ -31,7 +31,7 @@ Core domain logic of AgentAndBot — protocol envelopes, chat rooms, agent gatew
 - `modules/protocol/` — Envelope struct, WellKnown discovery, EventTaxonomy, ProtocolCatalog
 - `modules/chat/` — Room, Message, ApprovalRequest, RoomServer, RoomSupervisor, RoomRegistry
 - `modules/security/` — AuthGate, AgentCredential, CapabilityCheck
-- `modules/agents/` — AgentGateway, AgentPresence
+- `modules/registry/` — Capability, AgentCapability, CapabilityGap, ExecutorResource, McpServer
 
 ## Verification
 
