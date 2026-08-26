@@ -30,8 +30,13 @@ Core domain logic of AgentAndBot — protocol envelopes, chat rooms, agent gatew
 ### Module domains
 - `modules/protocol/` — Envelope struct, WellKnown discovery, EventTaxonomy, ProtocolCatalog
 - `modules/chat/` — Room, Message, ApprovalRequest, RoomServer, RoomSupervisor, RoomRegistry
-- `modules/security/` — AuthGate, AgentCredential, CapabilityCheck
+- `modules/security/` — AuthGate, AgentCredential, CapabilityCheck, Account (insan hesabı), QmSession (qm.agentandbot.com ortak giriş doğrulaması)
 - `modules/registry/` — Capability, AgentCapability, CapabilityGap, ExecutorResource, McpServer
+
+### QM ortak giriş (shared login)
+- `QmSession.verify/1` portal_session cookie'sini doğrular: HMAC-SHA256, key = HMAC(PORTAL_SESSION_SECRET, "portal.session.v1"); secret runtime'da `QM_PORTAL_SESSION_SECRET` env'inden okunur
+- Base64url decode işlemlerinde `padding: false` şart (portal token'ları paddingsiz)
+- `Account.upsert_from_email/1` e-postayı normalize eder ve last_signed_in_at günceller
 
 ## Verification
 
