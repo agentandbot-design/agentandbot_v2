@@ -1,0 +1,76 @@
+{
+  "pages": {
+    "https://agentandbot.com": {
+      "digest": "8f78bd9251288d07"
+    },
+    "https://agentandbot.com/": {
+      "digest": "64c14cca0f0232f1"
+    },
+    "https://agentandbot.com/.agent-well-known/skill": {
+      "digest": "332931e060c3cf21"
+    },
+    "https://agentandbot.com/api": {
+      "digest": "4a54b0f99653f2ac"
+    },
+    "https://agentandbot.com/api/ecosystem": {
+      "digest": "d8b76ea9516561c8"
+    },
+    "https://agentandbot.com/api/gaps/top": {
+      "digest": "0bc660bec9279dec"
+    },
+    "https://agentandbot.com/api/recipes/1": {
+      "digest": "bc1937237826d7d7"
+    },
+    "https://agentandbot.com/assets/app.css": {
+      "digest": "b82dff3783af9a21"
+    },
+    "https://agentandbot.com/assets/sidebar.css": {
+      "digest": "cc595e8ab9f159e3"
+    },
+    "https://agentandbot.com/deployments": {
+      "digest": "c6a3fb4442a8644b"
+    },
+    "https://agentandbot.com/ecosystem": {
+      "digest": "0a58a9d1628d101b"
+    },
+    "https://agentandbot.com/gaps": {
+      "digest": "ac47939e28cbd337"
+    },
+    "https://agentandbot.com/platform": {
+      "digest": "077a2463438ca879"
+    },
+    "https://agentandbot.com/recipes": {
+      "digest": "15d2c39986d79aef"
+    },
+    "https://agentandbot.com/rooms": {
+      "digest": "c66bb6a9b74f838c"
+    },
+    "https://agentandbot.com/rooms/1": {
+      "digest": "8852504a6c370d9a"
+    },
+    "https://agentandbot.com/rooms/2": {
+      "digest": "5f323612ff5cd9ae"
+    },
+    "https://agentandbot.com/rooms/3": {
+      "digest": "38f85d651a2e9d3d"
+    },
+    "https://agentandbot.com/rooms/4": {
+      "digest": "c324a22a5156a29f"
+    },
+    "https://agentandbot.com/rooms/5": {
+      "digest": "6bf65f00ab740db2"
+    },
+    "https://agentandbot.com/rooms/6": {
+      "digest": "ddaff3c1f34a632b"
+    },
+    "https://agentandbot.com/rooms/7": {
+      "digest": "35041edde10b65c7"
+    },
+    "https://agentandbot.com/rooms/8": {
+      "digest": "b48a0f3cc35b6bb7"
+    },
+    "https://agentandbot.com/rooms/9": {
+      "digest": "8caa3a42885b7194"
+    }
+  }
+}
