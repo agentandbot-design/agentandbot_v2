@@ -43,9 +43,19 @@ const RememberName = {
   },
 }
 
+// Terminal gövdesini alta kaydır (yeni satır geldiğinde)
+const TermScroll = {
+  mounted() {
+    this.el.scrollTop = this.el.scrollHeight
+  },
+  updated() {
+    this.el.scrollTop = this.el.scrollHeight
+  },
+}
+
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },
-  hooks: { ChatScroll, RememberName },
+  hooks: { ChatScroll, RememberName, TermScroll },
 })
 
 // Connect

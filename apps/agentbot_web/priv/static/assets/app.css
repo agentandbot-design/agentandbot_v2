@@ -3017,10 +3017,6 @@ video {
   padding-bottom: 2rem;
 }
 
-.pt-2 {
-  padding-top: 0.5rem;
-}
-
 .text-center {
   text-align: center;
 }
@@ -3245,6 +3241,367 @@ video {
 
 .rounded-box {
   border-radius: var(--radius-box);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AgentAndBot Terminal — phosphor CRT tema (Kimsufi ilhamlı)
+   Bauhaus: saf CSS, canvas yok, JS animasyon yok, GPU dostu.
+   Sadece .term-root kapsamında çalışır — siteye sızmaz.
+   ═══════════════════════════════════════════════════════════ */
+
+.term-root {
+  /* Palet */
+  --t-bg: #060c10;
+  --t-bg-lighter: #0a1018;
+  --t-bg-terminal: #060c10;
+  --t-text: #b0c4b8;
+  --t-text-dim: #3a5548;
+  --t-text-bright: #d4ffe6;
+  --t-green: #00ff88;
+  --t-green-dim: #00cc66;
+  --t-green-bright: #66ffaa;
+  --t-yellow: #ffcc00;
+  --t-blue: #00aaff;
+  --t-red: #ff4444;
+  --t-cyan: #00ffcc;
+  --t-border: #0f2a1f;
+  --t-phosphor: rgba(0, 255, 136, .15);
+  --t-glow: rgba(0, 255, 136, .06);
+  --t-scanline: rgba(0, 0, 0, .06);
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", "SF Mono", Consolas, monospace;
+  background: var(--t-bg);
+  color: var(--t-text);
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* ── Scanline overlay — statik, tek pseudo-element ── */
+
+.term-root::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 40;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    var(--t-scanline) 2px,
+    var(--t-scanline) 4px
+  );
+}
+
+/* ── Titlebar ── */
+
+.term-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--t-bg-lighter);
+  border-bottom: 1px solid var(--t-border);
+  min-height: 44px;
+}
+
+.term-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.term-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.term-dot.r {
+  background: #ff5f57;
+}
+
+.term-dot.y {
+  background: #febc2e;
+}
+
+.term-dot.g {
+  background: #28c840;
+}
+
+.term-titlebar-text {
+  font-size: 11px;
+  color: var(--t-text-dim);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.term-titlebar-badge {
+  font-size: 10px;
+  color: var(--t-green);
+  border: 1px solid var(--t-border);
+  border-radius: 3px;
+  padding: 2px 8px;
+  background: rgba(0, 255, 136, .05);
+}
+
+/* ── Output akışı ── */
+
+.term-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 8px;
+  scroll-behavior: smooth;
+  text-shadow: 0 0 2px var(--t-phosphor);
+}
+
+.term-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.term-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.term-body::-webkit-scrollbar-thumb {
+  background: var(--t-border);
+  border-radius: 2px;
+}
+
+.term-line {
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  animation: termLineAppear .15s ease-out;
+}
+
+@keyframes termLineAppear {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to   {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Satır tipleri */
+
+.term-line.l-prompt .p-user {
+  color: var(--t-green);
+  font-weight: 600;
+  text-shadow: 0 0 6px var(--t-phosphor);
+}
+
+.term-line.l-prompt .p-sep   {
+  color: var(--t-text-dim);
+}
+
+.term-line.l-prompt .p-cmd   {
+  color: var(--t-text-bright);
+}
+
+.term-line.l-out     {
+  color: var(--t-text);
+}
+
+.term-line.l-sys     {
+  color: var(--t-green);
+}
+
+.term-line.l-err     {
+  color: var(--t-red);
+}
+
+.term-line.l-warn    {
+  color: var(--t-yellow);
+}
+
+.term-line.l-info    {
+  color: var(--t-blue);
+}
+
+.term-line.l-cyan    {
+  color: var(--t-cyan);
+}
+
+.term-line.l-dim     {
+  color: var(--t-text-dim);
+}
+
+.term-line.l-success {
+  color: var(--t-green-bright);
+  font-weight: 600;
+}
+
+/* ── ASCII banner ── */
+
+.term-ascii {
+  color: var(--t-green);
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: pre;
+  text-shadow: 0 0 8px var(--t-phosphor), 0 0 16px rgba(0, 255, 136, .08);
+  margin: 4px 0;
+}
+
+/* ── Girdi satırı ── */
+
+.term-input-area {
+  padding: 10px 20px 14px;
+  border-top: 1px solid var(--t-border);
+  background: var(--t-bg-terminal);
+}
+
+.term-input-line {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+}
+
+.term-input-line .p-user {
+  color: var(--t-green);
+  font-weight: 600;
+  text-shadow: 0 0 6px var(--t-phosphor);
+}
+
+.term-input-line .p-sep {
+  color: var(--t-text-dim);
+  margin-right: 2px;
+}
+
+.term-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--t-text-bright);
+  font-family: inherit;
+  font-size: 13px;
+  caret-color: var(--t-green);
+  margin-left: 4px;
+}
+
+.term-input::-moz-placeholder {
+  color: var(--t-text-dim);
+  opacity: .4;
+}
+
+.term-input::placeholder {
+  color: var(--t-text-dim);
+  opacity: .4;
+}
+
+/* ── Cursor (statik block blink) ── */
+
+.term-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 15px;
+  background: var(--t-green);
+  box-shadow: 0 0 4px var(--t-phosphor);
+  animation: termBlink 1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+@keyframes termBlink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Sekmeler / hızlı komutlar ── */
+
+.term-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.term-chip {
+  padding: 3px 10px;
+  border: 1px solid var(--t-border);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--t-text);
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s;
+}
+
+.term-chip:hover {
+  border-color: var(--t-green);
+  color: var(--t-green);
+  background: rgba(0, 255, 136, .06);
+}
+
+/* ── Widget modu (küçük panel) ── */
+
+.term-root.term-widget {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  height: 420px;
+  border: 1px solid var(--t-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .5), 0 0 40px rgba(0, 255, 136, .04);
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.term-root.term-fullscreen {
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+  border: 1px solid var(--t-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* ── Açılır buton (sağ alt) ── */
+
+.term-toggle-btn {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 8999;
+  width: 44px;
+  height: 40px;
+  border: 1px solid var(--t-border);
+  border-radius: 6px;
+  background: var(--t-bg-lighter);
+  color: var(--t-green);
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
+  transition: box-shadow .15s, border-color .15s;
+}
+
+.term-toggle-btn:hover {
+  border-color: var(--t-green);
+  box-shadow: 0 4px 20px rgba(0, 255, 136, .15);
+}
+
+/* ── Uyumluluk: reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .term-root *, .term-root *::after, .term-root *::before {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* Custom */
