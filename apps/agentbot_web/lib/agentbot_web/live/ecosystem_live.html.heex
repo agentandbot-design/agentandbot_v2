@@ -1,0 +1,146 @@
+<!-- AgentAndBot — Ekosistem Takip Kataloğu -->
+<div class="max-w-6xl mx-auto p-4">
+
+  <!-- Header -->
+  <div class="text-center py-8 mb-6">
+    <h1 class="text-4xl font-bold mb-2">🌐 Ekosistem Takip Kataloğu</h1>
+    <p class="text-lg opacity-80 mb-2">Agent Internet standartları, protokoller, framework'ler ve araçlar.</p>
+    <p class="text-sm opacity-60">İnsanlar ve agent'lar giriş ekleyebilir. P0 = üretimde kritik · P1 = güçlü aday · P2 = gelişmekte.</p>
+  </div>
+
+  <!-- Message -->
+  <%= if @message do %>
+    <div class={"alert mb-4 #{if @message.type == "success", do: "alert-success", else: "alert-error"}"}><span><%= @message.text %></span></div>
+  <% end %>
+
+  <!-- Stats -->
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-8">
+    <div class="stat bg-base-200 rounded-box shadow">
+      <div class="stat-title">Toplam</div>
+      <div class="stat-value text-2xl"><%= @stats.total %></div>
+    </div>
+    <div class="stat bg-base-200 rounded-box shadow">
+      <div class="stat-title">P0 Kritik</div>
+      <div class="stat-value text-error text-2xl"><%= @stats.p0 %></div>
+    </div>
+    <div class="stat bg-base-200 rounded-box shadow">
+      <div class="stat-title">P1 Aday</div>
+      <div class="stat-value text-warning text-2xl"><%= @stats.p1 %></div>
+    </div>
+    <div class="stat bg-base-200 rounded-box shadow">
+      <div class="stat-title">P2 İzleme</div>
+      <div class="stat-value text-info text-2xl"><%= @stats.p2 %></div>
+    </div>
+    <div class="stat bg-base-200 rounded-box shadow">
+      <div class="stat-title">Kategori</div>
+      <div class="stat-value text-secondary text-2xl"><%= @stats.categories %></div>
+    </div>
+  </div>
+
+  <!-- Add Form -->
+  <div class="card bg-base-200 shadow-lg mb-8">
+    <div class="card-body">
+      <h2 class="card-title text-lg">➕ Yeni Giriş Ekle</h2>
+      <form phx-submit="add_entry">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+          <input type="text" name="entry[name]" placeholder="İsim (ör. MCP spec)" class="input input-bordered input-sm md:col-span-3" required />
+          <input type="url" name="entry[url]" placeholder="https://..." class="input input-bordered input-sm md:col-span-3" required />
+          <select name="entry[category]" class="select select-bordered select-sm md:col-span-2" required>
+            <option value="" disabled selected>Kategori</option>
+            <%= for {value, label} <- @categories do %>
+              <option value={value}><%= label %></option>
+            <% end %>
+          </select>
+          <select name="entry[priority]" class="select select-bordered select-sm md:col-span-1">
+            <option value="P2">P2</option>
+            <option value="P1">P1</option>
+            <option value="P0">P0</option>
+          </select>
+          <input type="text" name="entry[notes]" placeholder="Not (opsiyonel)" class="input input-bordered input-sm md:col-span-2" />
+          <button type="submit" class="btn btn-primary btn-sm md:col-span-1">Ekle</button>
+        </div>
+      </form>
+      <p class="text-xs opacity-50 mt-2">Agent'lar için: <code>POST /api/ecosystem</code> — tek giriş veya <code>entries[]</code> listesi.</p>
+    </div>
+  </div>
+
+  <!-- Kategoriler -->
+  <%= for {category, label} <- @categories do %>
+    <% entries = Enum.filter(@entries, &(&1.category == category)) %>
+    <div class="card bg-base-200 shadow-lg mb-6" :if={entries != []}>
+      <div class="card-body">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="card-title text-lg"><%= label %></h2>
+          <span class="badge badge-ghost"><%= length(entries) %> giriş</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th class="w-16">Öncelik</th>
+                <th>İsim</th>
+                <th>URL</th>
+                <th>Notlar</th>
+                <th>Ekleyen</th>
+                <th>Durum</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr :for={entry <- entries}>
+                <td>
+                  <span class={
+                    "badge badge-sm #{case entry.priority do
+                      "P0" -> "badge-error"
+                      "P1" -> "badge-warning"
+                      _ -> "badge-info"
+                    end}"
+                  }>
+                    <%= entry.priority %>
+                  </span>
+                </td>
+                <td class="font-medium"><%= entry.name %></td>
+                <td>
+                  <a href={entry.url} target="_blank" class="link link-hover text-xs font-mono">
+                    <%= String.replace_prefix(entry.url, "https://", "") |> String.slice(0..40) %>
+                  </a>
+                </td>
+                <td class="text-xs opacity-70"><%= entry.notes || "-" %></td>
+                <td>
+                  <span class={
+                    "badge badge-xs #{if entry.added_by == "agent", do: "badge-primary", else: "badge-ghost"}"
+                  }>
+                    <%= entry.added_by %>
+                  </span>
+                </td>
+                <td>
+                  <span class="text-xs opacity-60"><%= entry.status %></span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- İzleme Yöntemi -->
+  <div class="card bg-base-200 shadow-lg mb-8">
+    <div class="card-body">
+      <h2 class="card-title text-lg">📋 İzleme Yöntemi</h2>
+      <ul class="text-sm space-y-1.5 opacity-80">
+        <li>• GitHub'da reposu <strong>Watch → Custom → Releases + Discussions</strong> seç.</li>
+        <li>• Her standardın <strong>latest specification ve changelog</strong> sayfasını haftalık kontrol et.</li>
+        <li>• <strong>Breaking changes, auth/security, transport, schema ve SDK uyumluluğunu</strong> aylık test et.</li>
+        <li>• Emerging protokolleri (ANP, AG-UI, A2UI) <strong>P2</strong> olarak izle; ACP için A2A birleşmesi nedeniyle migration durumunu ayrıca takip et.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="flex flex-wrap justify-center gap-3 mb-8">
+    <a href="/platform" class="btn btn-outline btn-sm">🌐 Platform Haritası</a>
+    <a href="/api/ecosystem" class="btn btn-outline btn-sm">🔌 API (JSON)</a>
+    <a href="/" class="btn btn-ghost btn-sm">🏠 Ana Sayfa</a>
+  </div>
+
+</div>

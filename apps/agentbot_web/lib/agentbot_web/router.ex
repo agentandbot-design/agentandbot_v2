@@ -72,6 +72,11 @@ defmodule AgentbotWeb.Router do
     get("/capabilities/:name", AgentbotWeb.CapabilityController, :show)
     get("/discover", AgentbotWeb.CapabilityController, :discover)
     get("/gaps/top", AgentbotWeb.CapabilityController, :top_gaps)
+
+    # Ecosystem Catalog — ajan ekosistemi takip kataloğu
+    get("/ecosystem", AgentbotWeb.EcosystemController, :index)
+    get("/ecosystem/categories", AgentbotWeb.EcosystemController, :categories)
+    post("/ecosystem", AgentbotWeb.EcosystemController, :create)
     get("/gaps", AgentbotWeb.CapabilityController, :unfulfilled_gaps)
 
     # Provisioning API — gap→recipe→deploy→verify döngüsü (public view)
@@ -139,6 +144,7 @@ defmodule AgentbotWeb.Router do
 
     live("/", DashboardLive, :index)
     live("/platform", PlatformLive, :index)
+    live("/ecosystem", EcosystemLive, :index)
     live("/rooms", RoomListLive, :index)
     live("/rooms/:id", RoomLive, :show)
     live("/gaps", GapsLive, :index)
