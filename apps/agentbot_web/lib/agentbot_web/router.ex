@@ -138,6 +138,7 @@ defmodule AgentbotWeb.Router do
     pipe_through(:browser)
 
     live("/", DashboardLive, :index)
+    live("/platform", PlatformLive, :index)
     live("/rooms", RoomListLive, :index)
     live("/rooms/:id", RoomLive, :show)
     live("/gaps", GapsLive, :index)

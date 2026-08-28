@@ -993,6 +993,12 @@ video {
     --btn-soft-bg: initial;
   }
 
+  .btn-secondary {
+    --btn-color: var(--color-secondary);
+    --btn-fg: var(--color-secondary-content);
+    --btn-soft-bg: initial;
+  }
+
   .btn-success {
     --btn-color: var(--color-success);
     --btn-fg: var(--color-success-content);
@@ -1584,9 +1590,17 @@ video {
       text-decoration-line: underline;
     }
 
+    .link-primary:hover {
+      color: color-mix(in oklab, var(--color-primary) 80%, #000);
+    }
+
     .link-accent:hover {
       color: color-mix(in oklab, var(--color-accent) 80%, #000);
     }
+  }
+
+  .link-primary {
+    color: var(--color-primary);
   }
 
   .link-accent {
@@ -1625,6 +1639,48 @@ video {
 .loading-infinity: [object Object];
 
 .loading-infinity: [object Object];
+
+.alert {
+  border-width: var(--border);
+  border-color: var(--alert-border-color, var(--color-base-200));
+}
+
+@layer daisyui.l1.l2.l3 {
+  .alert {
+    border-style: solid;
+    --alert-border-color: var(--color-base-200);
+    display: grid;
+    align-items: center;
+    gap: calc(0.25rem * 4);
+    border-radius: var(--radius-box);
+    padding-inline: calc(0.25rem * 4);
+    padding-block: calc(0.25rem * 3);
+    color: var(--color-base-content);
+    background-color: var(--alert-color, var(--color-base-200));
+    justify-content: start;
+    justify-items: start;
+    grid-auto-flow: column;
+    grid-template-columns: auto;
+    text-align: start;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    background-size: auto, calc(var(--noise) * 33%);
+    background-image: none, var(--fx-noise);
+    box-shadow: 0 3px 0 -2px oklch(100% 0 0 / calc(var(--depth) * 0.08)) inset, 0 1px color-mix( in oklab, color-mix(in oklab, #000 20%, var(--alert-color, var(--color-base-200))) calc(var(--depth) * 20%), #0000 ), 0 4px 3px -2px oklch(0% 0 0 / calc(var(--depth) * 0.08));
+  }
+
+  .alert:has(:nth-child(2)) {
+    grid-template-columns: auto minmax(auto, 1fr);
+  }
+}
+
+@layer daisyui.l1.l2 {
+  .alert-warning {
+    color: var(--color-warning-content);
+    --alert-border-color: var(--color-warning);
+    --alert-color: var(--color-warning);
+  }
+}
 
 .diff-item-2:after: [object Object];
 
@@ -2499,6 +2555,10 @@ video {
   margin-top: 0.75rem;
 }
 
+.mt-4 {
+  margin-top: 1rem;
+}
+
 .mt-5 {
   margin-top: 1.25rem;
 }
@@ -2508,6 +2568,10 @@ video {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.block {
+  display: block;
 }
 
 .inline-block {
@@ -2660,6 +2724,12 @@ video {
   margin-bottom: calc(0.375rem * var(--tw-space-y-reverse));
 }
 
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+
 .space-y-3 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
   margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
@@ -2684,6 +2754,10 @@ video {
   white-space: pre-wrap;
 }
 
+.rounded {
+  border-radius: 0.25rem;
+}
+
 .rounded-box {
   border-radius: var(--radius-box);
 }
@@ -2704,12 +2778,33 @@ video {
   border-width: 1px;
 }
 
+.border-l-4 {
+  border-left-width: 4px;
+}
+
 .border-t {
   border-top-width: 1px;
 }
 
 .border-t-4 {
   border-top-width: 4px;
+}
+
+.border-l-accent {
+  border-left-color: var(--color-accent);
+}
+
+.border-l-info {
+  border-left-color: var(--color-info);
+}
+
+.border-l-primary {
+  --tw-border-opacity: 1;
+  border-left-color: rgb(99 102 241 / var(--tw-border-opacity));
+}
+
+.border-l-secondary {
+  border-left-color: var(--color-secondary);
 }
 
 .border-t-accent {
@@ -2723,6 +2818,10 @@ video {
 
 .border-t-secondary {
   border-top-color: var(--color-secondary);
+}
+
+.bg-base-100 {
+  background-color: var(--color-base-100);
 }
 
 .bg-base-200 {
@@ -2744,6 +2843,10 @@ video {
 
 .bg-success {
   background-color: var(--color-success);
+}
+
+.p-1 {
+  padding: 0.25rem;
 }
 
 .p-2 {
@@ -2786,6 +2889,11 @@ video {
   padding-bottom: 1rem;
 }
 
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
 .text-center {
   text-align: center;
 }
@@ -2797,6 +2905,11 @@ video {
 .text-2xl {
   font-size: 1.5rem;
   line-height: 2rem;
+}
+
+.text-4xl {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
 }
 
 .text-5xl {
@@ -2910,6 +3023,10 @@ video {
 
 .opacity-80 {
   opacity: 0.8;
+}
+
+.opacity-90 {
+  opacity: 0.9;
 }
 
 .shadow {
@@ -3105,6 +3222,10 @@ body {
 }
 
 @media (min-width: 1024px) {
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .lg\:grid-cols-\[1fr_250px\] {
     grid-template-columns: 1fr 250px;
   }
