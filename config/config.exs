@@ -7,6 +7,11 @@ config :agentbot_core,
 config :agentbot_web,
   generators: [timestamp_type: :utc_datetime]
 
+# mem.agentandbot.com — ortak hafıza servisi (dashboard canlı durum kartı)
+config :agentbot_web, :mem_service,
+  base_url: System.get_env("MEM_BASE_URL", "http://mem-agentandbot:4000"),
+  public_url: System.get_env("MEM_PUBLIC_URL", "https://mem.agentandbot.com")
+
 # Phoenix endpoint konfigürasyonu
 config :agentbot_web, AgentbotWeb.Endpoint,
   url: [host: "localhost", port: 4000],

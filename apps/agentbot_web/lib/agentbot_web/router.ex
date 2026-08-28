@@ -110,6 +110,9 @@ defmodule AgentbotWeb.Router do
     # Provisioning API — deployment register + verify (auth required)
     post("/deployments", AgentbotWeb.ProvisioningController, :create_deployment)
     post("/deployments/:id/verify", AgentbotWeb.ProvisioningController, :verify_deployment)
+
+    # Fusion Search — Mem0 (kişisel) + mem.agentandbot.com (kurumsal) birleşik arama
+    get("/fusion-search", AgentbotWeb.FusionSearchController, :search)
   end
 
   # Agent registration — token üretir (auth yok)

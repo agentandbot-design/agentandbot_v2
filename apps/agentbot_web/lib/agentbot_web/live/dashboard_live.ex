@@ -16,6 +16,7 @@ defmodule AgentbotWeb.DashboardLive do
   alias AgentbotCore.Modules.Registry.ExecutorResource
   alias AgentbotCore.Modules.Security.AgentCredential
   alias AgentbotCore.Repo
+  alias AgentbotWeb.MemStatus
 
   import Ecto.Query
 
@@ -33,7 +34,9 @@ defmodule AgentbotWeb.DashboardLive do
      |> assign(:recent_tasks, recent_tasks())
      |> assign(:capabilities, list_capabilities_with_providers())
      |> assign(:logo_proposals, Artifact.list_by_task(13))
-     |> assign(:resource_summary, ExecutorResource.summary())}
+     |> assign(:resource_summary, ExecutorResource.summary())
+     |> assign(:mem_status, MemStatus.fetch())
+     |> assign(:mem_public_url, MemStatus.public_url())}
   end
 
   @impl true
@@ -51,6 +54,7 @@ defmodule AgentbotWeb.DashboardLive do
     |> assign(:capabilities, list_capabilities_with_providers())
     |> assign(:logo_proposals, Artifact.list_by_task(13))
     |> assign(:resource_summary, ExecutorResource.summary())
+    |> assign(:mem_status, MemStatus.fetch())
   end
 
   defp assign_stats(socket) do
