@@ -37,6 +37,10 @@ defmodule AgentbotWeb.Router do
   # Ana API rehberi — auth yok
   get("/api", AgentbotWeb.ApiGuideController, :index)
 
+  # Web Terminal Protocol v1 — okuma açık, mutasyon Bearer ister
+  post("/api/exec", AgentbotWeb.ExecController, :exec)
+  get("/api/exec/version", AgentbotWeb.ExecController, :version)
+
   # Genel API
   scope "/api" do
     pipe_through(:api)
@@ -144,6 +148,7 @@ defmodule AgentbotWeb.Router do
 
     live("/", DashboardLive, :index)
     live("/platform", PlatformLive, :index)
+    live("/terminal", TerminalLive, :index)
     live("/ecosystem", EcosystemLive, :index)
     live("/rooms", RoomListLive, :index)
     live("/rooms/:id", RoomLive, :show)

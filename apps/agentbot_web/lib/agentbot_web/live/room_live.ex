@@ -53,6 +53,15 @@ defmodule AgentbotWeb.RoomLive do
   # ── Mesaj Gönderme ──────────────────────────────────────────────
 
   @impl true
+  def handle_event("set_sender_name", %{"name" => name}, socket) do
+    {:noreply, assign(socket, :sender_name, name)}
+  end
+
+  def handle_event("set_sender_name", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("send_message", params, socket) do
     content = String.trim(params["content"] || "")
     sender_name = params["sender_name"] || "İnsan"
@@ -179,11 +188,22 @@ defmodule AgentbotWeb.RoomLive do
 
     cond do
       msg.message_type == "system" -> :system
-      String.starts_with?(sender_id, "agent") -> :agent
-      true -> :human
+      sender_id == "human-web" -> :human
+      sender_id == "human" -> :human
+      sender_id == "" -> :human
+      true -> :agent
     end
   end
 
-  @doc "Zaman formatla"
-  def format_time(datetime), do: Calendar.strftime(datetime, "%H:%M")
+  @doc "Zaman formatla — bugün saat, değilse tarih + saat"
+  def format_time(datetime) do
+    today = Date.utc_today()
+    date = DateTime.to_date(datetime)
+
+    if Date.compare(date, today) == :eq do
+      Calendar.strftime(datetime, "%H:%M")
+    else
+      Calendar.strftime(datetime, "%d.%m %H:%M")
+    end
+  end
 end

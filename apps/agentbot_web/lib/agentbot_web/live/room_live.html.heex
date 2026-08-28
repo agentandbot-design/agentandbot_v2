@@ -31,7 +31,7 @@
     <!-- ═══ Mesaj Alanı ═══ -->
     <div>
       <!-- Messages -->
-      <div id="messages" class="flex flex-col gap-2 mb-24 min-h-[400px]" phx-update="stream">
+      <div id="messages" phx-hook="ChatScroll" class="flex flex-col gap-2 mb-24 min-h-[400px]" phx-update="stream">
         <div :for={{dom_id, msg} <- @streams.messages} id={dom_id}>
           <%= case msg_type(msg) do %>
             <% :agent -> %>
@@ -40,7 +40,7 @@
                 <div class="chat-header text-xs opacity-60 mb-1">
                   🤖 <%= msg.sender_name || msg.sender_id %>
                 </div>
-                <div class="chat-bubble bg-primary text-primary-content">
+                <div class="chat-bubble bg-primary text-primary-content whitespace-pre-wrap break-words max-w-full">
                   <%= msg.content %>
                 </div>
                 <div class="chat-footer opacity-50 text-xs mt-1">
@@ -62,7 +62,7 @@
                 <div class="chat-header text-xs opacity-60 mb-1">
                   👤 <%= msg.sender_name || msg.sender_id %>
                 </div>
-                <div class="chat-bubble bg-neutral-700">
+                <div class="chat-bubble bg-neutral-700 whitespace-pre-wrap break-words max-w-full">
                   <%= msg.content %>
                 </div>
                 <div class="chat-footer opacity-50 text-xs mt-1">
@@ -135,8 +135,8 @@
 <div class="fixed bottom-0 left-0 right-0 bg-neutral-800 border-t border-neutral-700 p-4 z-40">
   <div class="max-w-7xl mx-auto">
     <.form for={@form} phx-submit="send_message" class="flex gap-2">
-      <input type="text" name="sender_name" value={@sender_name} class="input input-bordered input-sm w-28" />
-      <input type="text" name="content" placeholder="Mesajını yaz..." class="input input-bordered flex-1" required autocomplete="off" />
+      <input id="sender_name_input" type="text" name="sender_name" value={@sender_name} phx-hook="RememberName" class="input input-bordered input-sm w-28" placeholder="Adın" />
+      <input type="text" name="content" placeholder="Mesajını yaz... (Shift+Enter yeni satır)" class="input input-bordered flex-1" required autocomplete="off" />
       <button type="submit" class="btn btn-primary">Gönder</button>
     </.form>
   </div>
