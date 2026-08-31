@@ -271,6 +271,33 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   @impl true
+  def handle_event("move_task_to", %{"id" => id, "target_column" => target_column} = params, socket) do
+    task_id = String.to_integer(id)
+    force = params["force"] == "true"
+
+    case Task.update_status(task_id, target_column, force: force, actor: "drag-drop") do
+      {:ok, _task} ->
+        {:noreply,
+         socket
+         |> assign_tasks()
+         |> put_flash(:info, "Kart sürüklenerek taşındı → #{target_column}")}
+
+      {:error, :artifact_required} ->
+        {:noreply,
+         socket
+         |> assign_tasks()
+         |> assign(:show_artifact_modal, task_id)
+         |> put_flash(:error, "Tamamlanabilmesi için önce bir Artifact üretilmiş olmalıdır.")}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> assign_tasks()
+         |> put_flash(:error, "Sürükle bırak başarısız.")}
+    end
+  end
+
+  @impl true
   def handle_event("open_artifact_modal", %{"id" => id}, socket) do
     {:noreply, assign(socket, :show_artifact_modal, String.to_integer(id))}
   end

@@ -215,11 +215,16 @@
       </div>
     <% end %>
 
-    <!-- KANBAN SÜTUNLARI -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 items-start">
+    <!-- KANBAN SÜTUNLARI (Sortable.js destekli) -->
+    <div id="kanban-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 items-start">
       <%= for col <- @columns do %>
         <% tasks = Map.get(@tasks_by_column, col.id, []) %>
-        <div class="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 flex flex-col min-h-[480px]">
+        <div
+          id={"kanban-column-#{col.id}"}
+          data-status={col.id}
+          phx-hook="KanbanSortable"
+          class="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 flex flex-col min-h-[480px]"
+        >
           <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-neutral-800">
             <div class="flex items-center gap-2 font-semibold text-sm text-neutral-200">
               <span><%= col.icon %></span>
@@ -230,10 +235,10 @@
             </span>
           </div>
 
-          <div class="flex flex-col gap-2.5 flex-1">
+          <div class="flex flex-col gap-2.5 flex-1 kanban-cards">
             <%= if Enum.empty?(tasks) do %>
               <div class="flex-1 flex items-center justify-center border border-dashed border-neutral-800/80 p-4 text-center">
-                <span class="text-xs text-neutral-600">Bu aşamada kart yok</span>
+                <span class="text-xs text-neutral-600">Bu aşamada kart yok — sürükle bırak</span>
               </div>
             <% else %>
               <%= for task <- tasks do %>
@@ -242,7 +247,11 @@
                 <% child_count = length(task.children || []) %>
                 <% comment_count = length(task.comments || []) %>
                 <% tag_list = Task.parse_tag_list(task.tags) %>
-                <div class="bg-neutral-800/90 hover:bg-neutral-800 border border-neutral-700/70 hover:border-indigo-500/50 rounded-xl p-3 shadow-sm transition flex flex-col justify-between group relative">
+                <div
+                  id={"task-#{task.id}"}
+                  data-task-id={task.id}
+                  class="kanban-card bg-neutral-800/90 hover:bg-neutral-800 border border-neutral-700/70 hover:border-indigo-500/50 rounded-xl p-3 shadow-sm transition flex flex-col justify-between group relative cursor-grab active:cursor-grabbing"
+                >
                   <div>
                     <div class="flex items-center justify-between gap-1 mb-2">
                       <div class="flex items-center gap-1.5 flex-wrap">
@@ -849,4 +858,42 @@
       </div>
     </div>
   <% end %>
+
+  <!-- Sortable.js (13KB, sıfır dependency) + LiveView hook — sürükle bırak -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <script>
+    window.KanbanSortable = {
+      mounted() {
+        if (window.Sortable && !this._sortable) {
+          this._sortable = window.Sortable.create(this.el, {
+            group: "kanban",
+            animation: 150,
+            ghostClass: "opacity-30",
+            dragClass: "rotate-1",
+            handle: ".kanban-card",
+            onEnd: (evt) => {
+              const itemEl = evt.item;
+              const targetEl = evt.to;
+              const taskId = itemEl.dataset.taskId;
+              const newStatus = targetEl.dataset.status;
+              const oldStatus = evt.from.dataset.status;
+
+              if (newStatus && oldStatus !== newStatus) {
+                this.pushEvent("move_task_to", {
+                  id: taskId,
+                  target_column: newStatus
+                });
+              }
+            }
+          });
+        }
+      },
+      destroyed() {
+        if (this._sortable) {
+          this._sortable.destroy();
+          this._sortable = null;
+        }
+      }
+    };
+  </script>
 </div>
