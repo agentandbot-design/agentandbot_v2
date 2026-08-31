@@ -108,13 +108,23 @@ defmodule AgentbotWeb.TaskController do
   # ── STATUS UPDATE ─────────────────────────────────
 
   @doc "Agent task durumunu güncelle"
-  def update_status(conn, %{"task_id" => task_id, "status" => status}) do
-    case Task.update_status(task_id, status) do
+  def update_status(conn, %{"task_id" => task_id, "status" => status} = params) do
+    force = params["force"] == true or params["force"] == "true"
+
+    case Task.update_status(task_id, status, force: force) do
       {:ok, task} ->
         json(conn, %{task: task})
 
+      {:error, :artifact_required} ->
+        conn
+        |> put_status(422)
+        |> json(%{
+          error: "Artifact zorunludur: Task'ı 'completed' yapmadan önce POST /api/tasks/:id/artifact ile artifact üretilmelidir.",
+          code: "artifact_required"
+        })
+
       {:error, _} ->
-        conn |> put_status(422) |> json(%{error: "Durum güuncellenemedi"})
+        conn |> put_status(422) |> json(%{error: "Durum güncellenemedi"})
     end
   end
 

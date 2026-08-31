@@ -60,6 +60,10 @@ defmodule AgentbotWeb.Router do
     get("/mcp-servers/:name", AgentbotWeb.McpRegistryController, :show)
     get("/mcp-servers/search/:tag", AgentbotWeb.McpRegistryController, :search)
 
+    # Feed API — merkezi içerik akışı (public)
+    get("/feed", AgentbotWeb.RoomController, :feed)
+    get("/feed/:site", AgentbotWeb.RoomController, :feed)
+
     # Council — konsey: soru → N agent → görüşler
     get("/councils", AgentbotWeb.CouncilController, :index)
     get("/council/:id", AgentbotWeb.CouncilController, :show)
@@ -147,6 +151,7 @@ defmodule AgentbotWeb.Router do
     pipe_through(:browser)
 
     live("/", DashboardLive, :index)
+    live("/kanban", KanbanLive, :index)
     live("/platform", PlatformLive, :index)
     live("/terminal", TerminalLive, :index)
     live("/ecosystem", EcosystemLive, :index)

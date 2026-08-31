@@ -1,8 +1,8 @@
 defmodule AgentbotCore.Modules.Marketplace.Task do
   @moduledoc """
-  Task — operasyonel birim. Agent'ın yaptığı iş.
+  Task — operasyonel birim. Agent veya insanın yaptığı iş.
 
-  Lifecycle: open → assigned → in_progress → completed | failed
+  Lifecycle: open → assigned → in_progress → review → completed | failed | blocked
 
   Bauhaus: sadece gerekli alanlar. Chat değil, iş.
   """
@@ -28,11 +28,14 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
              :inserted_at,
              :updated_at
            ]}
+  alias AgentbotCore.PubSub
   alias AgentbotCore.Repo
   alias AgentbotCore.Workers.TaskProcessor
 
   schema "tasks" do
     belongs_to(:room, AgentbotCore.Modules.Chat.Room)
+    has_many(:artifacts, AgentbotCore.Modules.Marketplace.Artifact)
+
     field(:created_by, :string)
     field(:assigned_to, :string)
     field(:capability, :string)
@@ -68,9 +71,19 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
 
   @doc "Task oluştur"
   def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> Repo.insert()
+    result =
+      %__MODULE__{}
+      |> changeset(attrs)
+      |> Repo.insert()
+
+    case result do
+      {:ok, task} ->
+        broadcast_change("task_created", task)
+        {:ok, task}
+
+      error ->
+        error
+    end
   end
 
   @doc "Task'ı agent'a ata"
@@ -85,7 +98,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
       {:ok, t} ->
         # Oban işini kuyruğa at
         Oban.insert(TaskProcessor.new(%{task_id: t.id}))
-
+        broadcast_change("task_updated", t)
         {:ok, t}
 
       error ->
@@ -98,7 +111,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
 
   Sadece status: open veya assigned olan task'lar claim edilebilir.
   Eğer task zaten başka bir agent tarafından claim edilmişse ve hala active ise
-  reject edilir. Claims tablosu: agent_id + task_id unique.
+  reject edilir.
   """
   def claim(task_id, agent_id) do
     task = Repo.get(__MODULE__, task_id)
@@ -114,32 +127,102 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
         {:error, :locked}
 
       true ->
-        task
-        |> changeset(%{assigned_to: agent_id, status: "in_progress"})
-        |> Repo.update()
+        result =
+          task
+          |> changeset(%{assigned_to: agent_id, status: "in_progress"})
+          |> Repo.update()
+
+        case result do
+          {:ok, t} ->
+            broadcast_change("task_updated", t)
+            {:ok, t}
+
+          error ->
+            error
+        end
     end
   end
 
-  @doc "Task durumunu güncelle"
-  def update_status(task_id, status) do
-    params =
-      if status in ["completed", "failed"] do
-        %{status: status, completed_at: DateTime.utc_now()}
-      else
-        %{status: status}
+  @doc """
+  Task durumunu güncelle.
+
+  Güvenlik Guard'ı: `status == "completed"` yapılırken task'a ait en az bir Artifact
+  bulunması zorunludur. Force modu (`opts[:force] == true`) sadece istisnai durumlar içindir.
+  """
+  def update_status(task_id, status, opts \\ []) do
+    task = Repo.get!(__MODULE__, task_id) |> Repo.preload(:artifacts)
+
+    # Artifact guard kontrolü
+    if status == "completed" and not Keyword.get(opts, :force, false) and Enum.empty?(task.artifacts) do
+      {:error, :artifact_required}
+    else
+      params =
+        if status in ["completed", "failed"] do
+          %{status: status, completed_at: DateTime.utc_now()}
+        else
+          %{status: status}
+        end
+
+      result =
+        task
+        |> changeset(params)
+        |> Repo.update()
+
+      case result do
+        {:ok, updated_task} ->
+          broadcast_change("task_updated", updated_task)
+          {:ok, updated_task}
+
+        error ->
+          error
+      end
+    end
+  end
+
+  @doc "Task sil"
+  def delete(task_id) do
+    task = Repo.get!(__MODULE__, task_id)
+    result = Repo.delete(task)
+
+    case result do
+      {:ok, deleted} ->
+        broadcast_change("task_deleted", deleted)
+        {:ok, deleted}
+
+      error ->
+        error
+    end
+  end
+
+  @doc "Tüm task'ları listele (opsiyonel filtrelerle)"
+  def list_all(opts \\ []) do
+    query = from(t in __MODULE__, order_by: [desc: t.priority, desc: t.inserted_at])
+
+    query =
+      case Keyword.get(opts, :status) do
+        nil -> query
+        status -> from(t in query, where: t.status == ^status)
       end
 
+    query
+    |> preload(:artifacts)
+    |> Repo.all()
+  end
+
+  @doc "Kanban görünümü için tüm task'ları getir"
+  def list_for_kanban do
     __MODULE__
-    |> Repo.get!(task_id)
-    |> changeset(params)
-    |> Repo.update()
+    |> order_by([t], desc: t.priority, desc: t.updated_at, desc: t.inserted_at)
+    |> preload(:artifacts)
+    |> Repo.all()
   end
 
   @doc "Capability'ye göre açık task'ları listele"
   def list_open_by_capability(capability) do
     __MODULE__
-    |> where([t], t.capability == ^capability and t.status == "open")
+    |> where([t], t.capability == ^capability and t.status in ["open", "ready"])
     |> order_by([t], desc: t.priority, asc: t.inserted_at)
+    |> preload(:artifacts)
     |> Repo.all()
   end
 
@@ -148,6 +231,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     __MODULE__
     |> where([t], t.assigned_to == ^agent_id)
     |> order_by([t], desc: t.inserted_at)
+    |> preload(:artifacts)
     |> Repo.all()
   end
 
@@ -156,9 +240,23 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     __MODULE__
     |> where([t], t.room_id == ^room_id)
     |> order_by([t], desc: t.inserted_at)
+    |> preload(:artifacts)
     |> Repo.all()
   end
 
   @doc "ID ile task bul"
-  def get!(id), do: Repo.get!(__MODULE__, id)
+  def get!(id), do: Repo.get!(__MODULE__, id) |> Repo.preload(:artifacts)
+
+  defp broadcast_change(event, task) do
+    PubSub.broadcast("kanban:tasks", event, %{
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      assigned_to: task.assigned_to,
+      capability: task.capability,
+      priority: task.priority
+    })
+  rescue
+    _ -> :ok
+  end
 end
