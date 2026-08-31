@@ -6,7 +6,7 @@
         <span>📋</span> AgentAndBot Kanban Board
       </h1>
       <p class="text-neutral-400 text-sm mt-1">
-        Tüm operasyonel görevlerin, problemlerin ve açık noktaların merkezi takip panosu.
+        Takımlar için açık (public) veya kapalı (özel) görev ve problem takip panosu.
       </p>
     </div>
 
@@ -15,60 +15,96 @@
         phx-click="open_new_modal"
         class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition cursor-pointer"
       >
-        <span>➕</span> Yeni Kart / Problem Ekle
+        <span>➕</span> Yeni Kart Ekle
       </button>
     </div>
   </div>
 
   <!-- Metrik Kartları -->
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-3">
-      <div class="text-xs uppercase tracking-wider text-neutral-400 font-medium">Toplam İş</div>
-      <div class="text-2xl font-bold text-neutral-100 mt-1"><%= @stats.total %></div>
+  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 mb-5">
+    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-neutral-400 font-medium">Toplam</div>
+      <div class="text-xl font-bold text-neutral-100 mt-0.5"><%= @stats.total %></div>
     </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-3">
-      <div class="text-xs uppercase tracking-wider text-sky-400 font-medium">📥 Açık / Bekleyen</div>
-      <div class="text-2xl font-bold text-sky-300 mt-1"><%= @stats.open %></div>
+    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-sky-400 font-medium">📥 Açık</div>
+      <div class="text-xl font-bold text-sky-300 mt-0.5"><%= @stats.open %></div>
     </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-3">
-      <div class="text-xs uppercase tracking-wider text-amber-400 font-medium">⚙️ Sürüyor</div>
-      <div class="text-2xl font-bold text-amber-300 mt-1"><%= @stats.in_progress %></div>
+    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-amber-400 font-medium">⚙️ Sürüyor</div>
+      <div class="text-xl font-bold text-amber-300 mt-0.5"><%= @stats.in_progress %></div>
     </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-3">
-      <div class="text-xs uppercase tracking-wider text-purple-400 font-medium">🔍 İnceleme</div>
-      <div class="text-2xl font-bold text-purple-300 mt-1"><%= @stats.review %></div>
+    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-purple-400 font-medium">🔍 İnceleme</div>
+      <div class="text-xl font-bold text-purple-300 mt-0.5"><%= @stats.review %></div>
     </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-3">
-      <div class="text-xs uppercase tracking-wider text-emerald-400 font-medium">✅ Tamamlandı</div>
-      <div class="text-2xl font-bold text-emerald-300 mt-1"><%= @stats.completed %></div>
+    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-emerald-400 font-medium">✅ Biten</div>
+      <div class="text-xl font-bold text-emerald-300 mt-0.5"><%= @stats.completed %></div>
     </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-3">
-      <div class="text-xs uppercase tracking-wider text-rose-400 font-medium">⛔ Engelli</div>
-      <div class="text-2xl font-bold text-rose-300 mt-1"><%= @stats.blocked %></div>
+    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-rose-400 font-medium">⛔ Engelli</div>
+      <div class="text-xl font-bold text-rose-300 mt-0.5"><%= @stats.blocked %></div>
+    </div>
+    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-emerald-400 font-medium">🌐 Açık (Public)</div>
+      <div class="text-xl font-bold text-emerald-400 mt-0.5"><%= @stats.public %></div>
+    </div>
+    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
+      <div class="text-[11px] uppercase tracking-wider text-amber-400 font-medium">🔒 Kapalı (Özel)</div>
+      <div class="text-xl font-bold text-amber-400 mt-0.5"><%= @stats.private %></div>
     </div>
   </div>
 
   <!-- Filtre & Arama Çubuğu -->
-  <div class="bg-neutral-800/60 border border-neutral-700/50 rounded-xl p-3.5 mb-6 flex flex-wrap items-center justify-between gap-3">
-    <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+  <div class="bg-neutral-800/60 border border-neutral-700/50 rounded-xl p-3 mb-5 flex flex-wrap items-center justify-between gap-2.5">
+    <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[300px]">
       <!-- Arama -->
-      <form phx-change="search" class="relative flex-1 min-w-[200px] max-w-md">
+      <form phx-change="search" class="relative flex-1 min-w-[180px] max-w-sm">
         <input
           type="text"
           name="q"
           value={@search_query}
-          placeholder="Kartlarda ara (başlık, açıklama, ajan)..."
-          class="w-full bg-neutral-900/80 border border-neutral-700 rounded-lg px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+          placeholder="Ara (başlık, açıklama, takım, ajan)..."
+          class="w-full bg-neutral-900/80 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
           autocomplete="off"
         />
       </form>
 
+      <!-- Takım Filtresi -->
+      <form phx-change="filter_team" class="flex items-center gap-1">
+        <span class="text-xs text-neutral-400">Takım:</span>
+        <select
+          name="team"
+          class="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
+        >
+          <option value="all" selected={@filter_team == "all"}>👥 Tüm Takımlar</option>
+          <%= for {name, id} <- @teams do %>
+            <option value={id} selected={@filter_team == id}><%= name %></option>
+          <% end %>
+        </select>
+      </form>
+
+      <!-- Görünürlük Filtresi -->
+      <form phx-change="filter_visibility" class="flex items-center gap-1">
+        <span class="text-xs text-neutral-400">Erişim:</span>
+        <select
+          name="visibility"
+          class="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
+        >
+          <option value="all" selected={@filter_visibility == "all"}>Tümü</option>
+          <%= for {name, id} <- @visibilities do %>
+            <option value={id} selected={@filter_visibility == id}><%= name %></option>
+          <% end %>
+        </select>
+      </form>
+
       <!-- Atanan Filtresi -->
-      <form phx-change="filter_assignee" class="flex items-center gap-1.5">
+      <form phx-change="filter_assignee" class="flex items-center gap-1">
         <span class="text-xs text-neutral-400">Atanan:</span>
         <select
           name="assignee"
-          class="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
+          class="bg-neutral-900 border border-neutral-700 rounded-lg px-2 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
         >
           <option value="all" selected={@filter_assignee == "all"}>Tümü</option>
           <option value="unassigned" selected={@filter_assignee == "unassigned"}>Atanmamış</option>
@@ -78,12 +114,12 @@
         </select>
       </form>
 
-      <!-- Capability Filtresi -->
-      <form phx-change="filter_capability" class="flex items-center gap-1.5">
+      <!-- Kategori Filtresi -->
+      <form phx-change="filter_capability" class="flex items-center gap-1">
         <span class="text-xs text-neutral-400">Kategori:</span>
         <select
           name="capability"
-          class="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
+          class="bg-neutral-900 border border-neutral-700 rounded-lg px-2 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
         >
           <option value="all" selected={@filter_capability == "all"}>Tümü</option>
           <%= for {name, cap} <- @capabilities do %>
@@ -95,17 +131,17 @@
 
     <div class="text-xs text-neutral-500 flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-      Canlı PubSub Senkronize
+      Canlı PubSub
     </div>
   </div>
 
   <!-- KANBAN SÜTUNLARI -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-start">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 items-start">
     <%= for col <- @columns do %>
       <% tasks = Map.get(@tasks_by_column, col.id, []) %>
-      <div class="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 flex flex-col min-h-[450px]">
+      <div class="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 flex flex-col min-h-[480px]">
         <!-- Sütun Başlığı -->
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800">
+        <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-neutral-800">
           <div class="flex items-center gap-2 font-semibold text-sm text-neutral-200">
             <span><%= col.icon %></span>
             <span><%= col.title %></span>
@@ -116,7 +152,7 @@
         </div>
 
         <!-- Kartlar Listesi -->
-        <div class="flex flex-col gap-3 flex-1">
+        <div class="flex flex-col gap-2.5 flex-1">
           <%= if Enum.empty?(tasks) do %>
             <div class="flex-1 flex items-center justify-center border border-dashed border-neutral-800/80 rounded-lg p-4 text-center">
               <span class="text-xs text-neutral-600">Bu aşamada kart yok</span>
@@ -124,21 +160,41 @@
           <% else %>
             <%= for task <- tasks do %>
               <% {p_label, p_class} = priority_badge(task.priority) %>
-              <div class="bg-neutral-800/90 hover:bg-neutral-800 border border-neutral-700/70 hover:border-neutral-600 rounded-xl p-3.5 shadow-sm transition flex flex-col justify-between group">
+              <% is_private = task.visibility == "private" %>
+              <div class="bg-neutral-800/90 hover:bg-neutral-800 border border-neutral-700/70 hover:border-indigo-500/50 rounded-xl p-3 shadow-sm transition flex flex-col justify-between group relative">
                 <div>
-                  <!-- Kart Üst Başlığı (Badge & ID) -->
+                  <!-- Kart Üst Başlığı (Badge, Takım, Görünürlük, ID) -->
                   <div class="flex items-center justify-between gap-1 mb-2">
-                    <span class={"text-[10px] font-semibold px-2 py-0.5 rounded border #{p_class}"}>
-                      <%= p_label %>
-                    </span>
-                    <span class="text-[11px] font-mono text-neutral-400 bg-neutral-900/60 px-1.5 py-0.5 rounded">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class={"text-[10px] font-semibold px-1.5 py-0.5 rounded border #{p_class}"}>
+                        <%= p_label %>
+                      </span>
+                      <span class="text-[10px] bg-neutral-900/80 text-neutral-300 border border-neutral-700 px-1.5 py-0.5 rounded">
+                        <%= team_label(task.team) %>
+                      </span>
+                      <button
+                        phx-click="toggle_visibility"
+                        phx-value-id={task.id}
+                        title={if is_private, do: "Kapalı (Takıma Özel) — Tıkla Açık Yap", else: "Açık (Public) — Tıkla Kapalı Yap"}
+                        class={"text-[10px] px-1.5 py-0.5 rounded border transition cursor-pointer #{if is_private, do: "bg-amber-950/60 text-amber-300 border-amber-800", else: "bg-emerald-950/50 text-emerald-300 border-emerald-800"}"}
+                      >
+                        <%= if is_private, do: "🔒 Özel", else: "🌐 Açık" %>
+                      </button>
+                    </div>
+
+                    <span class="text-[11px] font-mono text-neutral-400 bg-neutral-900/80 px-1.5 py-0.5 rounded">
                       #<%= task.id %>
                     </span>
                   </div>
 
-                  <!-- Başlık -->
-                  <h3 class="text-sm font-semibold text-neutral-100 leading-snug mb-1.5">
-                    <%= task.title %>
+                  <!-- Başlık (Tıklayınca Düzenleme Modalı Açılır) -->
+                  <h3
+                    phx-click="open_edit_modal"
+                    phx-value-id={task.id}
+                    class="text-sm font-semibold text-neutral-100 hover:text-indigo-400 leading-snug mb-1.5 cursor-pointer transition flex items-center justify-between"
+                  >
+                    <span><%= task.title %></span>
+                    <span class="opacity-0 group-hover:opacity-100 text-neutral-500 text-xs ml-1">✏️</span>
                   </h3>
 
                   <!-- Açıklama -->
@@ -149,7 +205,7 @@
                   <% end %>
 
                   <!-- Kategori & Atanan -->
-                  <div class="flex flex-wrap items-center gap-1.5 mb-3 text-[11px]">
+                  <div class="flex flex-wrap items-center gap-1.5 mb-2.5 text-[11px]">
                     <span class="bg-indigo-950/60 text-indigo-300 border border-indigo-800/60 px-2 py-0.5 rounded-md font-mono">
                       🏷️ <%= task.capability %>
                     </span>
@@ -166,15 +222,15 @@
                   </div>
 
                   <!-- Artifact Durumu -->
-                  <div class="text-[11px] mb-3">
+                  <div class="text-[11px] mb-2">
                     <%= if not Enum.empty?(task.artifacts) do %>
-                      <div class="bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 px-2 py-1 rounded flex items-center justify-between">
-                        <span>📦 <%= length(task.artifacts) %> Artifact Kayıtlı</span>
-                        <span class="text-[10px] opacity-80">Doğrulandı ✓</span>
+                      <div class="bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 px-2 py-0.5 rounded flex items-center justify-between text-[10px]">
+                        <span>📦 <%= length(task.artifacts) %> Artifact</span>
+                        <span class="opacity-80">Doğrulandı ✓</span>
                       </div>
                     <% else %>
                       <%= if task.status == "completed" do %>
-                        <div class="bg-amber-950/40 border border-amber-800/60 text-amber-400 px-2 py-1 rounded text-[10px]">
+                        <div class="bg-amber-950/40 border border-amber-800/60 text-amber-400 px-2 py-0.5 rounded text-[10px]">
                           ⚠️ Artifactsız Tamamlanmış
                         </div>
                       <% end %>
@@ -182,8 +238,8 @@
                   </div>
                 </div>
 
-                <!-- Aksiyonlar / Geçiş Butonları -->
-                <div class="pt-2.5 border-t border-neutral-700/50 flex items-center justify-between gap-1 text-xs">
+                <!-- Aksiyonlar / Hızlı Düzenle & Geçiş Butonları -->
+                <div class="pt-2 border-t border-neutral-700/50 flex items-center justify-between gap-1 text-xs">
                   <div class="flex items-center gap-1 flex-wrap">
                     <%= if task.status != "open" do %>
                       <button
@@ -191,7 +247,7 @@
                         phx-value-id={task.id}
                         phx-value-status="open"
                         title="Açık / Backlog'a taşı"
-                        class="p-1 text-neutral-400 hover:text-sky-300 hover:bg-neutral-700 rounded transition"
+                        class="p-1 text-neutral-400 hover:text-sky-300 hover:bg-neutral-700 rounded transition cursor-pointer"
                       >
                         📥
                       </button>
@@ -203,7 +259,7 @@
                         phx-value-id={task.id}
                         phx-value-status="in_progress"
                         title="Sürüyor (In Progress) yap"
-                        class="p-1 text-neutral-400 hover:text-amber-300 hover:bg-neutral-700 rounded transition"
+                        class="p-1 text-neutral-400 hover:text-amber-300 hover:bg-neutral-700 rounded transition cursor-pointer"
                       >
                         ⚙️
                       </button>
@@ -215,7 +271,7 @@
                         phx-value-id={task.id}
                         phx-value-status="review"
                         title="İnceleme (Review) aşamasına al"
-                        class="p-1 text-neutral-400 hover:text-purple-300 hover:bg-neutral-700 rounded transition"
+                        class="p-1 text-neutral-400 hover:text-purple-300 hover:bg-neutral-700 rounded transition cursor-pointer"
                       >
                         🔍
                       </button>
@@ -226,7 +282,7 @@
                         phx-click="open_artifact_modal"
                         phx-value-id={task.id}
                         title="Artifact ekle ve tamamla"
-                        class="p-1 text-neutral-400 hover:text-emerald-300 hover:bg-neutral-700 rounded transition"
+                        class="p-1 text-neutral-400 hover:text-emerald-300 hover:bg-neutral-700 rounded transition cursor-pointer"
                       >
                         ✅
                       </button>
@@ -238,22 +294,32 @@
                         phx-value-id={task.id}
                         phx-value-status="blocked"
                         title="Engellendi / İptal olarak işaretle"
-                        class="p-1 text-neutral-400 hover:text-rose-400 hover:bg-neutral-700 rounded transition"
+                        class="p-1 text-neutral-400 hover:text-rose-400 hover:bg-neutral-700 rounded transition cursor-pointer"
                       >
                         ⛔
                       </button>
                     <% end %>
                   </div>
 
-                  <button
-                    phx-click="delete_task"
-                    phx-value-id={task.id}
-                    data-confirm="Bu kartı silmek istediğinize emin misiniz?"
-                    title="Kartı Sil"
-                    class="p-1 text-neutral-500 hover:text-rose-400 hover:bg-neutral-700 rounded transition"
-                  >
-                    🗑️
-                  </button>
+                  <div class="flex items-center gap-1">
+                    <button
+                      phx-click="open_edit_modal"
+                      phx-value-id={task.id}
+                      title="Kartı Düzenle"
+                      class="p-1 text-neutral-400 hover:text-indigo-300 hover:bg-neutral-700 rounded transition cursor-pointer"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      phx-click="delete_task"
+                      phx-value-id={task.id}
+                      data-confirm="Bu kartı silmek istediğinize emin misiniz?"
+                      title="Kartı Sil"
+                      class="p-1 text-neutral-500 hover:text-rose-400 hover:bg-neutral-700 rounded transition cursor-pointer"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
               </div>
             <% end %>
@@ -279,7 +345,7 @@
           </button>
         </div>
 
-        <form phx-submit="save_task" class="flex flex-col gap-4">
+        <form phx-submit="save_new_task" class="flex flex-col gap-4">
           <div>
             <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
               Kart Başlığı *
@@ -304,6 +370,36 @@
               placeholder="Problemin kök nedeni, hedefler ve teslim edilmesi gereken artifact formatı..."
               class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
             ><%= @new_task["description"] %></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                Takım / Kapsam
+              </label>
+              <select
+                name="task[team]"
+                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
+              >
+                <%= for {name, id} <- @teams do %>
+                  <option value={id} selected={@new_task["team"] == id}><%= name %></option>
+                <% end %>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                Görünürlük (Açık / Kapalı)
+              </label>
+              <select
+                name="task[visibility]"
+                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
+              >
+                <%= for {name, id} <- @visibilities do %>
+                  <option value={id} selected={@new_task["visibility"] == id}><%= name %></option>
+                <% end %>
+              </select>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -337,7 +433,7 @@
 
             <div>
               <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
-                Atanan Ajan / İnsan
+                Atanan
               </label>
               <select
                 name="task[assigned_to]"
@@ -354,16 +450,181 @@
             <button
               type="button"
               phx-click="close_modal"
-              class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-sm transition"
+              class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-sm transition cursor-pointer"
             >
               Vazgeç
             </button>
             <button
               type="submit"
-              class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-sm transition shadow-lg shadow-indigo-600/30"
+              class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer"
             >
               Kartı Kaydet
             </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- KART DÜZENLEME (EDIT) MODALI -->
+  <%= if @show_edit_modal and @editing_task do %>
+    <div class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-neutral-900 border border-indigo-700/60 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-neutral-800">
+          <h2 class="text-lg font-bold text-neutral-100 flex items-center gap-2">
+            <span>✏️</span> Kartı Düzenle <span class="text-xs font-mono text-neutral-400">#<%= @editing_task["id"] %></span>
+          </h2>
+          <button
+            phx-click="close_modal"
+            class="text-neutral-400 hover:text-neutral-200 text-lg p-1"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form phx-submit="update_existing_task" class="flex flex-col gap-4">
+          <input type="hidden" name="task[id]" value={@editing_task["id"]} />
+
+          <div>
+            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              Kart Başlığı *
+            </label>
+            <input
+              type="text"
+              name="task[title]"
+              value={@editing_task["title"]}
+              required
+              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              Açıklama / Detaylar
+            </label>
+            <textarea
+              name="task[description]"
+              rows="3"
+              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+            ><%= @editing_task["description"] %></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                Takım / Kapsam
+              </label>
+              <select
+                name="task[team]"
+                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
+              >
+                <%= for {name, id} <- @teams do %>
+                  <option value={id} selected={@editing_task["team"] == id}><%= name %></option>
+                <% end %>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                Görünürlük (Açık / Kapalı)
+              </label>
+              <select
+                name="task[visibility]"
+                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
+              >
+                <%= for {name, id} <- @visibilities do %>
+                  <option value={id} selected={@editing_task["visibility"] == id}><%= name %></option>
+                <% end %>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                Kategori
+              </label>
+              <select
+                name="task[capability]"
+                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
+              >
+                <%= for {name, cap} <- @capabilities do %>
+                  <option value={cap} selected={@editing_task["capability"] == cap}><%= name %></option>
+                <% end %>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                Öncelik
+              </label>
+              <select
+                name="task[priority]"
+                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
+              >
+                <option value="2" selected={@editing_task["priority"] == "2"}>P0 Acil</option>
+                <option value="1" selected={@editing_task["priority"] == "1"}>P1 Yüksek</option>
+                <option value="0" selected={@editing_task["priority"] == "0"}>P2 Normal</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+                Durum (Kolon)
+              </label>
+              <select
+                name="task[status]"
+                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
+              >
+                <option value="open" selected={@editing_task["status"] in ["open", "ready", "assigned"]}>📥 Açık</option>
+                <option value="in_progress" selected={@editing_task["status"] == "in_progress"}>⚙️ Sürüyor</option>
+                <option value="review" selected={@editing_task["status"] == "review"}>🔍 İnceleme</option>
+                <option value="completed" selected={@editing_task["status"] == "completed"}>✅ Tamamlandı</option>
+                <option value="blocked" selected={@editing_task["status"] in ["blocked", "failed"]}>⛔ Engelli</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
+              Atanan Ajan / İnsan
+            </label>
+            <select
+              name="task[assigned_to]"
+              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
+            >
+              <%= for {name, id} <- @assignees do %>
+                <option value={id} selected={@editing_task["assigned_to"] == id}><%= name %></option>
+              <% end %>
+            </select>
+          </div>
+
+          <div class="flex items-center justify-between pt-4 border-t border-neutral-800 mt-2">
+            <button
+              type="button"
+              phx-click="delete_task"
+              phx-value-id={@editing_task["id"]}
+              data-confirm="Bu kartı silmek istediğinize emin misiniz?"
+              class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-lg text-xs transition cursor-pointer"
+            >
+              🗑️ Kartı Sil
+            </button>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                phx-click="close_modal"
+                class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-sm transition cursor-pointer"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-sm transition shadow-lg shadow-indigo-600/30 cursor-pointer"
+              >
+                Değişiklikleri Kaydet ✓
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -443,7 +704,7 @@
               phx-value-id={@show_artifact_modal}
               phx-value-status="completed"
               phx-value-force="true"
-              class="text-xs text-neutral-500 hover:text-amber-400 underline"
+              class="text-xs text-neutral-500 hover:text-amber-400 underline cursor-pointer"
             >
               Artifactsız Zorla Tamamla (İstisna)
             </button>
@@ -452,13 +713,13 @@
               <button
                 type="button"
                 phx-click="close_modal"
-                class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs transition"
+                class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs transition cursor-pointer"
               >
                 Vazgeç
               </button>
               <button
                 type="submit"
-                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-sm transition shadow-lg shadow-emerald-600/30"
+                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-sm transition shadow-lg shadow-emerald-600/30 cursor-pointer"
               >
                 Teslim Et ve Tamamla ✓
               </button>

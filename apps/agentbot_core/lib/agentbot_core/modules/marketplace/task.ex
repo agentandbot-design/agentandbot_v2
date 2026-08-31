@@ -3,13 +3,15 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   Task — operasyonel birim. Agent veya insanın yaptığı iş.
 
   Lifecycle: open → assigned → in_progress → review → completed | failed | blocked
+  Visibility: public (açık) | private (kapalı / takıma özel)
+  Team: core | agents | security | design | infra | general
 
   Bauhaus: sadece gerekli alanlar. Chat değil, iş.
   """
 
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query
+  import Ecto.Query, only: [from: 2, where: 3, order_by: 3, preload: 2]
 
   @derive {Jason.Encoder,
            only: [
@@ -18,6 +20,8 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
              :created_by,
              :assigned_to,
              :capability,
+             :team,
+             :visibility,
              :title,
              :description,
              :input,
@@ -39,6 +43,8 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     field(:created_by, :string)
     field(:assigned_to, :string)
     field(:capability, :string)
+    field(:team, :string, default: "core")
+    field(:visibility, :string, default: "public")
     field(:title, :string)
     field(:description, :string)
     # JSON string — task parametreleri
@@ -58,6 +64,8 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
       :created_by,
       :assigned_to,
       :capability,
+      :team,
+      :visibility,
       :title,
       :description,
       :input,
@@ -80,6 +88,28 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
       {:ok, task} ->
         broadcast_change("task_created", task)
         {:ok, task}
+
+      error ->
+        error
+    end
+  end
+
+  @doc "Task alanlarını güncelle / düzenle"
+  def update(task_id, attrs) when is_integer(task_id) do
+    task = Repo.get!(__MODULE__, task_id)
+    update(task, attrs)
+  end
+
+  def update(%__MODULE__{} = task, attrs) do
+    result =
+      task
+      |> changeset(attrs)
+      |> Repo.update()
+
+    case result do
+      {:ok, updated_task} ->
+        broadcast_change("task_updated", updated_task)
+        {:ok, updated_task}
 
       error ->
         error
@@ -204,15 +234,44 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
         status -> from(t in query, where: t.status == ^status)
       end
 
+    query =
+      case Keyword.get(opts, :team) do
+        nil -> query
+        "all" -> query
+        team -> from(t in query, where: t.team == ^team)
+      end
+
+    query =
+      case Keyword.get(opts, :visibility) do
+        nil -> query
+        "all" -> query
+        vis -> from(t in query, where: t.visibility == ^vis)
+      end
+
     query
     |> preload(:artifacts)
     |> Repo.all()
   end
 
   @doc "Kanban görünümü için tüm task'ları getir"
-  def list_for_kanban do
-    __MODULE__
-    |> order_by([t], desc: t.priority, desc: t.updated_at, desc: t.inserted_at)
+  def list_for_kanban(opts \\ []) do
+    query = from(t in __MODULE__, order_by: [desc: t.priority, desc: t.updated_at, desc: t.inserted_at])
+
+    query =
+      case Keyword.get(opts, :team) do
+        nil -> query
+        "all" -> query
+        team -> from(t in query, where: t.team == ^team)
+      end
+
+    query =
+      case Keyword.get(opts, :visibility) do
+        nil -> query
+        "all" -> query
+        vis -> from(t in query, where: t.visibility == ^vis)
+      end
+
+    query
     |> preload(:artifacts)
     |> Repo.all()
   end
@@ -252,6 +311,8 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
       id: task.id,
       title: task.title,
       status: task.status,
+      team: task.team,
+      visibility: task.visibility,
       assigned_to: task.assigned_to,
       capability: task.capability,
       priority: task.priority
