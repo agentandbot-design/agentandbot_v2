@@ -10,6 +10,8 @@ defmodule AgentbotWeb.KanbanLive do
 
   alias AgentbotCore.Modules.Marketplace.Artifact
   alias AgentbotCore.Modules.Marketplace.Task
+  alias AgentbotCore.Modules.Marketplace.TaskComment
+  alias AgentbotCore.Modules.Marketplace.TaskEvent
   alias AgentbotCore.PubSub
 
   @columns [
@@ -71,20 +73,31 @@ defmodule AgentbotWeb.KanbanLive do
       |> assign(:filter_visibility, "all")
       |> assign(:filter_assignee, "all")
       |> assign(:filter_capability, "all")
+      |> assign(:filter_tag, "all")
       |> assign(:search_query, "")
       |> assign(:show_modal, false)
       |> assign(:show_edit_modal, false)
       |> assign(:editing_task, nil)
       |> assign(:show_artifact_modal, nil)
+      |> assign(:show_archive, false)
+      |> assign(:show_detail_modal, false)
+      |> assign(:detail_task, nil)
+      |> assign(:detail_comments, [])
+      |> assign(:detail_events, [])
+      |> assign(:detail_children, [])
       |> assign(:new_task, %{
         "title" => "",
         "description" => "",
         "capability" => "bugfix",
-        "team" => "core",
+        "team" => "Core",
+        "tags" => "",
         "visibility" => "public",
         "priority" => "1",
-        "assigned_to" => "hermes-local"
+        "assigned_to" => "hermes-local",
+        "deadline" => ""
       })
+      |> assign(:new_comment, %{"author" => "ilkerkaan", "body" => ""})
+      |> assign(:new_subtask, %{"title" => "", "assigned_to" => "hermes-local"})
       |> assign_tasks()
 
     {:ok, socket}
@@ -104,11 +117,13 @@ defmodule AgentbotWeb.KanbanLive do
       "title" => task.title || "",
       "description" => task.description || "",
       "capability" => task.capability || "general",
-      "team" => task.team || "core",
+      "team" => task.team || "Core",
+      "tags" => task.tags || "",
       "visibility" => task.visibility || "public",
       "priority" => to_string(task.priority || 0),
       "assigned_to" => task.assigned_to || "",
-      "status" => task.status || "open"
+      "status" => task.status || "open",
+      "deadline" => format_date_input(task.deadline_at)
     }
 
     {:noreply,
@@ -133,17 +148,23 @@ defmodule AgentbotWeb.KanbanLive do
     assigned_to = if params["assigned_to"] == "", do: nil, else: params["assigned_to"]
     status = if is_nil(assigned_to), do: "open", else: "assigned"
 
+    deadline_at = build_deadline_at(params["deadline"])
+
     attrs = %{
       title: String.trim(params["title"] || ""),
       description: String.trim(params["description"] || ""),
       capability: params["capability"] || "general",
-      team: params["team"] || "core",
+      team: normalize_team(params["team"]),
+      tags: String.trim(params["tags"] || ""),
       visibility: params["visibility"] || "public",
       priority: priority,
       assigned_to: assigned_to,
       created_by: "ilkerkaan",
       status: status
     }
+
+    attrs =
+      if deadline_at, do: Map.put(attrs, :deadline_at, deadline_at), else: attrs
 
     if attrs.title != "" do
       case Task.create(attrs) do
@@ -155,10 +176,12 @@ defmodule AgentbotWeb.KanbanLive do
              "title" => "",
              "description" => "",
              "capability" => "bugfix",
-             "team" => "core",
+             "team" => "Core",
+             "tags" => "",
              "visibility" => "public",
              "priority" => "1",
-             "assigned_to" => "hermes-local"
+             "assigned_to" => "hermes-local",
+             "deadline" => ""
            })
            |> assign_tasks()
            |> put_flash(:info, "Yeni kart başarıyla eklendi.")}
@@ -177,16 +200,22 @@ defmodule AgentbotWeb.KanbanLive do
     priority = parse_int(params["priority"], 0)
     assigned_to = if params["assigned_to"] == "", do: nil, else: params["assigned_to"]
 
+    deadline_at = build_deadline_at(params["deadline"])
+
     attrs = %{
       title: String.trim(params["title"] || ""),
       description: String.trim(params["description"] || ""),
       capability: params["capability"] || "general",
-      team: params["team"] || "core",
+      team: normalize_team(params["team"]),
+      tags: String.trim(params["tags"] || ""),
       visibility: params["visibility"] || "public",
       priority: priority,
       assigned_to: assigned_to,
       status: params["status"] || "open"
     }
+
+    attrs =
+      if deadline_at, do: Map.put(attrs, :deadline_at, deadline_at), else: attrs
 
     if attrs.title != "" do
       case Task.update(task_id, attrs) do
@@ -294,6 +323,46 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   @impl true
+  def handle_event("archive_task", %{"id" => id}, socket) do
+    task_id = String.to_integer(id)
+
+    case Task.archive(task_id) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign_tasks()
+         |> put_flash(:info, "Kart arşive taşındı.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Kart arşive taşınamadı.")}
+    end
+  end
+
+  @impl true
+  def handle_event("unarchive_task", %{"id" => id}, socket) do
+    task_id = String.to_integer(id)
+
+    case Task.unarchive(task_id) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign_tasks()
+         |> put_flash(:info, "Kart arşivden geri alındı.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Geri alma başarısız.")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_archive", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_archive, !socket.assigns.show_archive)
+     |> assign_tasks()}
+  end
+
+  @impl true
   def handle_event("filter_team", %{"team" => val}, socket) do
     {:noreply, socket |> assign(:filter_team, val) |> assign_tasks()}
   end
@@ -314,20 +383,131 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   @impl true
+  def handle_event("filter_tag", %{"tag" => tag}, socket) do
+    {:noreply, socket |> assign(:filter_tag, tag) |> assign_tasks()}
+  end
+
+  @impl true
+  def handle_event("clear_tag_filter", _params, socket) do
+    {:noreply, socket |> assign(:filter_tag, "all") |> assign_tasks()}
+  end
+
+  @impl true
   def handle_event("search", %{"q" => query}, socket) do
     {:noreply, socket |> assign(:search_query, query) |> assign_tasks()}
   end
 
+  # ---- Detay Modalı (Kart Detayı) ----
+  @impl true
+  def handle_event("open_detail", %{"id" => id}, socket) do
+    {:noreply, socket |> load_detail(String.to_integer(id))}
+  end
+
+  @impl true
+  def handle_event("close_detail", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_detail_modal, false)
+     |> assign(:detail_task, nil)
+     |> assign(:detail_comments, [])
+     |> assign(:detail_events, [])
+     |> assign(:detail_children, [])}
+  end
+
+  # ---- Yorum Ekleme ----
+  @impl true
+  def handle_event("add_comment", %{"task_id" => tid, "author" => author, "body" => body}, socket) do
+    task_id = String.to_integer(tid)
+    author = if author in [nil, ""], do: "ilkerkaan", else: author
+
+    case TaskComment.create(%{task_id: task_id, author: author, body: body}) do
+      {:ok, _c} ->
+        TaskEvent.log(task_id, author, "commented", %{length: String.length(body || "")})
+        {:noreply, socket |> load_detail(task_id) |> put_flash(:info, "Yorum eklendi.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Yorum kaydedilemedi.")}
+    end
+  end
+
+  # ---- Alt Görev Ekleme & Toggle ----
+  @impl true
+  def handle_event("add_subtask", %{"parent_id" => pid, "title" => title, "assigned_to" => at}, socket) do
+    parent_id = String.to_integer(pid)
+    title = String.trim(title || "")
+
+    if title != "" do
+      parent = Task.get!(parent_id)
+
+      attrs = %{
+        title: title,
+        description: "",
+        capability: parent.capability || "general",
+        team: parent.team || "Core",
+        visibility: parent.visibility || "public",
+        priority: 1,
+        assigned_to: (at != "" && at) || nil,
+        created_by: "ilkerkaan",
+        status: "open",
+        parent_id: parent_id
+      }
+
+      case Task.create(attrs) do
+        {:ok, _child} ->
+          TaskEvent.log(parent_id, at || "ilkerkaan", "subtask_added", %{title: title})
+          {:noreply, socket |> load_detail(parent_id) |> put_flash(:info, "Alt görev eklendi.")}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Alt görev oluşturulamadı.")}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "Alt görev başlığı boş olamaz.")}
+    end
+  end
+
+  @impl true
+  def handle_event("toggle_subtask", %{"id" => id, "parent_id" => parent_id}, socket) do
+    child = Task.get!(String.to_integer(id))
+    new_status = if child.status in ["open", "assigned", "ready"], do: "in_progress", else: "open"
+
+    case Task.update_status(child.id, new_status) do
+      {:ok, _} ->
+        TaskEvent.log(child.id, "ilkerkaan", "status_changed", %{to: new_status})
+        pid = String.to_integer(parent_id)
+        {:noreply, load_detail(socket, pid)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Alt görev durumu güncellenemedi.")}
+    end
+  end
+
+  # ---- PubSub Realtime ----
   @impl true
   def handle_info({:task_updated, _}, socket), do: {:noreply, assign_tasks(socket)}
   def handle_info({:task_created, _}, socket), do: {:noreply, assign_tasks(socket)}
   def handle_info({:task_deleted, _}, socket), do: {:noreply, assign_tasks(socket)}
+  def handle_info({:task_archived, _}, socket), do: {:noreply, assign_tasks(socket)}
   def handle_info(_other, socket), do: {:noreply, socket}
+
+  # ---- Private Helpers ----
+  defp load_detail(socket, task_id) do
+    task = Task.get!(task_id)
+    comments = TaskComment.list_by_task(task_id)
+    events = TaskEvent.list_by_task(task_id)
+    children = Task.list_children(task_id)
+
+    socket
+    |> assign(:show_detail_modal, true)
+    |> assign(:detail_task, task)
+    |> assign(:detail_comments, comments)
+    |> assign(:detail_events, events)
+    |> assign(:detail_children, children)
+  end
 
   defp assign_tasks(socket) do
     all_tasks = Task.list_for_kanban()
 
-    # İstatistikler
+    # İstatistikler (tüm aktif kartlar)
     stats = %{
       total: length(all_tasks),
       open: Enum.count(all_tasks, &(&1.status in ["open", "ready", "assigned"])),
@@ -339,11 +519,26 @@ defmodule AgentbotWeb.KanbanLive do
       private: Enum.count(all_tasks, &(&1.visibility == "private"))
     }
 
+    # Dinamik takım listesi (mevcut kartlardan)
+    all_teams =
+      case safe_list_distinct_teams() do
+        list when is_list(list) and list != [] -> list
+        _ -> Enum.map(@teams, fn {_, id} -> id end)
+      end
+
+    # Ekip yükü
+    workload =
+      case safe_workload_counts() do
+        list when is_list(list) -> list
+        _ -> []
+      end
+
     # Filtreleme
     f_team = socket.assigns[:filter_team] || "all"
     f_vis = socket.assigns[:filter_visibility] || "all"
     f_assignee = socket.assigns[:filter_assignee] || "all"
     f_cap = socket.assigns[:filter_capability] || "all"
+    f_tag = socket.assigns[:filter_tag] || "all"
     f_q = String.downcase(String.trim(socket.assigns[:search_query] || ""))
 
     filtered_tasks =
@@ -352,7 +547,7 @@ defmodule AgentbotWeb.KanbanLive do
         match_team =
           case f_team do
             "all" -> true
-            val -> (t.team || "core") == val
+            val -> (t.team || "Core") == val
           end
 
         match_vis =
@@ -375,6 +570,12 @@ defmodule AgentbotWeb.KanbanLive do
             val -> t.capability == val
           end
 
+        match_tag =
+          case f_tag do
+            "all" -> true
+            val -> val in Task.parse_tag_list(t.tags || "")
+          end
+
         match_q =
           if f_q == "" do
             true
@@ -383,13 +584,14 @@ defmodule AgentbotWeb.KanbanLive do
               String.contains?(String.downcase(t.description || ""), f_q) or
               String.contains?(String.downcase(t.capability || ""), f_q) or
               String.contains?(String.downcase(t.team || ""), f_q) or
-              String.contains?(String.downcase(t.assigned_to || ""), f_q)
+              String.contains?(String.downcase(t.assigned_to || ""), f_q) or
+              String.contains?(String.downcase(t.tags || ""), f_q)
           end
 
-        match_team and match_vis and match_assignee and match_cap and match_q
+        match_team and match_vis and match_assignee and match_cap and match_tag and match_q
       end)
 
-    # Kolonlara ayır
+    # Kolonlara ayır (arşivlenmemiş aktif kartlar)
     tasks_by_column = %{
       "open" => Enum.filter(filtered_tasks, &(&1.status in ["open", "ready", "assigned"])),
       "in_progress" => Enum.filter(filtered_tasks, &(&1.status == "in_progress")),
@@ -398,11 +600,56 @@ defmodule AgentbotWeb.KanbanLive do
       "blocked" => Enum.filter(filtered_tasks, &(&1.status in ["blocked", "failed"]))
     }
 
-    socket
-    |> assign(:stats, stats)
-    |> assign(:tasks_by_column, tasks_by_column)
+    # Arşivlenmiş kartlar
+    archived_tasks =
+      case socket.assigns[:show_archive] do
+        true -> safe_list_archived()
+        _ -> []
+      end
+
+    socket =
+      socket
+      |> assign(:stats, stats)
+      |> assign(:tasks_by_column, tasks_by_column)
+      |> assign(:all_teams, all_teams)
+      |> assign(:workload, workload)
+      |> assign(:archived_tasks, archived_tasks)
+
+    # Detay modalı açıksa içeriği de yenile
+    case socket.assigns[:detail_task] do
+      nil ->
+        socket
+
+      %{id: id} ->
+        # Detaydaki task hâlâ mevcutsa yeniden yükle
+        try do
+          load_detail(socket, id)
+        rescue
+          _ -> assign(socket, :show_detail_modal, false)
+        end
+    end
   end
 
+  # Güvenli erişim (fonksiyon yoksa boş dön)
+  defp safe_list_distinct_teams do
+    Task.list_distinct_teams()
+  rescue
+    _ -> []
+  end
+
+  defp safe_workload_counts do
+    Task.workload_counts()
+  rescue
+    _ -> []
+  end
+
+  defp safe_list_archived do
+    Task.list_archived()
+  rescue
+    _ -> []
+  end
+
+  # ---- Public Helpers ----
   def priority_badge(priority) do
     case priority do
       p when p >= 2 -> {"P0 Acil", "bg-red-900/60 text-red-300 border-red-700"}
@@ -418,14 +665,194 @@ defmodule AgentbotWeb.KanbanLive do
       "security" -> "🛡️ Güvenlik"
       "infra" -> "🏗️ Altyapı"
       "design" -> "🎨 Tasarım"
-      _ -> "📁 Genel"
+      "Core" -> "⚡ Çekirdek"
+      "Agents" -> "🤖 Ajanlar"
+      "Security" -> "🛡️ Güvenlik"
+      "Infra" -> "🏗️ Altyapı"
+      "Design" -> "🎨 Tasarım"
+      _ -> "📁 #{team}"
     end
   end
 
+  # Deadline chip için {label, class}
+  def deadline_chip(nil), do: nil
+
+  def deadline_chip(%DateTime{} = dt) do
+    date = DateTime.to_date(dt)
+
+    case Date.compare(date, Date.utc_today()) do
+      :lt ->
+        days = Date.diff(Date.utc_today(), date)
+        {"⏰ Geçti #{days}g", "bg-red-950/60 text-red-300 border-red-800"}
+
+      :eq ->
+        {"⏰ Bugün", "bg-amber-950/60 text-amber-300 border-amber-700"}
+
+      :gt ->
+        days = Date.diff(date, Date.utc_today())
+
+        label =
+          cond do
+            days == 1 -> "⏰ Yarın"
+            days <= 7 -> "⏰ #{days}g"
+            true -> "⏰ #{format_short_date(date)}"
+          end
+
+        {"#{label}", "bg-neutral-800 text-neutral-300 border-neutral-700"}
+    end
+  end
+
+  def deadline_chip(_), do: nil
+
+  # Detay modal'daki durum rozeti için sınıf
+  def status_badge_class(status) do
+    case to_string(status || "") do
+      "open" -> "bg-sky-950/40 text-sky-300 border border-sky-800"
+      "in_progress" -> "bg-amber-950/40 text-amber-300 border border-amber-800"
+      "review" -> "bg-purple-950/40 text-purple-300 border border-purple-800"
+      "completed" -> "bg-emerald-950/40 text-emerald-300 border border-emerald-800"
+      "blocked" -> "bg-rose-950/40 text-rose-300 border border-rose-800"
+      _ -> "bg-neutral-800 text-neutral-300 border border-neutral-700"
+    end
+  end
+
+  # Aktivite ikonu (event_icon/1)
+  def event_icon(action) do
+    case to_string(action || "") do
+      "created" -> "✨"
+      "status_changed" -> "🔄"
+      "assigned" -> "👤"
+      "commented" -> "💬"
+      "edited" -> "✏️"
+      "archived" -> "🗄️"
+      "unarchived" -> "↩️"
+      "deleted" -> "🗑️"
+      "subtask_added" -> "🧩"
+      _ -> "📌"
+    end
+  end
+
+  # Aksiyon etiketleri (Türkçe)
+  def event_action_label(action) do
+    case to_string(action || "") do
+      "created" -> "Kart oluşturuldu"
+      "status_changed" -> "Durum değiştirildi"
+      "assigned" -> "Atama yapıldı"
+      "commented" -> "Yorum eklendi"
+      "edited" -> "Kart düzenlendi"
+      "archived" -> "Arşive taşındı"
+      "unarchived" -> "Arşivden geri alındı"
+      "deleted" -> "Kart silindi"
+      "subtask_added" -> "Alt görev eklendi"
+      _ -> "Etkinlik"
+    end
+  end
+
+  # Göreceli zaman (az önce, Xd önce, ...)
+  def format_rel(nil), do: ""
+
+  def format_rel(%DateTime{} = dt) do
+    diff = DateTime.diff(DateTime.utc_now(), dt, :second)
+
+    cond do
+      diff < 60 -> "az önce"
+      diff < 3600 -> "#{div(diff, 60)}dk önce"
+      diff < 86_400 -> "#{div(diff, 3600)}sa önce"
+      diff < 604_800 -> "#{div(diff, 86_400)}g önce"
+      true -> format_short_date(DateTime.to_date(dt))
+    end
+  end
+
+  def format_rel(_), do: ""
+
+  def format_short_date(%Date{} = d) do
+    "#{String.pad_leading(to_string(d.day), 2, "0")}.#{String.pad_leading(to_string(d.month), 2, "0")}"
+  end
+
+  def format_short_date(_), do: ""
+
+  # Tam tarih formatı (dd.mm HH:MM) — eski format_date ile uyumlu
+  def format_date(nil), do: "—"
+
+  def format_date(%DateTime{} = dt) do
+    d = DateTime.to_date(dt)
+    t = DateTime.to_time(dt)
+
+    day = String.pad_leading(to_string(d.day), 2, "0")
+    month = String.pad_leading(to_string(d.month), 2, "0")
+    hh = String.pad_leading(to_string(t.hour), 2, "0")
+    mm = String.pad_leading(to_string(t.minute), 2, "0")
+
+    "#{day}.#{month} #{hh}:#{mm}"
+  end
+
+  def format_date(_), do: "—"
+
+  # <input type="date"> için ISO tarih (yyyy-mm-dd)
+  def format_date_input(nil), do: ""
+
+  def format_date_input(%DateTime{} = dt) do
+    d = DateTime.to_date(dt)
+    "#{d.year}-#{String.pad_leading(to_string(d.month), 2, "0")}-#{String.pad_leading(to_string(d.day), 2, "0")}"
+  end
+
+  def format_date_input(_), do: ""
+
+  # ---- Private Parsers ----
   defp parse_int(val, default) do
     case Integer.parse(to_string(val || "")) do
       {num, _} -> num
       :error -> default
     end
   end
+
+  defp parse_date(str) when is_binary(str) do
+    case String.trim(str) do
+      "" -> :error
+      s -> Date.from_iso8601(s)
+    end
+  end
+
+  defp parse_date(_), do: :error
+
+  # deadline string -> %DateTime{} | nil
+  defp build_deadline_at(nil), do: nil
+  defp build_deadline_at(""), do: nil
+
+  defp build_deadline_at(str) when is_binary(str) do
+    case parse_date(str) do
+      {:ok, %Date{} = date} ->
+        case DateTime.new(date, ~T[23:59:59]) do
+          {:ok, dt} -> DateTime.truncate(dt, :second)
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp build_deadline_at(_), do: nil
+
+  # Takım adını düzenle: boşsa "Core", trim uygula
+  defp normalize_team(nil), do: "Core"
+
+  defp normalize_team(val) when is_binary(val) do
+    case String.trim(val) do
+      "" -> "Core"
+      s -> s
+    end
+  end
+
+  defp normalize_team(_), do: "Core"
+
+  # Filtre barındaki takım <select> için {label, value} listesi
+  def team_filter_options(all_teams) when is_list(all_teams) do
+    Enum.map(all_teams, fn team -> {team_label(team), team} end)
+  end
+
+  def team_filter_options(_), do: Enum.map(@teams, fn {name, id} -> {name, id} end)
+
+  # Bir kartın alt görev sayısını döndürür (Task.loaded_children üzerinden ya da sorgu ile)
+  def child_count(_task), do: 0
 end
