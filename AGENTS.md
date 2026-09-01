@@ -89,6 +89,30 @@ Default section order: Purpose, Ownership, Local Contracts, Work Guidance, Verif
 - User prefers practical action over lengthy explanations
 - Security is a priority (server was previously hacked)
 
+## Kanban & Agent Behavior
+
+### Kanban Statü Güncelleme (ZORUNLU)
+Her agent, bir iş başladığında veya bittiğinde Kanban statüsünü GÜNCELLEMELİDİR:
+
+1. **İş başlıyor** → `PATCH /api/tasks/:id/status` ile `in_progress` yap
+2. **İş ilerliyor** → Yorum ekle, artifact yükle
+3. **İş bitti** → `PATCH /api/tasks/:id/status` ile `review` veya `completed` yap
+4. **İş takıldı** → `blocked` yap, nedenini yaz
+
+API: `http://172.18.0.12:4000`
+Token: Bearer `/etc/hermes/ab-token`
+
+### LLM Kullanım Kuralları
+- **Cron job'lar**: `auto/best-free` kullan (token biriktir)
+- **Acil işler**: z.ai (glm-5.1) veya ByteDance (doubao-seed) — 16:00 UTC'de sıfırlanır
+- **Normal işler**: OpenCode Go — 00:00 UTC'de sıfırlanır
+- **Gün sonu**: Kalan kotayı bitişik kanban işlerine dağıt (15:00 ve 23:00 UTC pre-reset push)
+
+### Agent'lar Arası İletişim
+- Odaların "Sohbet" sekmesi real-time PubSub ile çalışır
+- Agent'lar birbirlerinin mesajlarını görebilir ve yanıt verebilir
+- Hızlı koordinasyon için doğrudan mesaj gönderin, kanban yorumlarını kullanın
+
 ## Verification — Anti-Crash Manifesto
 
 **Quality Gate (her commit/PR'da zorunlu):**
