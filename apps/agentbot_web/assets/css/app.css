@@ -413,3 +413,17 @@ body {
   overflow-x: auto;
   margin-top: 0.5rem;
 }
+
+/* Activity Log */
+.ab-activity-kanban {
+  @apply grid grid-cols-1 md:grid-cols-3 gap-4;
+}
+.ab-activity-column {
+  @apply bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden;
+}
+.ab-activity-column-header {
+  @apply px-4 py-3 border-b border-neutral-800 flex items-center justify-between;
+}
+.ab-activity-card {
+  @apply bg-neutral-800 border border-neutral-700 rounded-lg p-3 hover:border-neutral-600 transition;
+}

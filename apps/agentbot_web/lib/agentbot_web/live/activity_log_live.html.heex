@@ -1,0 +1,163 @@
+<div class="ab-content max-w-full px-4 sm:px-6">
+  <!-- BAŞLIK -->
+  <div class="ab-page-head flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold flex items-center gap-2">
+        <span>📋</span> SAP Danışmanlık Günlüğü
+      </h1>
+      <p class="text-neutral-400 text-sm mt-1">
+        Günlük aktivite takibi — Google Docs ile senkronize.
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <input
+        type="date"
+        value={@date}
+        phx-change="change_date"
+        class="px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-sm text-neutral-200"
+      />
+      <button
+        phx-click="toggle_form"
+        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition cursor-pointer"
+      >
+        <span>➕</span> Yeni Aktivite
+      </button>
+    </div>
+  </div>
+
+  <!-- YENİ AKTİVİTE FORMU -->
+  <%= if @show_form do %>
+    <div class="mt-4 bg-neutral-900 border border-neutral-700 rounded-xl p-6">
+      <h3 class="text-lg font-bold text-neutral-100 mb-4">Yeni Aktivite</h3>
+      <form phx-submit="save_activity" class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Başlık *</label>
+            <input
+              type="text"
+              name="activity_log[title]"
+              value={@new_activity["title"]}
+              required
+              placeholder="Örn: SAP FI aylık mutabakat toplantısı"
+              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Kategori</label>
+            <select
+              name="activity_log[category]"
+              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-200"
+            >
+              <%= for cat <- @categories do %>
+                <option value={cat} selected={@new_activity["category"] == cat}>#{String.upcase(cat)}</option>
+              <% end %>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Durum</label>
+            <select
+              name="activity_log[status]"
+              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-200"
+            >
+              <%= for status <- @statuses do %>
+                <option value={status} selected={@new_activity["status"] == status}>#{String.upcase(status)}</option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">İçerik</label>
+          <textarea
+            name="activity_log[content]"
+            rows="4"
+            placeholder="Aktivite detayları..."
+            class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+          ><%= @new_activity["content"] %></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Etiketler (virgülle ayır)</label>
+          <input
+            type="text"
+            name="activity_log[tags]"
+            value={@new_activity["tags"]}
+            placeholder="SAP, FI, aylık, mutabakat"
+            class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+          />
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-semibold cursor-pointer transition">
+            💾 Kaydet
+          </button>
+          <button type="button" phx-click="toggle_form" class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded-lg text-sm font-semibold cursor-pointer transition">
+            İptal
+          </button>
+        </div>
+      </form>
+    </div>
+  <% end %>
+
+  <!-- KANBAN BOARD -->
+  <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <%= for status <- @statuses do %>
+      <% items = activities_by_status(@activities, status) %>
+      <div class="bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden">
+        <!-- Kolon Başlığı -->
+        <div class={"px-4 py-3 border-b border-neutral-800 flex items-center justify-between " <> status_color(status)}>
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-neutral-100"><%= String.upcase(status) %></span>
+            <span class="text-xs bg-black/30 px-2 py-0.5 rounded-full"><%= length(items) %></span>
+          </div>
+        </div>
+        <!-- Kartlar -->
+        <div class="p-3 space-y-3 min-h-[200px]">
+          <%= for activity <- items do %>
+            <div class="bg-neutral-800 border border-neutral-700 rounded-lg p-3 hover:border-neutral-600 transition">
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2">
+                  <span><%= category_icon(activity.category) %></span>
+                  <span class="text-sm font-semibold text-neutral-200"><%= activity.title %></span>
+                </div>
+                <button phx-click="delete_activity" phx-value-id={activity.id} class="text-neutral-500 hover:text-red-400 text-xs cursor-pointer">✕</button>
+              </div>
+              <%= if activity.content do %>
+                <p class="text-xs text-neutral-400 mb-2 line-clamp-3"><%= String.slice(activity.content, 0, 100) %><%= if String.length(activity.content) > 100, do: "..." %></p>
+              <% end %>
+              <%= if activity.tags do %>
+                <div class="flex flex-wrap gap-1 mb-2">
+                  <%= for tag <- String.split(activity.tags, ",") do %>
+                    <span class="text-xs bg-indigo-600/20 text-indigo-300 px-2 py-0.5 rounded-full"><%= String.trim(tag) %></span>
+                  <% end %>
+                </div>
+              <% end %>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-neutral-500"><%= activity.inserted_at %></span>
+                <div class="flex gap-1">
+                  <%= if activity.google_doc_url do %>
+                    <a href={activity.google_doc_url} target="_blank" class="text-xs text-blue-400 hover:text-blue-300">📄 Doc</a>
+                  <% else %>
+                    <button phx-click="sync_google" phx-value-id={activity.id} class="text-xs text-neutral-400 hover:text-emerald-400 cursor-pointer">☁️ Sync</button>
+                  <% end %>
+                </div>
+              </div>
+              <!-- Statü değiştir -->
+              <div class="mt-2 flex gap-1">
+                <%= for s <- @statuses do %>
+                  <%= if s != activity.status do %>
+                    <button
+                      phx-click="update_status"
+                      phx-value-id={activity.id}
+                      phx-value-status={s}
+                      class="text-xs px-2 py-1 bg-neutral-700 hover:bg-neutral-600 text-neutral-300 rounded cursor-pointer transition"
+                    >
+                      → <%= String.upcase(s) %>
+                    </button>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

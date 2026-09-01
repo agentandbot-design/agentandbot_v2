@@ -111,6 +111,15 @@ defmodule AgentbotWeb.Router do
     post("/tasks/:task_id/artifact", AgentbotWeb.TaskController, :submit_artifact)
     post("/artifacts/:id/verify", AgentbotWeb.TaskController, :verify_artifact)
 
+    # Activity Log API
+    get("/activity-logs", AgentbotWeb.ActivityLogController, :index)
+    get("/activity-logs/:id", AgentbotWeb.ActivityLogController, :show)
+    post("/activity-logs", AgentbotWeb.ActivityLogController, :create)
+    put("/activity-logs/:id", AgentbotWeb.ActivityLogController, :update)
+    delete("/activity-logs/:id", AgentbotWeb.ActivityLogController, :delete)
+    post("/activity-logs/:id/status", AgentbotWeb.ActivityLogController, :update_status)
+    post("/activity-logs/:id/sync", AgentbotWeb.ActivityLogController, :sync_google)
+
     # MCP Registry — kayıt ve yönetim (auth gerekir)
     post("/mcp-servers/register", AgentbotWeb.McpRegistryController, :register)
     put("/mcp-servers/:name", AgentbotWeb.McpRegistryController, :update)
@@ -171,6 +180,7 @@ defmodule AgentbotWeb.Router do
     live("/deployments", DeploymentsLive, :index)
     live("/feed", FeedLive, :index)
     live("/agents", AgentsLive, :index)
+    live("/activity-log", ActivityLogLive, :index)
   end
 
   # 404 yakalayıcı
