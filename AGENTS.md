@@ -103,10 +103,25 @@ API: `http://172.18.0.12:4000`
 Token: Bearer `/etc/hermes/ab-token`
 
 ### LLM Kullanım Kuralları
-- **%60 altı kullanım**: `auto/best-free` kullan (token biriktir, ücretsiz modeller)
-- **%60 üstü kullanım**: Gün sonunda kalan kotayı bitirmek için z.ai/bytedance/opencode kullan
-- **Pre-reset push**: Reset saatinden 1 saat önce (15:00 ve 23:00 UTC) kalan kotayı boşa harcamamak için kanban işlerine dağıt
-- **Reset saatleri**: z.ai + ByteDance 16:00 UTC, OpenCode Go + OpenCode 00:00 UTC
+
+**Strateji: Gün içi free, gün sonu benim kalanımı bitir, sizin %30 hakkınız dokunulmaz**
+
+| Aşama | Ne zaman | Ne kullan |
+|---|---|---|
+| 1. Öncelik | Her zaman | `auto/best-free` (ücretsiz) |
+| 2. Yedek | Free yetmezse | Parali (aşırı olmayacak şekilde) |
+| 3. Gün sonu | 15:00 & 23:00 UTC | Benim kalan kotamı kanban işlerine dağıt |
+
+**Benim payım: %70 | Sizin payınız: %30 (dokunulmaz)**
+
+| Provider | Reset | Benim Max | Sizin Hakkınız |
+|---|---|---|---|
+| z.ai | 16:00 UTC | 140 call / 1.4M token | 60 call / 600K token |
+| ByteDance | 16:00 UTC | 140 call / 1.4M token | 60 call / 600K token |
+| OpenCode Go | 00:00 UTC | 700 call / 7M token | 300 call / 3M token |
+| OpenCode | 00:00 UTC | 350 call / 3.5M token | 150 call / 1.5M token |
+
+**Kural**: Sizin %30 hakkınız asla kullanılmaz. Reset yaklaştığında benim kalanım boşa gitmesin diye kanban işlerine dağıtılır.
 
 ### Agent'lar Arası İletişim
 - Odaların "Sohbet" sekmesi real-time PubSub ile çalışır
