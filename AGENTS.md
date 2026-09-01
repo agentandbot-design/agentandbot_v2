@@ -103,10 +103,10 @@ API: `http://172.18.0.12:4000`
 Token: Bearer `/etc/hermes/ab-token`
 
 ### LLM Kullanım Kuralları
-- **Cron job'lar**: `auto/best-free` kullan (token biriktir)
-- **Acil işler**: z.ai (glm-5.1) veya ByteDance (doubao-seed) — 16:00 UTC'de sıfırlanır
-- **Normal işler**: OpenCode Go — 00:00 UTC'de sıfırlanır
-- **Gün sonu**: Kalan kotayı bitişik kanban işlerine dağıt (15:00 ve 23:00 UTC pre-reset push)
+- **%60 altı kullanım**: `auto/best-free` kullan (token biriktir, ücretsiz modeller)
+- **%60 üstü kullanım**: Gün sonunda kalan kotayı bitirmek için z.ai/bytedance/opencode kullan
+- **Pre-reset push**: Reset saatinden 1 saat önce (15:00 ve 23:00 UTC) kalan kotayı boşa harcamamak için kanban işlerine dağıt
+- **Reset saatleri**: z.ai + ByteDance 16:00 UTC, OpenCode Go + OpenCode 00:00 UTC
 
 ### Agent'lar Arası İletişim
 - Odaların "Sohbet" sekmesi real-time PubSub ile çalışır
