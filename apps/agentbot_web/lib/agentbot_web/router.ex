@@ -63,6 +63,13 @@ defmodule AgentbotWeb.Router do
     # Feed API — merkezi içerik akışı (public)
     get("/feed", AgentbotWeb.RoomController, :feed)
     get("/feed/:site", AgentbotWeb.RoomController, :feed)
+    post("/feed", AgentbotWeb.RoomController, :create_feed)
+    get("/feed/stats/json", AgentbotWeb.RoomController, :feed_stats)
+
+    # Agent Manifest Registry — #23
+    get("/agents", AgentbotWeb.AgentController, :list_manifests)
+    get("/agents/me/manifest", AgentbotWeb.AgentController, :my_manifest)
+    get("/agents/:agent_id/manifest", AgentbotWeb.AgentController, :show_manifest)
 
     # Council — konsey: soru → N agent → görüşler
     get("/councils", AgentbotWeb.CouncilController, :index)
@@ -151,15 +158,18 @@ defmodule AgentbotWeb.Router do
     pipe_through(:browser)
 
     live("/", DashboardLive, :index)
-    live("/kanban", KanbanLive, :index)
     live("/platform", PlatformLive, :index)
     live("/terminal", TerminalLive, :index)
     live("/ecosystem", EcosystemLive, :index)
     live("/rooms", RoomListLive, :index)
-    live("/rooms/:id", RoomLive, :show)
+    live("/rooms/:id", KanbanLive, :index)
+    live("/rooms/:id/kanban", KanbanLive, :index)
+    live("/rooms/:id/chat", RoomLive, :show)
     live("/gaps", GapsLive, :index)
     live("/recipes", RecipesLive, :index)
     live("/deployments", DeploymentsLive, :index)
+    live("/feed", FeedLive, :index)
+    live("/agents", AgentsLive, :index)
   end
 
   # 404 yakalayıcı

@@ -112,6 +112,48 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
     |> Repo.update_all(set: [is_active: false])
   end
 
+  @doc "Tüm aktif agent manifest'lerini listele — #23"
+  def list_active_manifests do
+    __MODULE__
+    |> where([c], c.is_active == true)
+    |> order_by([c], desc: c.inserted_at)
+    |> Repo.all()
+    |> Enum.map(&to_manifest/1)
+  end
+
+  @doc "Tek agent manifest'i getir — #23"
+  def find_manifest(agent_id) do
+    __MODULE__
+    |> where([c], c.agent_id == ^agent_id and c.is_active == true)
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      cred -> to_manifest(cred)
+    end
+  end
+
+  @doc "Credential → Manifest dönüşümü"
+  def to_manifest(%__MODULE__{} = c) do
+    %{
+      schema: "agentandbot.manifest/v1",
+      agent_id: c.agent_id,
+      agent_name: c.agent_name,
+      executor_type: c.executor_type,
+      capabilities: c.capabilities,
+      protocols: c.protocols,
+      endpoint: c.endpoint,
+      description: c.description,
+      version: Map.get(c, :version, "0.1.0"),
+      is_active: c.is_active,
+      signed_at: (c.updated_at || c.inserted_at) |> DateTime.to_iso8601(),
+      links: %{
+        self: "/api/agents/#{c.agent_id}/manifest",
+        skill: "/.agent-well-known/skill",
+        protocols: "/.agent-well-known/protocols"
+      }
+    }
+  end
+
   # Token hash — SHA256
   defp hash_token(token) do
     Base.encode16(:crypto.hash(:sha256, token), case: :lower)

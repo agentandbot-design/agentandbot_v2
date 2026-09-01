@@ -65,6 +65,33 @@ defmodule AgentbotWeb.AgentController do
     json(conn, %{agents: agents, count: length(agents)})
   end
 
+  @doc "Tüm kayıtlı agent manifest'lerini listele — #23"
+  def list_manifests(conn, _params) do
+    manifests = AgentCredential.list_active_manifests()
+    json(conn, %{count: length(manifests), agents: manifests})
+  end
+
+  @doc "Tek agent manifest — #23"
+  def show_manifest(conn, %{"agent_id" => agent_id}) do
+    case AgentCredential.find_manifest(agent_id) do
+      nil -> conn |> put_status(404) |> json(%{error: "agent bulunamadı", agent_id: agent_id})
+      manifest -> json(conn, manifest)
+    end
+  end
+
+  @doc "Authed agent kendi manifest'ini görsün — #23"
+  def my_manifest(conn, _params) do
+    agent_id = conn.assigns[:agent_id]
+    if agent_id do
+      case AgentCredential.find_manifest(agent_id) do
+        nil -> conn |> put_status(404) |> json(%{error: "manifest yok", agent_id: agent_id})
+        manifest -> json(conn, manifest)
+      end
+    else
+      conn |> put_status(401) |> json(%{error: "auth gerekli — Bearer token"})
+    end
+  end
+
   def disconnect(conn, _params) do
     agent_id = conn.assigns.agent_id
     AgentGateway.disconnect(agent_id)

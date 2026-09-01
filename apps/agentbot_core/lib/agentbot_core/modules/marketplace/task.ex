@@ -28,20 +28,22 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
              :created_by,
              :assigned_to,
              :capability,
-             :team,
-             :visibility,
-             :tags,
-             :title,
-             :description,
-             :input,
-             :status,
-             :priority,
-             :parent_id,
-             :archived,
-             :deadline_at,
-             :completed_at,
-             :inserted_at,
-             :updated_at
+                         :team,
+                         :visibility,
+                         :tags,
+                         :title,
+                         :description,
+                         :input,
+                         :status,
+                         :priority,
+                         :parent_id,
+                         :archived,
+                         :deadline_at,
+                         :completed_at,
+                         :external_url,
+                         :source_type,
+                         :inserted_at,
+                         :updated_at
            ]}
 
   schema "tasks" do
@@ -66,6 +68,8 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     field(:archived, :boolean, default: false)
     field(:deadline_at, :utc_datetime)
     field(:completed_at, :utc_datetime)
+    field(:external_url, :string)
+    field(:source_type, :string, default: "manual")
 
     timestamps(type: :utc_datetime)
   end
@@ -75,7 +79,8 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     |> cast(attrs, [
       :room_id, :created_by, :assigned_to, :capability, :team, :visibility,
       :tags, :title, :description, :input, :status, :priority,
-      :parent_id, :archived, :deadline_at, :completed_at
+      :parent_id, :archived, :deadline_at, :completed_at,
+      :external_url, :source_type
     ])
     |> validate_required([:created_by, :capability, :title])
   end
@@ -276,11 +281,40 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     |> Enum.uniq()
   end
 
+  @doc "Tags string'i içinde #git veya #not varsa external URL üretir"
+  def external_link_from_tags(title, tags_str) do
+    tags = parse_tag_list(tags_str)
+
+    cond do
+      "git" in tags ->
+        {"github", github_url_from_title(title)}
+
+      "not" in tags ->
+        {"gdrive", nil}
+
+      true ->
+        {"manual", nil}
+    end
+  end
+
+  # Başlıktan slug üreterek varsayılan GitHub dosya URL'i
+  defp github_url_from_title(title) do
+    slug =
+      title
+      |> String.downcase()
+      |> String.replace(~r/[^\w\s\-]/u, "")
+      |> String.replace(~r/\s+/u, "-")
+      |> String.slice(0, 50)
+
+    "https://github.com/agentandbot-design/agentandbot_v2/blob/main/notes/#{slug}.md"
+  end
+
   defp apply_filters(query, opts) do
     query
     |> maybe_filter(:status, opts[:status])
     |> maybe_filter(:team, opts[:team])
     |> maybe_filter(:visibility, opts[:visibility])
+    |> maybe_filter(:room_id, opts[:room_id])
   end
 
   defp maybe_filter(query, _key, nil), do: query
@@ -288,6 +322,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   defp maybe_filter(query, :status, status), do: from(t in query, where: t.status == ^status)
   defp maybe_filter(query, :team, team), do: from(t in query, where: t.team == ^team)
   defp maybe_filter(query, :visibility, vis), do: from(t in query, where: t.visibility == ^vis)
+  defp maybe_filter(query, :room_id, rid) when is_integer(rid), do: from(t in query, where: t.room_id == ^rid)
 
   @doc "Capability'ye göre açık task'ları listele"
   def list_open_by_capability(capability) do

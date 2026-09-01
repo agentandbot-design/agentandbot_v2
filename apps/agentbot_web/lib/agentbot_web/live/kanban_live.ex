@@ -8,11 +8,13 @@ defmodule AgentbotWeb.KanbanLive do
 
   use AgentbotWeb, :live_view
 
+  alias AgentbotCore.Modules.Chat.Room
   alias AgentbotCore.Modules.Marketplace.Artifact
   alias AgentbotCore.Modules.Marketplace.Task
   alias AgentbotCore.Modules.Marketplace.TaskComment
   alias AgentbotCore.Modules.Marketplace.TaskEvent
   alias AgentbotCore.PubSub
+  alias AgentbotCore.Repo
 
   @columns [
     %{id: "open", title: "Açık / Backlog", icon: "📥", badge: "ab-badge--info"},
@@ -56,14 +58,32 @@ defmodule AgentbotWeb.KanbanLive do
   ]
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     if connected?(socket) do
       PubSub.subscribe("kanban:tasks")
     end
 
+    {room_id, room} =
+      case params do
+        %{"id" => id_str} ->
+          case Integer.parse(id_str) do
+            {id, _} ->
+              case Repo.get(Room, id) do
+                nil -> {nil, nil}
+                room -> {id, room}
+              end
+            _ ->
+              {nil, nil}
+          end
+        _ ->
+          {nil, nil}
+      end
+
     socket =
       socket
-      |> assign(:page_title, "Kanban Board")
+      |> assign(:page_title, page_title(room))
+      |> assign(:room_id, room_id)
+      |> assign(:room, room)
       |> assign(:columns, @columns)
       |> assign(:capabilities, @capabilities)
       |> assign(:teams, @teams)
@@ -85,6 +105,9 @@ defmodule AgentbotWeb.KanbanLive do
       |> assign(:detail_comments, [])
       |> assign(:detail_events, [])
       |> assign(:detail_children, [])
+      |> assign(:view_mode, "kanban")
+      |> assign(:calendar_tasks, [])
+      |> assign(:calendar_month, Date.utc_today())
       |> assign(:new_task, %{
         "title" => "",
         "description" => "",
@@ -94,13 +117,23 @@ defmodule AgentbotWeb.KanbanLive do
         "visibility" => "public",
         "priority" => "1",
         "assigned_to" => "hermes-local",
-        "deadline" => ""
+        "deadline" => "",
+        "room_id" => room_id
       })
       |> assign(:new_comment, %{"author" => "ilkerkaan", "body" => ""})
       |> assign(:new_subtask, %{"title" => "", "assigned_to" => "hermes-local"})
       |> assign_tasks()
 
     {:ok, socket}
+  end
+
+  defp page_title(nil), do: "Kanban Board"
+  defp page_title(room), do: "📋 #{room.name} — Kanban"
+
+  @impl true
+  def handle_event("toggle_view", _params, socket) do
+    new_mode = if socket.assigns.view_mode == "kanban", do: "calendar", else: "kanban"
+    {:noreply, assign(socket, :view_mode, new_mode)}
   end
 
   @impl true
@@ -160,6 +193,7 @@ defmodule AgentbotWeb.KanbanLive do
       priority: priority,
       assigned_to: assigned_to,
       created_by: "ilkerkaan",
+      room_id: socket.assigns[:room_id],
       status: status
     }
 
@@ -532,7 +566,8 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   defp assign_tasks(socket) do
-    all_tasks = Task.list_for_kanban()
+    room_id = socket.assigns[:room_id]
+    all_tasks = if room_id, do: Task.list_by_room(room_id), else: Task.list_for_kanban()
 
     # İstatistikler (tüm aktif kartlar)
     stats = %{
@@ -639,6 +674,8 @@ defmodule AgentbotWeb.KanbanLive do
       |> assign(:stats, stats)
       |> assign(:tasks_by_column, tasks_by_column)
       |> assign(:all_teams, all_teams)
+      |> assign(:calendar_tasks, filtered_tasks)
+      |> assign(:calendar_month, Date.utc_today())
       |> assign(:workload, workload)
       |> assign(:archived_tasks, archived_tasks)
 
@@ -675,6 +712,11 @@ defmodule AgentbotWeb.KanbanLive do
   rescue
     _ -> []
   end
+
+  defp safe_length(nil), do: 0
+  defp safe_length(%Ecto.Association.NotLoaded{}), do: 0
+  defp safe_length(list) when is_list(list), do: length(list)
+  defp safe_length(_), do: 0
 
   # ---- Public Helpers ----
   def priority_badge(priority) do

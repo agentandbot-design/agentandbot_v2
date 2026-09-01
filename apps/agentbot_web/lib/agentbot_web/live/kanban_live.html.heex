@@ -17,6 +17,22 @@
         <span>➕</span> Yeni Kart
       </button>
       <button
+        phx-click="toggle_view"
+        class={"px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition cursor-pointer border " <>
+          if @view_mode == "kanban" do
+            "bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-700"
+          else
+            "bg-indigo-600 text-white border-indigo-500"
+          end
+        }
+      >
+        <%= if @view_mode == "kanban" do %>
+          <span>📅</span> Calendar
+        <% else %>
+          <span>📋</span> Kanban
+        <% end %>
+      </button>
+      <button
         phx-click="toggle_archive"
         class={"px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition cursor-pointer " <>
           if @show_archive do
@@ -216,6 +232,7 @@
     <% end %>
 
     <!-- KANBAN SÜTUNLARI (Sortable.js destekli) -->
+    <%= if @view_mode == "kanban" do %>
     <div id="kanban-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 items-start">
       <%= for col <- @columns do %>
         <% tasks = Map.get(@tasks_by_column, col.id, []) %>
@@ -244,8 +261,8 @@
               <%= for task <- tasks do %>
                 <% {p_label, p_class} = priority_badge(task.priority) %>
                 <% is_private = task.visibility == "private" %>
-                <% child_count = length(task.children || []) %>
-                <% comment_count = length(task.comments || []) %>
+                <% child_count = safe_length(task.children) %>
+                <% comment_count = safe_length(task.comments) %>
                 <% tag_list = Task.parse_tag_list(task.tags) %>
                 <div
                   id={"task-#{task.id}"}
@@ -386,6 +403,11 @@
         </div>
       <% end %>
     </div>
+    <% end %>
+
+    <%= if @view_mode == "calendar" do %>
+      <.live_component module={AgentbotWeb.KanbanCalendarComponent} id="kanban-calendar" tasks={@calendar_tasks} month={@calendar_month} on_task_click="open_detail" />
+    <% end %>
   <% end %>
 
   <!-- ============================================================== -->
