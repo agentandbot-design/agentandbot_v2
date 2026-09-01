@@ -26,10 +26,10 @@
           end
         }
       >
-        <%= if @view_mode == "kanban" do %>
-          <span>📅</span> Calendar
-        <% else %>
-          <span>📋</span> Kanban
+        <%= case @view_mode do %>
+          <% "kanban" -> %><span>📅</span> Calendar
+          <% "calendar" -> %><span>💬</span> Sohbet
+          <% _ -> %><span>📋</span> Kanban
         <% end %>
       </button>
       <button
@@ -407,6 +407,56 @@
 
     <%= if @view_mode == "calendar" do %>
       <.live_component module={AgentbotWeb.KanbanCalendarComponent} id="kanban-calendar" tasks={@calendar_tasks} month={@calendar_month} on_task_click="open_detail" />
+    <% end %>
+
+    <%= if @view_mode == "chat" do %>
+      <div class="mt-4 bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden flex flex-col" style="height: 600px;">
+        <!-- Chat Header -->
+        <div class="px-4 py-3 border-b border-neutral-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">💬</span>
+            <span class="font-semibold text-neutral-200">Oda Sohbeti</span>
+            <%= if @room_id do %>
+              <span class="text-xs text-neutral-500 ml-2">Room #<%= @room_id %></span>
+            <% end %>
+          </div>
+          <span class="text-xs text-neutral-500"><%= length(@chat_messages) %> mesaj</span>
+        </div>
+
+        <!-- Messages -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <%= for msg <- @chat_messages do %>
+            <div id={"msg-#{msg.id}"} class="flex gap-3">
+              <div class={"flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold " <> sender_badge(msg)}>
+                <%= if msg.sender_id == "human", do: "İ", else: "A" %>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-baseline gap-2 mb-1">
+                  <span class="text-sm font-semibold text-neutral-200"><%= msg.sender_name || "Agent" %></span>
+                  <span class="text-xs text-neutral-500"><%= msg.inserted_at %></span>
+                </div>
+                <div class="text-sm text-neutral-300 whitespace-pre-wrap break-words"><%= msg.content %></div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- Input -->
+        <div class="p-3 border-t border-neutral-800">
+          <form phx-submit="send_message" class="flex gap-2">
+            <input
+              type="text"
+              name="message[body]"
+              value={@chat_input}
+              placeholder="Mesaj yazın..."
+              class="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
+            />
+            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold cursor-pointer transition">
+              Gönder
+            </button>
+          </form>
+        </div>
+      </div>
     <% end %>
   <% end %>
 

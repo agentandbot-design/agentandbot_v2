@@ -9,6 +9,7 @@ defmodule AgentbotWeb.KanbanLive do
   use AgentbotWeb, :live_view
 
   alias AgentbotCore.Modules.Chat.Room
+  alias AgentbotCore.Modules.Chat.Message
   alias AgentbotCore.Modules.Marketplace.Artifact
   alias AgentbotCore.Modules.Marketplace.Task
   alias AgentbotCore.Modules.Marketplace.TaskComment
@@ -108,6 +109,8 @@ defmodule AgentbotWeb.KanbanLive do
       |> assign(:view_mode, "kanban")
       |> assign(:calendar_tasks, [])
       |> assign(:calendar_month, Date.utc_today())
+      |> assign(:chat_messages, [])
+      |> assign(:chat_input, "")
       |> assign(:new_task, %{
         "title" => "",
         "description" => "",
@@ -124,6 +127,10 @@ defmodule AgentbotWeb.KanbanLive do
       |> assign(:new_subtask, %{"title" => "", "assigned_to" => "hermes-local"})
       |> assign_tasks()
 
+    if connected?(socket) && room_id do
+      AgentbotCore.PubSub.subscribe("room:#{room_id}")
+    end
+
     {:ok, socket}
   end
 
@@ -132,8 +139,37 @@ defmodule AgentbotWeb.KanbanLive do
 
   @impl true
   def handle_event("toggle_view", _params, socket) do
-    new_mode = if socket.assigns.view_mode == "kanban", do: "calendar", else: "kanban"
+    new_mode =
+      case socket.assigns.view_mode do
+        "kanban" -> "calendar"
+        "calendar" -> "chat"
+        _ -> "kanban"
+      end
+
     {:noreply, assign(socket, :view_mode, new_mode)}
+  end
+
+  @impl true
+  def handle_event("send_message", %{"message" => %{"body" => body}}, socket) do
+    room_id = socket.assigns[:room_id]
+
+    if room_id && String.trim(body) != "" do
+      case Message.create(%{
+             room_id: room_id,
+             content: String.trim(body),
+             sender_name: "İnsan",
+             sender_id: "human"
+           }) do
+        {:ok, msg} ->
+          AgentbotCore.PubSub.broadcast("room:#{room_id}", {:new_message, msg})
+          {:noreply, assign(socket, :chat_input, "")}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Mesaj gönderilemedi.")}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
@@ -544,6 +580,14 @@ defmodule AgentbotWeb.KanbanLive do
 
   # ---- PubSub Realtime ----
   @impl true
+  def handle_info({:new_message, msg}, socket) do
+    if socket.assigns[:room_id] == msg.room_id do
+      {:noreply, assign(socket, :chat_messages, Enum.take(socket.assigns.chat_messages ++ [msg], 100))}
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_info({:task_updated, _}, socket), do: {:noreply, assign_tasks(socket)}
   def handle_info({:task_created, _}, socket), do: {:noreply, assign_tasks(socket)}
   def handle_info({:task_deleted, _}, socket), do: {:noreply, assign_tasks(socket)}
@@ -676,6 +720,7 @@ defmodule AgentbotWeb.KanbanLive do
       |> assign(:all_teams, all_teams)
       |> assign(:calendar_tasks, filtered_tasks)
       |> assign(:calendar_month, Date.utc_today())
+      |> assign(:chat_messages, if(room_id, do: Message.list_by_room(room_id, 50), else: []))
       |> assign(:workload, workload)
       |> assign(:archived_tasks, archived_tasks)
 
@@ -717,6 +762,10 @@ defmodule AgentbotWeb.KanbanLive do
   defp safe_length(%Ecto.Association.NotLoaded{}), do: 0
   defp safe_length(list) when is_list(list), do: length(list)
   defp safe_length(_), do: 0
+
+  defp sender_badge(msg) do
+    if msg.sender_id == "human", do: "bg-indigo-600 text-white", else: "bg-emerald-600 text-white"
+  end
 
   # ---- Public Helpers ----
   def priority_badge(priority) do

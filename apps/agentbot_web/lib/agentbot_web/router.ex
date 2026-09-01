@@ -165,6 +165,7 @@ defmodule AgentbotWeb.Router do
     live("/rooms/:id", KanbanLive, :index)
     live("/rooms/:id/kanban", KanbanLive, :index)
     live("/rooms/:id/chat", RoomLive, :show)
+    live("/kanban", KanbanLive, :index)
     live("/gaps", GapsLive, :index)
     live("/recipes", RecipesLive, :index)
     live("/deployments", DeploymentsLive, :index)
