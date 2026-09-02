@@ -33,10 +33,12 @@ defmodule AgentbotWeb.ActivityLogLive do
 
   @impl true
   def handle_params(%{"date" => date_str}, _uri, socket) do
-    date = case Date.from_iso8601(date_str) do
-      {:ok, d} -> d
-      _ -> Date.utc_today()
-    end
+    date =
+      case Date.from_iso8601(date_str) do
+        {:ok, d} -> d
+        _ -> Date.utc_today()
+      end
+
     activities = ActivityLog.list_by_date(date)
     {:noreply, assign(socket, date: date, activities: activities)}
   end
@@ -56,6 +58,7 @@ defmodule AgentbotWeb.ActivityLogLive do
     case ActivityLog.create(params) do
       {:ok, _activity} ->
         activities = ActivityLog.list_by_date(socket.assigns.date)
+
         {:noreply,
          socket
          |> assign(:activities, activities)
@@ -88,6 +91,7 @@ defmodule AgentbotWeb.ActivityLogLive do
 
   def handle_event("delete_activity", %{"id" => id}, socket) do
     activity = ActivityLog.get!(id)
+
     case ActivityLog.delete(activity) do
       {:ok, _} ->
         activities = ActivityLog.list_by_date(socket.assigns.date)
@@ -100,9 +104,11 @@ defmodule AgentbotWeb.ActivityLogLive do
 
   def handle_event("sync_google", %{"id" => id}, socket) do
     activity = ActivityLog.get!(id)
+
     case ActivityLog.sync_to_google(activity) do
       {:ok, updated} ->
         activities = ActivityLog.list_by_date(socket.assigns.date)
+
         {:noreply,
          socket
          |> assign(:activities, activities)
@@ -114,10 +120,12 @@ defmodule AgentbotWeb.ActivityLogLive do
   end
 
   def handle_event("change_date", %{"date" => date_str}, socket) do
-    date = case Date.from_iso8601(date_str) do
-      {:ok, d} -> d
-      _ -> Date.utc_today()
-    end
+    date =
+      case Date.from_iso8601(date_str) do
+        {:ok, d} -> d
+        _ -> Date.utc_today()
+      end
+
     activities = ActivityLog.list_by_date(date)
     {:noreply, assign(socket, date: date, activities: activities)}
   end

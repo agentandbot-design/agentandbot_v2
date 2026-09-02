@@ -44,7 +44,17 @@ defmodule AgentbotCore.Modules.Registry.EcosystemEntry do
 
   def changeset(entry, attrs) do
     entry
-    |> cast(attrs, [:name, :url, :category, :priority, :notes, :status, :last_checked_at, :added_by, :metadata])
+    |> cast(attrs, [
+      :name,
+      :url,
+      :category,
+      :priority,
+      :notes,
+      :status,
+      :last_checked_at,
+      :added_by,
+      :metadata
+    ])
     |> validate_required([:name, :url, :category])
     |> validate_inclusion(:priority, ~w(P0 P1 P2))
     |> validate_inclusion(:status, ~w(unknown ok changed broken archived))

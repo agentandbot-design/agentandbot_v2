@@ -49,8 +49,11 @@ defmodule AgentbotWeb.EcosystemController do
     results =
       Enum.map(entries, fn entry_attrs ->
         case EcosystemEntry.upsert(entry_attrs) do
-          {:ok, entry} -> %{url: entry.url, status: "ok", id: entry.id}
-          {:error, changeset} -> %{url: get_field(changeset, :url), status: "error", errors: error_details(changeset)}
+          {:ok, entry} ->
+            %{url: entry.url, status: "ok", id: entry.id}
+
+          {:error, changeset} ->
+            %{url: get_field(changeset, :url), status: "error", errors: error_details(changeset)}
         end
       end)
 

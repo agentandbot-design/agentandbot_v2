@@ -10,6 +10,7 @@ defmodule AgentbotWeb.AgentManifestModal do
   @impl true
   def update(%{agent_id: id}, socket) do
     manifest = AgentCredential.find_manifest(id)
+
     pretty =
       case manifest do
         nil -> "{\n  \"error\": \"manifest bulunamadı\"\n}"

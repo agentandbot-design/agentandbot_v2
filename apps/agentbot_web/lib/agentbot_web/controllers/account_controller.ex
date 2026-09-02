@@ -32,7 +32,8 @@ defmodule AgentbotWeb.AccountController do
   # Cookie silme — Domain'li ve hostsuz iki ayrı Set-Cookie gerekir.
   # Plug aynı isimli başlığı tekilleştirdiği için (List.keystore) başlıklar
   # before_send'te doğrudan resp_headers'e yazılır.
-  @clear_domain_cookie "portal_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Domain=" <> @cookie_domain <> "; Secure; HttpOnly"
+  @clear_domain_cookie "portal_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Domain=" <>
+                         @cookie_domain <> "; Secure; HttpOnly"
   @clear_host_cookie "portal_session=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; HttpOnly"
 
   @doc "POST /auth/logout — paylaşılan oturumu kapatır, ana sayfaya döner"

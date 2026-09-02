@@ -92,6 +92,7 @@ defmodule AgentbotWeb.RoomController do
       true ->
         type = Map.get(body, "type", "news")
         valid_types = ~w(blog news video tweet podcast paper)
+
         if type not in valid_types do
           conn |> put_status(422) |> json(%{error: "type geçersiz: #{type}", valid: valid_types})
         else
@@ -111,7 +112,9 @@ defmodule AgentbotWeb.RoomController do
 
           case Message.create_feed_item(attrs) do
             {:ok, msg} ->
-              conn |> put_status(201) |> json(%{
+              conn
+              |> put_status(201)
+              |> json(%{
                 status: "ok",
                 id: msg.id,
                 manifest_url: "/api/feed/#{msg.id}",
@@ -136,6 +139,7 @@ defmodule AgentbotWeb.RoomController do
 
   defp maybe_put_int(map, _key, nil), do: map
   defp maybe_put_int(map, _key, ""), do: map
+
   defp maybe_put_int(map, key, value) do
     case Integer.parse(value) do
       {n, _} -> Map.put(map, key, n)
@@ -145,6 +149,7 @@ defmodule AgentbotWeb.RoomController do
 
   defp maybe_put_at(map, _key, nil), do: map
   defp maybe_put_at(map, _key, ""), do: map
+
   defp maybe_put_at(map, key, value) do
     case DateTime.from_iso8601(value) do
       {:ok, dt, _} -> Map.put(map, key, dt)
@@ -154,6 +159,7 @@ defmodule AgentbotWeb.RoomController do
 
   defp maybe_put_sites(map, nil), do: map
   defp maybe_put_sites(map, ""), do: map
+
   defp maybe_put_sites(map, value) do
     sites =
       value
@@ -167,6 +173,7 @@ defmodule AgentbotWeb.RoomController do
   defp parse_list(nil), do: []
   defp parse_list([]), do: []
   defp parse_list(value) when is_list(value), do: value
+
   defp parse_list(value) when is_binary(value) do
     value
     |> String.split(",")
@@ -176,12 +183,14 @@ defmodule AgentbotWeb.RoomController do
 
   defp parse_datetime(nil), do: nil
   defp parse_datetime(""), do: nil
+
   defp parse_datetime(value) when is_binary(value) do
     case DateTime.from_iso8601(value) do
       {:ok, dt, _} -> dt
       _ -> nil
     end
   end
+
   defp parse_datetime(value), do: value
 
   defp changeset_errors(changeset) do

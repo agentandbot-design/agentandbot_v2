@@ -43,7 +43,9 @@ defmodule AgentbotWeb.FusionSearchController do
 
   defp int_param(conn, key, default) do
     case conn.query_params[key] do
-      nil -> default
+      nil ->
+        default
+
       val ->
         case Integer.parse(val) do
           {n, _} -> n

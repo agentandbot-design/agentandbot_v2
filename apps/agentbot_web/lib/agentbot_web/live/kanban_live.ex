@@ -73,9 +73,11 @@ defmodule AgentbotWeb.KanbanLive do
                 nil -> {nil, nil}
                 room -> {id, room}
               end
+
             _ ->
               {nil, nil}
           end
+
         _ ->
           {nil, nil}
       end
@@ -257,7 +259,8 @@ defmodule AgentbotWeb.KanbanLive do
            |> put_flash(:info, "Yeni kart başarıyla eklendi.")}
 
         {:error, _changeset} ->
-          {:noreply, put_flash(socket, :error, "Kart kaydedilemedi. Lütfen alanları kontrol edin.")}
+          {:noreply,
+           put_flash(socket, :error, "Kart kaydedilemedi. Lütfen alanları kontrol edin.")}
       end
     else
       {:noreply, put_flash(socket, :error, "Kart başlığı zorunludur.")}
@@ -341,7 +344,11 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   @impl true
-  def handle_event("move_task_to", %{"id" => id, "target_column" => target_column} = params, socket) do
+  def handle_event(
+        "move_task_to",
+        %{"id" => id, "target_column" => target_column} = params,
+        socket
+      ) do
     task_id = String.to_integer(id)
     force = params["force"] == "true"
 
@@ -373,7 +380,11 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   @impl true
-  def handle_event("submit_artifact_and_complete", %{"artifact" => params, "task_id" => task_id_str}, socket) do
+  def handle_event(
+        "submit_artifact_and_complete",
+        %{"artifact" => params, "task_id" => task_id_str},
+        socket
+      ) do
     task_id = String.to_integer(task_id_str)
     task = Task.get!(task_id)
 
@@ -529,7 +540,11 @@ defmodule AgentbotWeb.KanbanLive do
 
   # ---- Alt Görev Ekleme & Toggle ----
   @impl true
-  def handle_event("add_subtask", %{"parent_id" => pid, "title" => title, "assigned_to" => at}, socket) do
+  def handle_event(
+        "add_subtask",
+        %{"parent_id" => pid, "title" => title, "assigned_to" => at},
+        socket
+      ) do
     parent_id = String.to_integer(pid)
     title = String.trim(title || "")
 
@@ -582,7 +597,8 @@ defmodule AgentbotWeb.KanbanLive do
   @impl true
   def handle_info({:new_message, msg}, socket) do
     if socket.assigns[:room_id] == msg.room_id do
-      {:noreply, assign(socket, :chat_messages, Enum.take(socket.assigns.chat_messages ++ [msg], 100))}
+      {:noreply,
+       assign(socket, :chat_messages, Enum.take(socket.assigns.chat_messages ++ [msg], 100))}
     else
       {:noreply, socket}
     end
@@ -911,6 +927,7 @@ defmodule AgentbotWeb.KanbanLive do
 
   def format_date_input(%DateTime{} = dt) do
     d = DateTime.to_date(dt)
+
     "#{d.year}-#{String.pad_leading(to_string(d.month), 2, "0")}-#{String.pad_leading(to_string(d.day), 2, "0")}"
   end
 

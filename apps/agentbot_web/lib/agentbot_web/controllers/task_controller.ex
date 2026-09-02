@@ -119,7 +119,8 @@ defmodule AgentbotWeb.TaskController do
         conn
         |> put_status(422)
         |> json(%{
-          error: "Artifact zorunludur: Task'ı 'completed' yapmadan önce POST /api/tasks/:id/artifact ile artifact üretilmelidir.",
+          error:
+            "Artifact zorunludur: Task'ı 'completed' yapmadan önce POST /api/tasks/:id/artifact ile artifact üretilmelidir.",
           code: "artifact_required"
         })
 

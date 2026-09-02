@@ -42,8 +42,11 @@ defmodule AgentbotWeb.ExecController do
     token = extract_token(conn)
 
     case token && AuthGate.verify_token(token) do
-      {:ok, agent} -> %{agent_id: agent.agent_id, agent_name: agent.agent_name, user_id: agent.agent_id}
-      _ -> %{}
+      {:ok, agent} ->
+        %{agent_id: agent.agent_id, agent_name: agent.agent_name, user_id: agent.agent_id}
+
+      _ ->
+        %{}
     end
   end
 

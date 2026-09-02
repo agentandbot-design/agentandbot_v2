@@ -115,7 +115,7 @@ defmodule AgentbotCore.Modules.Chat.Message do
 
   @doc "Feed istatistikleri — tip dağılımı ve toplam"
   def feed_stats do
-    items = Repo.all(from m in __MODULE__, where: m.room_id == 10)
+    items = Repo.all(from(m in __MODULE__, where: m.room_id == 10))
 
     types =
       items
@@ -123,7 +123,8 @@ defmodule AgentbotCore.Modules.Chat.Message do
 
     today_count =
       today = Date.utc_today()
-      Enum.count(items, fn m -> DateTime.to_date(m.inserted_at) == today end)
+
+    Enum.count(items, fn m -> DateTime.to_date(m.inserted_at) == today end)
 
     %{
       total: length(items),
@@ -149,7 +150,9 @@ defmodule AgentbotCore.Modules.Chat.Message do
       room_id: 10,
       sender_id: Map.get(attrs, :sender_id, "external-feed"),
       sender_name: Map.get(attrs, :sender_name, "Feed Bot"),
-      content: Map.get(attrs, :content, "") <> if(Map.get(attrs, :excerpt), do: "\n\n" <> Map.get(attrs, :excerpt), else: ""),
+      content:
+        Map.get(attrs, :content, "") <>
+          if(Map.get(attrs, :excerpt), do: "\n\n" <> Map.get(attrs, :excerpt), else: ""),
       message_type: "feed",
       metadata: metadata
     })

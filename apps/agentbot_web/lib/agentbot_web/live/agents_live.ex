@@ -182,6 +182,7 @@ defmodule AgentbotWeb.AgentsLive do
   def handle_info(_, socket), do: {:noreply, socket}
 
   defp filter_manifests(manifests, "all"), do: manifests
+
   defp filter_manifests(manifests, type) do
     Enum.filter(manifests, &(&1.executor_type == type))
   end

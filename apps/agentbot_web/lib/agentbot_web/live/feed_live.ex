@@ -58,6 +58,7 @@ defmodule AgentbotWeb.FeedLive do
     site = socket.assigns.site_filter
 
     opts = %{limit: 50}
+
     opts =
       opts
       |> maybe_put(:type, type != "all" && type)
@@ -193,10 +194,18 @@ defmodule AgentbotWeb.FeedLive do
     diff = DateTime.diff(now, dt, :second)
 
     cond do
-      diff < 60 -> "şimdi"
-      diff < 3600 -> "#{div(diff, 60)}dk"
-      diff < 86_400 -> "#{div(diff, 3600)}sa"
-      diff < 604_800 -> "#{div(diff, 86_400)}g"
+      diff < 60 ->
+        "şimdi"
+
+      diff < 3600 ->
+        "#{div(diff, 60)}dk"
+
+      diff < 86_400 ->
+        "#{div(diff, 3600)}sa"
+
+      diff < 604_800 ->
+        "#{div(diff, 86_400)}g"
+
       true ->
         {{y, m, d}, {h, mm, _}} = dt |> DateTime.to_date() |> then(&{&1, {0, 0, 0}})
         "#{y}-#{pad(m)}-#{pad(d)} #{pad(h)}:#{pad(mm)}"

@@ -85,6 +85,7 @@ defmodule AgentbotWeb.ActivityLogController do
   end
 
   defp parse_date(nil), do: Date.utc_today()
+
   defp parse_date(date_str) do
     case Date.from_iso8601(date_str) do
       {:ok, date} -> date

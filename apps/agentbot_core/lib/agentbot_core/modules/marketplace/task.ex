@@ -28,22 +28,22 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
              :created_by,
              :assigned_to,
              :capability,
-                         :team,
-                         :visibility,
-                         :tags,
-                         :title,
-                         :description,
-                         :input,
-                         :status,
-                         :priority,
-                         :parent_id,
-                         :archived,
-                         :deadline_at,
-                         :completed_at,
-                         :external_url,
-                         :source_type,
-                         :inserted_at,
-                         :updated_at
+             :team,
+             :visibility,
+             :tags,
+             :title,
+             :description,
+             :input,
+             :status,
+             :priority,
+             :parent_id,
+             :archived,
+             :deadline_at,
+             :completed_at,
+             :external_url,
+             :source_type,
+             :inserted_at,
+             :updated_at
            ]}
 
   schema "tasks" do
@@ -77,10 +77,24 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   def changeset(task, attrs) do
     task
     |> cast(attrs, [
-      :room_id, :created_by, :assigned_to, :capability, :team, :visibility,
-      :tags, :title, :description, :input, :status, :priority,
-      :parent_id, :archived, :deadline_at, :completed_at,
-      :external_url, :source_type
+      :room_id,
+      :created_by,
+      :assigned_to,
+      :capability,
+      :team,
+      :visibility,
+      :tags,
+      :title,
+      :description,
+      :input,
+      :status,
+      :priority,
+      :parent_id,
+      :archived,
+      :deadline_at,
+      :completed_at,
+      :external_url,
+      :source_type
     ])
     |> validate_required([:created_by, :capability, :title])
   end
@@ -92,11 +106,15 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     case result do
       {:ok, task} ->
         TaskEvent.log(task.id, attrs[:created_by] || "system", "created", %{
-          title: task.title, capability: task.capability
+          title: task.title,
+          capability: task.capability
         })
+
         broadcast_change("task_created", task)
         {:ok, task}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -113,17 +131,31 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     case result do
       {:ok, updated} ->
         changes = Map.filter(attrs, fn {k, v} -> Map.get(task, k) != v end)
-        action = if changes[:status] && changes[:status] != old_status, do: "status_changed", else: "edited"
-        TaskEvent.log(updated.id, attrs[:edited_by] || "user", action, %{changes: Map.keys(changes)})
+
+        action =
+          if changes[:status] && changes[:status] != old_status,
+            do: "status_changed",
+            else: "edited"
+
+        TaskEvent.log(updated.id, attrs[:edited_by] || "user", action, %{
+          changes: Map.keys(changes)
+        })
+
         broadcast_change("task_updated", updated)
         {:ok, updated}
-      error -> error
+
+      error ->
+        error
     end
   end
 
   @doc "Task'ı agent'a ata + event kaydet"
   def assign(task_id, agent_id) do
-    task = __MODULE__ |> Repo.get!(task_id) |> changeset(%{assigned_to: agent_id, status: "assigned"}) |> Repo.update()
+    task =
+      __MODULE__
+      |> Repo.get!(task_id)
+      |> changeset(%{assigned_to: agent_id, status: "assigned"})
+      |> Repo.update()
 
     case task do
       {:ok, t} ->
@@ -131,7 +163,9 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
         Oban.insert(TaskProcessor.new(%{task_id: t.id}))
         broadcast_change("task_updated", t)
         {:ok, t}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -140,17 +174,27 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     task = Repo.get(__MODULE__, task_id)
 
     cond do
-      task == nil -> {:error, :not_found}
-      task.status in ["completed", "failed"] -> {:error, :already_done}
-      task.assigned_to != nil and task.assigned_to != agent_id and task.status == "in_progress" -> {:error, :locked}
+      task == nil ->
+        {:error, :not_found}
+
+      task.status in ["completed", "failed"] ->
+        {:error, :already_done}
+
+      task.assigned_to != nil and task.assigned_to != agent_id and task.status == "in_progress" ->
+        {:error, :locked}
+
       true ->
-        result = task |> changeset(%{assigned_to: agent_id, status: "in_progress"}) |> Repo.update()
+        result =
+          task |> changeset(%{assigned_to: agent_id, status: "in_progress"}) |> Repo.update()
+
         case result do
           {:ok, t} ->
             TaskEvent.log(t.id, agent_id, "claimed", %{agent: agent_id})
             broadcast_change("task_updated", t)
             {:ok, t}
-          error -> error
+
+          error ->
+            error
         end
     end
   end
@@ -159,23 +203,31 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   def update_status(task_id, status, opts \\ []) do
     task = Repo.get!(__MODULE__, task_id) |> Repo.preload(:artifacts)
 
-    if status == "completed" and not Keyword.get(opts, :force, false) and Enum.empty?(task.artifacts) do
+    if status == "completed" and not Keyword.get(opts, :force, false) and
+         Enum.empty?(task.artifacts) do
       {:error, :artifact_required}
     else
-      params = if status in ["completed", "failed"] do
-        %{status: status, completed_at: DateTime.utc_now()}
-      else
-        %{status: status}
-      end
+      params =
+        if status in ["completed", "failed"] do
+          %{status: status, completed_at: DateTime.utc_now()}
+        else
+          %{status: status}
+        end
 
       result = task |> changeset(params) |> Repo.update()
 
       case result do
         {:ok, updated} ->
-          TaskEvent.log(updated.id, opts[:actor] || "system", "status_changed", %{from: task.status, to: status})
+          TaskEvent.log(updated.id, opts[:actor] || "system", "status_changed", %{
+            from: task.status,
+            to: status
+          })
+
           broadcast_change("task_updated", updated)
           {:ok, updated}
-        error -> error
+
+        error ->
+          error
       end
     end
   end
@@ -190,7 +242,9 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
         TaskEvent.log(t.id, "system", "archived", %{})
         broadcast_change("task_archived", t)
         {:ok, t}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -204,7 +258,9 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
         TaskEvent.log(t.id, "system", "unarchived", %{})
         broadcast_change("task_updated", t)
         {:ok, t}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -213,24 +269,37 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     task = Repo.get!(__MODULE__, task_id)
     TaskEvent.log(task.id, "system", "deleted", %{title: task.title})
     result = Repo.delete(task)
+
     case result do
       {:ok, deleted} ->
         broadcast_change("task_deleted", deleted)
         {:ok, deleted}
-      error -> error
+
+      error ->
+        error
     end
   end
 
   @doc "Tüm task'ları listele (arsivlenmemiş)"
   def list_all(opts \\ []) do
-    query = from(t in __MODULE__, where: t.archived == false, order_by: [desc: t.priority, desc: t.inserted_at])
+    query =
+      from(t in __MODULE__,
+        where: t.archived == false,
+        order_by: [desc: t.priority, desc: t.inserted_at]
+      )
+
     query = apply_filters(query, opts)
     query |> preload([:artifacts, :comments, :children]) |> Repo.all()
   end
 
   @doc "Kanban görünümü için tüm task'ları getir (arsivlenmemiş)"
   def list_for_kanban(opts \\ []) do
-    query = from(t in __MODULE__, where: t.archived == false, order_by: [desc: t.priority, desc: t.updated_at, desc: t.inserted_at])
+    query =
+      from(t in __MODULE__,
+        where: t.archived == false,
+        order_by: [desc: t.priority, desc: t.updated_at, desc: t.inserted_at]
+      )
+
     query = apply_filters(query, opts)
     query |> preload([:artifacts, :comments, :children]) |> Repo.all()
   end
@@ -254,7 +323,10 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   @doc "Kullanıcının iş yükünü say"
   def workload_counts do
     __MODULE__
-    |> where([t], t.archived == false and t.status in ["open", "ready", "assigned", "in_progress"])
+    |> where(
+      [t],
+      t.archived == false and t.status in ["open", "ready", "assigned", "in_progress"]
+    )
     |> select([t], %{assignee: t.assigned_to, count: count(t.id)})
     |> group_by([t], t.assigned_to)
     |> Repo.all()
@@ -273,6 +345,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
 
   @doc "Etiket string'ini temizlenmiş liste haline getirir (['SAP', 'harezm'])"
   def parse_tag_list(nil), do: []
+
   def parse_tag_list(tags_str) when is_binary(tags_str) do
     tags_str
     |> String.split([",", " ", "\n", "\t"], trim: true)
@@ -322,12 +395,17 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   defp maybe_filter(query, :status, status), do: from(t in query, where: t.status == ^status)
   defp maybe_filter(query, :team, team), do: from(t in query, where: t.team == ^team)
   defp maybe_filter(query, :visibility, vis), do: from(t in query, where: t.visibility == ^vis)
-  defp maybe_filter(query, :room_id, rid) when is_integer(rid), do: from(t in query, where: t.room_id == ^rid)
+
+  defp maybe_filter(query, :room_id, rid) when is_integer(rid),
+    do: from(t in query, where: t.room_id == ^rid)
 
   @doc "Capability'ye göre açık task'ları listele"
   def list_open_by_capability(capability) do
     __MODULE__
-    |> where([t], t.capability == ^capability and t.status in ["open", "ready"] and t.archived == false)
+    |> where(
+      [t],
+      t.capability == ^capability and t.status in ["open", "ready"] and t.archived == false
+    )
     |> order_by([t], desc: t.priority, asc: t.inserted_at)
     |> preload(:artifacts)
     |> Repo.all()
@@ -353,10 +431,15 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
 
   defp broadcast_change(event, task) do
     PubSub.broadcast("kanban:tasks", event, %{
-      id: task.id, title: task.title, status: task.status,
-      team: task.team, visibility: task.visibility,
-      tags: task.tags, assigned_to: task.assigned_to,
-      capability: task.capability, priority: task.priority
+      id: task.id,
+      title: task.title,
+      status: task.status,
+      team: task.team,
+      visibility: task.visibility,
+      tags: task.tags,
+      assigned_to: task.assigned_to,
+      capability: task.capability,
+      priority: task.priority
     })
   rescue
     _ -> :ok

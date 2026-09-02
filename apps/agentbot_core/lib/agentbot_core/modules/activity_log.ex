@@ -61,6 +61,7 @@ defmodule AgentbotCore.Modules.ActivityLog do
   @doc "Tüm aktiviteleri listele (tarihe göre)"
   def list_all(opts \\ []) do
     limit = Keyword.get(opts, :limit, 100)
+
     Repo.all(
       from(a in __MODULE__,
         order_by: [desc: a.date, desc: a.inserted_at],

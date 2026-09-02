@@ -19,24 +19,50 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
   alias AgentbotCore.Modules.Memory.FusionSearch
 
   @doc "Komut çalıştır → %{ok, output, ms}"
-  @spec exec(String.t(), map()) :: %{ok: boolean(), output: String.t(), code: atom() | nil, ms: integer()}
+  @spec exec(String.t(), map()) :: %{
+          ok: boolean(),
+          output: String.t(),
+          code: atom() | nil,
+          ms: integer()
+        }
   def exec(cmd, ctx \\ %{}) when is_binary(cmd) do
     t0 = System.monotonic_time(:millisecond)
     cmd = String.trim(cmd)
 
     result =
       case parse(cmd) do
-        {"help", _} -> help_text(ctx)
-        {"agents", rest} -> agents_cmd(rest)
-        {"rooms", rest} -> rooms_cmd(rest)
-        {"room", rest} -> room_cmd(rest, ctx)
-        {"task", rest} -> task_cmd(rest, ctx)
-        {"memory", rest} -> memory_cmd(rest, ctx)
-        {"council", rest} -> council_cmd(rest, ctx)
-        {"request", rest} -> request_cmd(rest, ctx)
-        {"stats", _} -> stats_cmd()
-        {"", _} -> %{ok: true, output: ""}
-        {unknown, _} -> %{ok: false, code: :not_found, output: "Bilinmeyen komut: #{unknown} — help"}
+        {"help", _} ->
+          help_text(ctx)
+
+        {"agents", rest} ->
+          agents_cmd(rest)
+
+        {"rooms", rest} ->
+          rooms_cmd(rest)
+
+        {"room", rest} ->
+          room_cmd(rest, ctx)
+
+        {"task", rest} ->
+          task_cmd(rest, ctx)
+
+        {"memory", rest} ->
+          memory_cmd(rest, ctx)
+
+        {"council", rest} ->
+          council_cmd(rest, ctx)
+
+        {"request", rest} ->
+          request_cmd(rest, ctx)
+
+        {"stats", _} ->
+          stats_cmd()
+
+        {"", _} ->
+          %{ok: true, output: ""}
+
+        {unknown, _} ->
+          %{ok: false, code: :not_found, output: "Bilinmeyen komut: #{unknown} — help"}
       end
 
     ms = System.monotonic_time(:millisecond) - t0
@@ -78,22 +104,25 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
 
   # ── help ───────────────────────────────────────────────
   defp help_text(_ctx) do
-    %{ok: true, output: """
-    AgentAndBot Terminal — komutlar
+    %{
+      ok: true,
+      output: """
+      AgentAndBot Terminal — komutlar
 
-    agents [online]              Kayıtlı/çevrimiçi agent'lar
-    rooms                        Odalar
-    room new <ad>                Yeni oda (auth)
-    room say <id> <mesaj>        Odaya mesaj (auth)
-    task list [--status open]    Task'lar
-    task create <ad> --cap <c>   Task oluştur (auth)
-    memory search <sorgu>        Kurumsal hafızada ara
-    memory add <metin>           Hafızaya yaz (auth)
-    council ask <soru> --agents N  Konsey (auth)
-    request <ihtiyaç>            İnsan girişi — derdini yaz
-    stats                        Sistem istatistikleri
-    help                         Bu liste
-    """}
+      agents [online]              Kayıtlı/çevrimiçi agent'lar
+      rooms                        Odalar
+      room new <ad>                Yeni oda (auth)
+      room say <id> <mesaj>        Odaya mesaj (auth)
+      task list [--status open]    Task'lar
+      task create <ad> --cap <c>   Task oluştur (auth)
+      memory search <sorgu>        Kurumsal hafızada ara
+      memory add <metin>           Hafızaya yaz (auth)
+      council ask <soru> --agents N  Konsey (auth)
+      request <ihtiyaç>            İnsan girişi — derdini yaz
+      stats                        Sistem istatistikleri
+      help                         Bu liste
+      """
+    }
   end
 
   # ── agents ─────────────────────────────────────────────
@@ -101,14 +130,22 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
     case rest do
       "online" ->
         case AgentPresence.list_online() do
-          [] -> %{ok: true, output: "Çevrimiçi agent yok"}
+          [] ->
+            %{ok: true, output: "Çevrimiçi agent yok"}
+
           agents ->
-            rows = Enum.map(agents, &"  #{String.pad_trailing(&1.agent_name || &1.agent_id, 22)} ● online")
+            rows =
+              Enum.map(
+                agents,
+                &"  #{String.pad_trailing(&1.agent_name || &1.agent_id, 22)} ● online"
+              )
+
             %{ok: true, output: "Çevrimiçi agent'lar:\n" <> Enum.join(rows, "\n")}
         end
 
       _ ->
         agents = Repo.all(AgentbotCore.Modules.Security.AgentCredential)
+
         rows =
           Enum.map(agents, fn a ->
             online = if AgentPresence.online?(a.agent_id), do: "● online", else: "○ offline"
@@ -139,15 +176,19 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
       ["say", id, msg] ->
         if ctx[:agent_id] do
           case Repo.get(Room, id) do
-            nil -> %{ok: false, code: :not_found, output: "Oda yok: #{id}"}
+            nil ->
+              %{ok: false, code: :not_found, output: "Oda yok: #{id}"}
+
             room ->
-              {:ok, _} = Message.create(%{
-                room_id: room.id,
-                sender_id: ctx[:agent_id],
-                sender_name: ctx[:agent_name] || ctx[:agent_id],
-                content: msg,
-                message_type: "text"
-              })
+              {:ok, _} =
+                Message.create(%{
+                  room_id: room.id,
+                  sender_id: ctx[:agent_id],
+                  sender_name: ctx[:agent_name] || ctx[:agent_id],
+                  content: msg,
+                  message_type: "text"
+                })
+
               %{ok: true, output: "→ ##{room.id} gönderildi"}
           end
         else
@@ -171,10 +212,15 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
 
       ["create", title] when title != "" ->
         if ctx[:agent_id] do
-          case Task.create(%{title: title, capability: fl["cap"] || "general", created_by: ctx[:agent_id]}) do
+          case Task.create(%{
+                 title: title,
+                 capability: fl["cap"] || "general",
+                 created_by: ctx[:agent_id]
+               }) do
             {:ok, task} ->
               assignee = if task.assigned_to, do: " → atandı: #{task.assigned_to}", else: ""
               %{ok: true, output: "Task ##{task.id} oluşturuldu#{assignee}"}
+
             {:error, reason} ->
               %{ok: false, code: :error, output: "Task hatası: #{inspect(reason)}"}
           end
@@ -183,7 +229,11 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
         end
 
       _ ->
-        %{ok: false, code: :usage, output: "Kullanım: task list | task create <başlık> --cap <capability>"}
+        %{
+          ok: false,
+          code: :usage,
+          output: "Kullanım: task list | task create <başlık> --cap <capability>"
+        }
     end
   end
 
@@ -203,12 +253,18 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
 
       ["add", content] when content != "" ->
         if ctx[:agent_id] do
-          chunk = %{"content" => content, "source" => "agent", "title" => "terminal", "project" => "console"}
+          chunk = %{
+            "content" => content,
+            "source" => "agent",
+            "title" => "terminal",
+            "project" => "console"
+          }
 
           case AgentbotCore.Modules.Memory.MemLocalClient.ingest(chunk) do
             {:ok, data} ->
               id = get_in(to_map(data), ["id"]) || get_in(to_map(data), [:id]) || "?"
               %{ok: true, output: "Hafızaya yazıldı (##{id})"}
+
             {:error, e} ->
               %{ok: false, code: :error, output: "Yazma hatası: #{inspect(e)}"}
           end
@@ -230,14 +286,20 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
         if is_nil(ctx[:agent_id]) do
           unauthorized("council ask")
         else
-          min = case Integer.parse(fl["agents"] || "2") do
-            {n, _} -> n
-            :error -> 2
-          end
+          min =
+            case Integer.parse(fl["agents"] || "2") do
+              {n, _} -> n
+              :error -> 2
+            end
 
           case Council.create(%{question: question, min_responses: min}) do
             {:ok, council} ->
-              %{ok: true, output: "Konsey ##{council.id} açıldı — #{min} agent'e soruldu.\nYanıtları izle: council show ##{council.id} (API: GET /api/council/#{council.id})"}
+              %{
+                ok: true,
+                output:
+                  "Konsey ##{council.id} açıldı — #{min} agent'e soruldu.\nYanıtları izle: council show ##{council.id} (API: GET /api/council/#{council.id})"
+              }
+
             {:error, e} ->
               %{ok: false, code: :error, output: "Konsey hatası: #{inspect(e)}"}
           end
@@ -245,21 +307,37 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
 
       ["show", id] ->
         case Repo.get(Council, id) do
-          nil -> %{ok: false, code: :not_found, output: "Konsey yok: #{id}"}
-          council -> %{ok: true, output: "Konsey ##{council.id}: #{council.question}\nDurum: #{council.status}"}
+          nil ->
+            %{ok: false, code: :not_found, output: "Konsey yok: #{id}"}
+
+          council ->
+            %{
+              ok: true,
+              output: "Konsey ##{council.id}: #{council.question}\nDurum: #{council.status}"
+            }
         end
 
       _ ->
-        %{ok: false, code: :usage, output: "Kullanım: council ask <soru> --agents N | council show <id>"}
+        %{
+          ok: false,
+          code: :usage,
+          output: "Kullanım: council ask <soru> --agents N | council show <id>"
+        }
     end
   end
 
   # ── request (insan girişi) ─────────────────────────────
   defp request_cmd(rest, _ctx) do
     case rest do
-      "" -> %{ok: false, code: :usage, output: "Kullanım: request <ihtiyacın>"}
+      "" ->
+        %{ok: false, code: :usage, output: "Kullanım: request <ihtiyacın>"}
+
       need ->
-        %{ok: true, output: "İstek alındı: \"#{need}\"\n(Sistem capability tahmin edip uygun agent'a delege eder — POST /api/request)"}
+        %{
+          ok: true,
+          output:
+            "İstek alındı: \"#{need}\"\n(Sistem capability tahmin edip uygun agent'a delege eder — POST /api/request)"
+        }
     end
   end
 
@@ -273,16 +351,23 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
       online: AgentPresence.count_online()
     }
 
-    %{ok: true, output: """
-    AgentAndBot — canlı istatistikler
-      agent'lar:     #{counts.agents}
-      çevrimiçi:     #{counts.online}
-      odalar:        #{counts.rooms}
-      mesajlar:      #{counts.messages}
-      task'lar:      #{counts.tasks}
-    """}
+    %{
+      ok: true,
+      output: """
+      AgentAndBot — canlı istatistikler
+        agent'lar:     #{counts.agents}
+        çevrimiçi:     #{counts.online}
+        odalar:        #{counts.rooms}
+        mesajlar:      #{counts.messages}
+        task'lar:      #{counts.tasks}
+      """
+    }
   end
 
   defp unauthorized(cmd),
-    do: %{ok: false, code: :unauthorized, output: "'#{cmd}' için yetki gerekli — token: terminal sayfasından veya aabt token <değer>"}
+    do: %{
+      ok: false,
+      code: :unauthorized,
+      output: "'#{cmd}' için yetki gerekli — token: terminal sayfasından veya aabt token <değer>"
+    }
 end

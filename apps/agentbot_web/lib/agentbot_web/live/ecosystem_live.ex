@@ -56,7 +56,13 @@ defmodule AgentbotWeb.EcosystemLive do
   def handle_event("check", %{"id" => id}, socket) do
     entry = Repo.get(EcosystemEntry, String.to_integer(id))
 
-    case entry && Repo.update(EcosystemEntry.changeset(entry, %{status: "checked", last_checked_at: DateTime.utc_now()})) do
+    case entry &&
+           Repo.update(
+             EcosystemEntry.changeset(entry, %{
+               status: "checked",
+               last_checked_at: DateTime.utc_now()
+             })
+           ) do
       {:ok, _} ->
         {:noreply, assign(socket, :entries, EcosystemEntry.list_all())}
 

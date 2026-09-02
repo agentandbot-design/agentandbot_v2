@@ -8,16 +8,17 @@ defmodule AgentbotWeb.MemStatus do
 
   @timeout 3_000
 
-  @type t :: %{
-          status: String.t(),
-          version: String.t(),
-          chunks: non_neg_integer(),
-          credentials: non_neg_integer(),
-          embedder_configured: boolean(),
-          embedder_model: String.t() | nil,
-          checked_at: DateTime.t()
-        }
-  | :offline
+  @type t ::
+          %{
+            status: String.t(),
+            version: String.t(),
+            chunks: non_neg_integer(),
+            credentials: non_neg_integer(),
+            embedder_configured: boolean(),
+            embedder_model: String.t() | nil,
+            checked_at: DateTime.t()
+          }
+          | :offline
 
   @spec fetch() :: t()
   def fetch do

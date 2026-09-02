@@ -15,6 +15,7 @@ defmodule AgentbotCore.Modules.GoogleDocs do
   """
   def sync_activity(activity_log) do
     token = get_token()
+
     with {:ok, doc_id} <- create_doc(token, activity_log.title),
          {:ok, _} <- write_content(token, doc_id, activity_log),
          {:ok, url} <- get_doc_url(token, doc_id) do

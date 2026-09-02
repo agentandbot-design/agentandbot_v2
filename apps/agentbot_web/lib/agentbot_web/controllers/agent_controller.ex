@@ -82,6 +82,7 @@ defmodule AgentbotWeb.AgentController do
   @doc "Authed agent kendi manifest'ini görsün — #23"
   def my_manifest(conn, _params) do
     agent_id = conn.assigns[:agent_id]
+
     if agent_id do
       case AgentCredential.find_manifest(agent_id) do
         nil -> conn |> put_status(404) |> json(%{error: "manifest yok", agent_id: agent_id})

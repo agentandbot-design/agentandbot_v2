@@ -62,7 +62,8 @@ defmodule AgentbotCore.Modules.Memory.MCPClient do
   @doc """
   Call a tool on the MCP server.
   """
-  @spec call_tool(String.t(), String.t(), String.t(), map()) :: {:ok, tool_result()} | {:error, term()}
+  @spec call_tool(String.t(), String.t(), String.t(), map()) ::
+          {:ok, tool_result()} | {:error, term()}
   def call_tool(url, api_key, tool_name, arguments) do
     payload = %{
       jsonrpc: "2.0",

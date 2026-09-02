@@ -54,8 +54,12 @@ defmodule AgentbotWeb.TerminalLive do
         out = String.trim_trailing(result.output)
 
         lines =
-          socket.assigns.lines ++ [echo, {cls, out}] ++
-            if(String.contains?(cmd, "council ask"), do: [{:dim, "(yanıtlar agent'lardan geldikçe /api/council/:id'de görünür)"}], else: [])
+          socket.assigns.lines ++
+            [echo, {cls, out}] ++
+            if(String.contains?(cmd, "council ask"),
+              do: [{:dim, "(yanıtlar agent'lardan geldikçe /api/council/:id'de görünür)"}],
+              else: []
+            )
 
         {:noreply,
          socket
@@ -70,10 +74,18 @@ defmodule AgentbotWeb.TerminalLive do
     idx = socket.assigns.hist_idx
 
     cond do
-      hist == [] -> {:noreply, socket}
-      is_nil(idx) -> {:noreply, socket |> assign(:hist_idx, length(hist) - 1) |> assign(:input, Enum.at(hist, -1))}
-      idx > 0 -> {:noreply, socket |> assign(:hist_idx, idx - 1) |> assign(:input, Enum.at(hist, idx - 1))}
-      true -> {:noreply, socket}
+      hist == [] ->
+        {:noreply, socket}
+
+      is_nil(idx) ->
+        {:noreply,
+         socket |> assign(:hist_idx, length(hist) - 1) |> assign(:input, Enum.at(hist, -1))}
+
+      idx > 0 ->
+        {:noreply, socket |> assign(:hist_idx, idx - 1) |> assign(:input, Enum.at(hist, idx - 1))}
+
+      true ->
+        {:noreply, socket}
     end
   end
 
@@ -82,9 +94,14 @@ defmodule AgentbotWeb.TerminalLive do
     idx = socket.assigns.hist_idx
 
     cond do
-      is_nil(idx) -> {:noreply, socket}
-      idx < length(hist) - 1 -> {:noreply, socket |> assign(:hist_idx, idx + 1) |> assign(:input, Enum.at(hist, idx + 1))}
-      true -> {:noreply, socket |> assign(:input, "") |> assign(:hist_idx, nil)}
+      is_nil(idx) ->
+        {:noreply, socket}
+
+      idx < length(hist) - 1 ->
+        {:noreply, socket |> assign(:hist_idx, idx + 1) |> assign(:input, Enum.at(hist, idx + 1))}
+
+      true ->
+        {:noreply, socket |> assign(:input, "") |> assign(:hist_idx, nil)}
     end
   end
 

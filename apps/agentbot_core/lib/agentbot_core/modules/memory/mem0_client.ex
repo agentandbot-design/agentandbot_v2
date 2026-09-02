@@ -34,7 +34,8 @@ defmodule AgentbotCore.Modules.Memory.Mem0Client do
     payload = %{
       messages: messages,
       user_id: user_id,
-      source: "ilkerkaan"                    # kaynak etiketi (opsiyonel)
+      # kaynak etiketi (opsiyonel)
+      source: "ilkerkaan"
     }
 
     request("/memories/", :post, payload, opts)
@@ -99,6 +100,8 @@ defmodule AgentbotCore.Modules.Memory.Mem0Client do
   defp api_key do
     Application.get_env(:agentbot_core, :mem0_api_key) ||
       System.get_env("MEM0_API_KEY") ||
-      raise("MEM0_API_KEY is not configured. Set :agentbot_core, :mem0_api_key or env MEM0_API_KEY")
+      raise(
+        "MEM0_API_KEY is not configured. Set :agentbot_core, :mem0_api_key or env MEM0_API_KEY"
+      )
   end
 end
