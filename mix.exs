@@ -8,7 +8,8 @@ defmodule AgentbotUmbrella.MixProject do
       version: "0.1.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases()
+      aliases: aliases(),
+      dialyzer: dialyzer_opts()
     ]
   end
 
@@ -32,6 +33,15 @@ defmodule AgentbotUmbrella.MixProject do
       {:mox, "~> 1.1", only: :test},
       # Anti-Crash Manifesto: type analysis
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp dialyzer_opts do
+    [
+      plt_add_apps: [:ex_unit],
+      # Known warnings — follow-up Plan #1 cleanup tracked separately
+      ignore_warnings: ".dialyzer_ignore.exs",
+      list_unused_filters: true
     ]
   end
 
