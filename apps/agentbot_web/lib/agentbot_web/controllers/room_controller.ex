@@ -93,9 +93,7 @@ defmodule AgentbotWeb.RoomController do
         type = Map.get(body, "type", "news")
         valid_types = ~w(blog news video tweet podcast paper)
 
-        if type not in valid_types do
-          conn |> put_status(422) |> json(%{error: "type geçersiz: #{type}", valid: valid_types})
-        else
+        if type in valid_types do
           attrs = %{
             title: title,
             content: content,
@@ -124,6 +122,8 @@ defmodule AgentbotWeb.RoomController do
             {:error, _} ->
               conn |> put_status(422) |> json(%{error: "Feed kaydedilemedi"})
           end
+        else
+          conn |> put_status(422) |> json(%{error: "type geçersiz: #{type}", valid: valid_types})
         end
     end
   end

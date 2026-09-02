@@ -145,7 +145,7 @@ defmodule AgentbotCore.Modules.Security.AgentCredential do
       description: c.description,
       version: Map.get(c, :version, "0.1.0"),
       is_active: c.is_active,
-      signed_at: (c.updated_at || c.inserted_at) |> DateTime.to_iso8601(),
+      signed_at: DateTime.to_iso8601(c.updated_at || c.inserted_at),
       links: %{
         self: "/api/agents/#{c.agent_id}/manifest",
         skill: "/.agent-well-known/skill",

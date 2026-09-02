@@ -38,23 +38,28 @@ defmodule AgentbotWeb.AccountController do
 
   @doc "POST /auth/logout — paylaşılan oturumu kapatır, ana sayfaya döner"
   def logout(conn, _params) do
-    register_before_send(conn, fn conn ->
-      remaining = Enum.reject(conn.resp_headers, fn {k, _} -> k == "set-cookie" end)
+    conn =
+      register_before_send(conn, fn conn ->
+        remaining = Enum.reject(conn.resp_headers, fn {k, _} -> k == "set-cookie" end)
 
-      %{
-        conn
-        | resp_headers: [
-            {"set-cookie", @clear_domain_cookie},
-            {"set-cookie", @clear_host_cookie}
-            | remaining
-          ]
-      }
-    end)
-    |> redirect(to: "/")
+        %{
+          conn
+          | resp_headers: [
+              {"set-cookie", @clear_domain_cookie},
+              {"set-cookie", @clear_host_cookie}
+              | remaining
+            ]
+        }
+      end)
+
+    redirect(conn, to: "/")
   end
 
   defp qm_login_url do
-    Application.get_env(:agentbot_core, :qm_sso, [])
-    |> Keyword.get(:login_url, "https://qm.agentandbot.com/auth/login")
+    Keyword.get(
+      Application.get_env(:agentbot_core, :qm_sso, []),
+      :login_url,
+      "https://qm.agentandbot.com/auth/login"
+    )
   end
 end

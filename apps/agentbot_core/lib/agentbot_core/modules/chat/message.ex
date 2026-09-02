@@ -117,14 +117,10 @@ defmodule AgentbotCore.Modules.Chat.Message do
   def feed_stats do
     items = Repo.all(from(m in __MODULE__, where: m.room_id == 10))
 
-    types =
-      items
-      |> Enum.frequencies_by(fn m -> get_in(m.metadata, ["type"]) || "other" end)
+    types = Enum.frequencies_by(items, fn m -> get_in(m.metadata, ["type"]) || "other" end)
 
-    today_count =
-      today = Date.utc_today()
-
-    Enum.count(items, fn m -> DateTime.to_date(m.inserted_at) == today end)
+    today = Date.utc_today()
+    today_count = Enum.count(items, fn m -> DateTime.to_date(m.inserted_at) == today end)
 
     %{
       total: length(items),

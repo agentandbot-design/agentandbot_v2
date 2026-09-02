@@ -8,6 +8,7 @@ defmodule AgentbotCore.Modules.ActivityLog do
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
+  alias AgentbotCore.Modules.GoogleDocs
   alias AgentbotCore.Repo
 
   @statuses ["draft", "in_progress", "done", "archived"]
@@ -101,7 +102,7 @@ defmodule AgentbotCore.Modules.ActivityLog do
 
   @doc "Google Docs'a senkronize et"
   def sync_to_google(%__MODULE__{} = activity_log) do
-    case AgentbotCore.Modules.GoogleDocs.sync_activity(activity_log) do
+    case GoogleDocs.sync_activity(activity_log) do
       {:ok, doc_id, doc_url} ->
         activity_log
         |> Ecto.Changeset.change(%{

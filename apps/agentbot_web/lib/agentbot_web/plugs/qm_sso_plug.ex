@@ -10,6 +10,9 @@ defmodule AgentbotWeb.Plugs.QmSsoPlug do
 
   import Plug.Conn
 
+  alias AgentbotCore.Modules.Security.Account
+  alias AgentbotCore.Modules.Security.QmSession
+
   @cookie "portal_session"
 
   def init(opts), do: opts
@@ -20,9 +23,9 @@ defmodule AgentbotWeb.Plugs.QmSsoPlug do
         conn
 
       token ->
-        case AgentbotCore.Modules.Security.QmSession.verify(token) do
+        case QmSession.verify(token) do
           {:ok, claims} ->
-            case AgentbotCore.Modules.Security.Account.upsert_from_email(claims.email) do
+            case Account.upsert_from_email(claims.email) do
               {:ok, account} -> assign(conn, :current_account, account)
               _ -> assign(conn, :current_account, nil)
             end

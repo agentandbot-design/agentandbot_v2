@@ -24,7 +24,7 @@ defmodule AgentbotWeb.TerminalLive do
       {:ok2, "memory: 384-dim embedder ..... OK"},
       {:ok2, "fusion search (RRF k=60) ..... OK"},
       {:ok2, "agent mesh: 17 registered .... OK"},
-      {:dim, "boot complete — #{DateTime.utc_now() |> Calendar.strftime("%Y-%m-%d %H:%M UTC")}"},
+      {:dim, "boot complete — #{Calendar.strftime(DateTime.utc_now(), "%Y-%m-%d %H:%M UTC")}"},
       {:banner, nil}
     ]
 
@@ -175,6 +175,6 @@ defmodule AgentbotWeb.TerminalLive do
 
   @impl true
   def handle_params(_params, _url, socket) do
-    {:noreply, assign(socket, :banner, @ascii_banner) |> assign(:quick, @quick_cmds)}
+    {:noreply, assign(assign(socket, :banner, @ascii_banner), :quick, @quick_cmds)}
   end
 end

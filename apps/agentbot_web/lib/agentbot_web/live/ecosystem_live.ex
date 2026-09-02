@@ -93,9 +93,11 @@ defmodule AgentbotWeb.EcosystemLive do
   end
 
   defp format_errors(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {k, v}, acc -> String.replace(acc, "%{#{k}}", inspect(v)) end)
-    end)
-    |> inspect()
+    errors =
+      Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+        Enum.reduce(opts, msg, fn {k, v}, acc -> String.replace(acc, "%{#{k}}", inspect(v)) end)
+      end)
+
+    inspect(errors)
   end
 end

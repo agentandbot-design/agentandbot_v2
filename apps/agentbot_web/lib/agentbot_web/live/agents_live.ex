@@ -8,8 +8,8 @@ defmodule AgentbotWeb.AgentsLive do
 
   use AgentbotWeb, :live_view
 
-  alias AgentbotCore.Modules.Security.AgentCredential
   alias AgentbotCore.Modules.Agents.AgentPresence
+  alias AgentbotCore.Modules.Security.AgentCredential
 
   @impl true
   def mount(_params, _session, socket) do

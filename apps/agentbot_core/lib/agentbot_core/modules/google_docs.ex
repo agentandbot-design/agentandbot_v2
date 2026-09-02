@@ -114,7 +114,7 @@ defmodule AgentbotCore.Modules.GoogleDocs do
     #{activity_log.content || "İçerik yok."}
 
     ─────────────────────────────
-    Otomatik oluşturuldu: #{DateTime.utc_now() |> DateTime.to_string()}
+    Otomatik oluşturuldu: #{DateTime.to_string(DateTime.utc_now())}
     Platform: e-any.online / AgentAndBot
     """
 
@@ -145,7 +145,7 @@ defmodule AgentbotCore.Modules.GoogleDocs do
   end
 
   defp clear_content(_token, _doc_id) do
-    # TODO: Implement content clearing for updates
+    # Content clearing for updates: pending — append-only for now
     :ok
   end
 

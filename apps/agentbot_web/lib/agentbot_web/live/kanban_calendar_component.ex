@@ -53,12 +53,12 @@ defmodule AgentbotWeb.KanbanCalendarComponent do
     last_day = Date.days_in_month(first)
     last = %{first | day: last_day}
 
-    days = Date.range(first, last) |> Enum.to_list()
+    days = Enum.to_list(Date.range(first, last))
 
     by_day =
       tasks
       |> Enum.filter(fn t -> t.deadline_at != nil end)
-      |> Enum.group_by(fn t -> t.deadline_at |> DateTime.to_date() end)
+      |> Enum.group_by(fn t -> DateTime.to_date(t.deadline_at) end)
       |> Map.new(fn {d, ts} -> {d, Enum.sort_by(ts, & &1.priority, :desc)} end)
 
     leading_blanks = Date.day_of_week(first) - 1

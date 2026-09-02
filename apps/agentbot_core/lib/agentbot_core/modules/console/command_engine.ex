@@ -11,12 +11,14 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
   gelecekteki aab CLI. Parse sunucuda — client sadece transport.
   """
 
-  alias AgentbotCore.Repo
-  alias AgentbotCore.Modules.Chat.{Message, Room}
+  alias AgentbotCore.Modules.Agents.AgentPresence
+  alias AgentbotCore.Modules.Chat.Message
+  alias AgentbotCore.Modules.Chat.Room
   alias AgentbotCore.Modules.Council.Council
   alias AgentbotCore.Modules.Marketplace.Task
-  alias AgentbotCore.Modules.Agents.AgentPresence
   alias AgentbotCore.Modules.Memory.FusionSearch
+  alias AgentbotCore.Modules.Memory.MemLocalClient
+  alias AgentbotCore.Repo
 
   @doc "Komut çalıştır → %{ok, output, ms}"
   @spec exec(String.t(), map()) :: %{
@@ -79,9 +81,7 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
 
   # ── flag parser: --cap x --agents 3 kalan kelimeler ────
   defp flags(rest) do
-    {flags, args} =
-      String.split(rest)
-      |> Enum.split_with(&String.starts_with?(&1, "--"))
+    {flags, args} = Enum.split_with(String.split(rest), &String.starts_with?(&1, "--"))
 
     flag_map =
       flags
@@ -206,24 +206,13 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
 
     case String.split(args, " ", parts: 2) do
       ["list"] ->
-        tasks = Repo.all(Task) |> Enum.take(20)
+        tasks = Enum.take(Repo.all(Task), 20)
         rows = Enum.map(tasks, fn t -> "  ##{t.id}  [#{t.status}]  #{t.title}" end)
         %{ok: true, output: "Task'lar (son #{length(tasks)}):\n" <> Enum.join(rows, "\n")}
 
       ["create", title] when title != "" ->
         if ctx[:agent_id] do
-          case Task.create(%{
-                 title: title,
-                 capability: fl["cap"] || "general",
-                 created_by: ctx[:agent_id]
-               }) do
-            {:ok, task} ->
-              assignee = if task.assigned_to, do: " → atandı: #{task.assigned_to}", else: ""
-              %{ok: true, output: "Task ##{task.id} oluşturuldu#{assignee}"}
-
-            {:error, reason} ->
-              %{ok: false, code: :error, output: "Task hatası: #{inspect(reason)}"}
-          end
+          create_task(title, fl, ctx)
         else
           unauthorized("task create")
         end
@@ -234,6 +223,21 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
           code: :usage,
           output: "Kullanım: task list | task create <başlık> --cap <capability>"
         }
+    end
+  end
+
+  defp create_task(title, fl, ctx) do
+    case Task.create(%{
+           title: title,
+           capability: fl["cap"] || "general",
+           created_by: ctx[:agent_id]
+         }) do
+      {:ok, task} ->
+        assignee = if task.assigned_to, do: " → atandı: #{task.assigned_to}", else: ""
+        %{ok: true, output: "Task ##{task.id} oluşturuldu#{assignee}"}
+
+      {:error, reason} ->
+        %{ok: false, code: :error, output: "Task hatası: #{inspect(reason)}"}
     end
   end
 
@@ -260,7 +264,7 @@ defmodule AgentbotCore.Modules.Console.CommandEngine do
             "project" => "console"
           }
 
-          case AgentbotCore.Modules.Memory.MemLocalClient.ingest(chunk) do
+          case MemLocalClient.ingest(chunk) do
             {:ok, data} ->
               id = get_in(to_map(data), ["id"]) || get_in(to_map(data), [:id]) || "?"
               %{ok: true, output: "Hafızaya yazıldı (##{id})"}

@@ -44,9 +44,7 @@ defmodule AgentbotCore.Modules.Security.QmSession do
 
   # base64url(body) üzerinde anahtar türetilmiş HMAC
   defp expected_signature(body) do
-    sig =
-      :crypto.mac(:hmac, :sha256, derived_key(), body)
-      |> Base.url_encode64(padding: false)
+    sig = Base.url_encode64(:crypto.mac(:hmac, :sha256, derived_key(), body), padding: false)
 
     {:ok, sig}
   rescue
@@ -87,8 +85,7 @@ defmodule AgentbotCore.Modules.Security.QmSession do
   defp secure_compare(a, b) when byte_size(a) == byte_size(b) do
     diff = :crypto.exor(a, b)
 
-    :binary.bin_to_list(diff)
-    |> Enum.reduce(0, fn
+    Enum.reduce(:binary.bin_to_list(diff), 0, fn
       0, acc -> acc
       _, _acc -> 1
     end) == 0

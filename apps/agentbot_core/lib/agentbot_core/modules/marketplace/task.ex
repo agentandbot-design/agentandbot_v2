@@ -201,7 +201,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
 
   @doc "Task durumunu güncelle + artifact guard + event kaydet"
   def update_status(task_id, status, opts \\ []) do
-    task = Repo.get!(__MODULE__, task_id) |> Repo.preload(:artifacts)
+    task = Repo.preload(Repo.get!(__MODULE__, task_id), :artifacts)
 
     if status == "completed" and not Keyword.get(opts, :force, false) and
          Enum.empty?(task.artifacts) do
@@ -427,7 +427,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     |> Repo.all()
   end
 
-  def get!(id), do: Repo.get!(__MODULE__, id) |> preload([:artifacts, :comments, :children])
+  def get!(id), do: preload(Repo.get!(__MODULE__, id), [:artifacts, :comments, :children])
 
   defp broadcast_change(event, task) do
     PubSub.broadcast("kanban:tasks", event, %{

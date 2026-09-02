@@ -40,7 +40,7 @@ defmodule AgentbotCore.Modules.Security.Account do
   QM girişinden hesabı atar — yoksa oluşturur, varsa last_signed_in_at günceller.
   """
   def upsert_from_email(email) when is_binary(email) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    now = DateTime.truncate(DateTime.utc_now(), :second)
     normalized = email |> String.trim() |> String.downcase()
 
     case find_by_email(normalized) do

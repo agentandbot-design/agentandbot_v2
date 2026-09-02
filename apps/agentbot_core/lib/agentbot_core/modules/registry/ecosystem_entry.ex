@@ -63,17 +63,17 @@ defmodule AgentbotCore.Modules.Registry.EcosystemEntry do
 
   @doc "Kategoriye göre listele (öncelik sırasıyla)"
   def list_by_category(category) do
-    from(e in __MODULE__,
-      where: e.category == ^category,
-      order_by: [asc: e.priority, asc: e.name]
+    Repo.all(
+      from(e in __MODULE__,
+        where: e.category == ^category,
+        order_by: [asc: e.priority, asc: e.name]
+      )
     )
-    |> Repo.all()
   end
 
   @doc "Tüm katalog — kategori + öncelik sıralı"
   def list_all do
-    from(e in __MODULE__, order_by: [asc: e.category, asc: e.priority, asc: e.name])
-    |> Repo.all()
+    Repo.all(from(e in __MODULE__, order_by: [asc: e.category, asc: e.priority, asc: e.name]))
   end
 
   @doc "Var olanı güncelle veya yenisini ekle (URL bazlı upsert)"
@@ -93,10 +93,11 @@ defmodule AgentbotCore.Modules.Registry.EcosystemEntry do
 
   @doc "Kategori istatistikleri"
   def category_stats do
-    from(e in __MODULE__,
-      group_by: [e.category, e.priority],
-      select: {e.category, e.priority, count(e.id)}
+    Repo.all(
+      from(e in __MODULE__,
+        group_by: [e.category, e.priority],
+        select: {e.category, e.priority, count(e.id)}
+      )
     )
-    |> Repo.all()
   end
 end

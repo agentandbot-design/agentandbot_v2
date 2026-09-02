@@ -8,8 +8,8 @@ defmodule AgentbotWeb.KanbanLive do
 
   use AgentbotWeb, :live_view
 
-  alias AgentbotCore.Modules.Chat.Room
   alias AgentbotCore.Modules.Chat.Message
+  alias AgentbotCore.Modules.Chat.Room
   alias AgentbotCore.Modules.Marketplace.Artifact
   alias AgentbotCore.Modules.Marketplace.Task
   alias AgentbotCore.Modules.Marketplace.TaskComment
@@ -508,7 +508,7 @@ defmodule AgentbotWeb.KanbanLive do
   # ---- Detay Modalı (Kart Detayı) ----
   @impl true
   def handle_event("open_detail", %{"id" => id}, socket) do
-    {:noreply, socket |> load_detail(String.to_integer(id))}
+    {:noreply, load_detail(socket, String.to_integer(id))}
   end
 
   @impl true
@@ -629,130 +629,117 @@ defmodule AgentbotWeb.KanbanLive do
     room_id = socket.assigns[:room_id]
     all_tasks = if room_id, do: Task.list_by_room(room_id), else: Task.list_for_kanban()
 
-    # İstatistikler (tüm aktif kartlar)
-    stats = %{
-      total: length(all_tasks),
-      open: Enum.count(all_tasks, &(&1.status in ["open", "ready", "assigned"])),
-      in_progress: Enum.count(all_tasks, &(&1.status == "in_progress")),
-      review: Enum.count(all_tasks, &(&1.status == "review")),
-      completed: Enum.count(all_tasks, &(&1.status == "completed")),
-      blocked: Enum.count(all_tasks, &(&1.status in ["blocked", "failed"])),
-      public: Enum.count(all_tasks, &(&1.visibility != "private")),
-      private: Enum.count(all_tasks, &(&1.visibility == "private"))
-    }
-
-    # Dinamik takım listesi (mevcut kartlardan)
-    all_teams =
-      case safe_list_distinct_teams() do
-        list when is_list(list) and list != [] -> list
-        _ -> Enum.map(@teams, fn {_, id} -> id end)
-      end
-
-    # Ekip yükü
-    workload =
-      case safe_workload_counts() do
-        list when is_list(list) -> list
-        _ -> []
-      end
-
-    # Filtreleme
-    f_team = socket.assigns[:filter_team] || "all"
-    f_vis = socket.assigns[:filter_visibility] || "all"
-    f_assignee = socket.assigns[:filter_assignee] || "all"
-    f_cap = socket.assigns[:filter_capability] || "all"
-    f_tag = socket.assigns[:filter_tag] || "all"
-    f_q = String.downcase(String.trim(socket.assigns[:search_query] || ""))
-
-    filtered_tasks =
-      all_tasks
-      |> Enum.filter(fn t ->
-        match_team =
-          case f_team do
-            "all" -> true
-            val -> (t.team || "Core") == val
-          end
-
-        match_vis =
-          case f_vis do
-            "all" -> true
-            "public" -> (t.visibility || "public") != "private"
-            "private" -> t.visibility == "private"
-          end
-
-        match_assignee =
-          case f_assignee do
-            "all" -> true
-            "unassigned" -> is_nil(t.assigned_to) or t.assigned_to == ""
-            val -> t.assigned_to == val
-          end
-
-        match_cap =
-          case f_cap do
-            "all" -> true
-            val -> t.capability == val
-          end
-
-        match_tag =
-          case f_tag do
-            "all" -> true
-            val -> val in Task.parse_tag_list(t.tags || "")
-          end
-
-        match_q =
-          if f_q == "" do
-            true
-          else
-            String.contains?(String.downcase(t.title || ""), f_q) or
-              String.contains?(String.downcase(t.description || ""), f_q) or
-              String.contains?(String.downcase(t.capability || ""), f_q) or
-              String.contains?(String.downcase(t.team || ""), f_q) or
-              String.contains?(String.downcase(t.assigned_to || ""), f_q) or
-              String.contains?(String.downcase(t.tags || ""), f_q)
-          end
-
-        match_team and match_vis and match_assignee and match_cap and match_tag and match_q
-      end)
-
-    # Kolonlara ayır (arşivlenmemiş aktif kartlar)
-    tasks_by_column = %{
-      "open" => Enum.filter(filtered_tasks, &(&1.status in ["open", "ready", "assigned"])),
-      "in_progress" => Enum.filter(filtered_tasks, &(&1.status == "in_progress")),
-      "review" => Enum.filter(filtered_tasks, &(&1.status == "review")),
-      "completed" => Enum.filter(filtered_tasks, &(&1.status == "completed")),
-      "blocked" => Enum.filter(filtered_tasks, &(&1.status in ["blocked", "failed"]))
-    }
-
-    # Arşivlenmiş kartlar
-    archived_tasks =
-      case socket.assigns[:show_archive] do
-        true -> safe_list_archived()
-        _ -> []
-      end
+    all_teams = list_teams()
+    workload = list_workload()
+    filtered_tasks = filter_tasks(all_tasks, socket.assigns)
+    tasks_by_column = group_by_column(filtered_tasks)
+    archived_tasks = if socket.assigns[:show_archive], do: safe_list_archived(), else: []
+    chat_messages = if room_id, do: Message.list_by_room(room_id, 50), else: []
 
     socket =
       socket
-      |> assign(:stats, stats)
+      |> assign(:stats, task_stats(all_tasks))
       |> assign(:tasks_by_column, tasks_by_column)
       |> assign(:all_teams, all_teams)
       |> assign(:calendar_tasks, filtered_tasks)
       |> assign(:calendar_month, Date.utc_today())
-      |> assign(:chat_messages, if(room_id, do: Message.list_by_room(room_id, 50), else: []))
+      |> assign(:chat_messages, chat_messages)
       |> assign(:workload, workload)
       |> assign(:archived_tasks, archived_tasks)
 
-    # Detay modalı açıksa içeriği de yenile
+    reload_detail(socket)
+  end
+
+  defp list_teams do
+    case safe_list_distinct_teams() do
+      list when is_list(list) and list != [] -> list
+      _ -> Enum.map(@teams, fn {_, id} -> id end)
+    end
+  end
+
+  defp list_workload do
+    case safe_workload_counts() do
+      list when is_list(list) -> list
+      _ -> []
+    end
+  end
+
+  defp reload_detail(socket) do
     case socket.assigns[:detail_task] do
       nil ->
         socket
 
       %{id: id} ->
-        # Detaydaki task hâlâ mevcutsa yeniden yükle
         try do
           load_detail(socket, id)
         rescue
           _ -> assign(socket, :show_detail_modal, false)
         end
     end
+  end
+
+  # Filtre koşulları — her biri bağımsız predicate
+  defp filter_tasks(tasks, assigns) do
+    Enum.filter(tasks, fn t ->
+      match_team?(t, assigns[:filter_team] || "all") and
+        match_visibility?(t, assigns[:filter_visibility] || "all") and
+        match_assignee?(t, assigns[:filter_assignee] || "all") and
+        match_capability?(t, assigns[:filter_capability] || "all") and
+        match_tag?(t, assigns[:filter_tag] || "all") and
+        match_query?(t, String.downcase(String.trim(assigns[:search_query] || "")))
+    end)
+  end
+
+  defp match_team?(_t, "all"), do: true
+  defp match_team?(t, val), do: (t.team || "Core") == val
+
+  defp match_visibility?(_t, "all"), do: true
+
+  defp match_visibility?(t, "public"), do: (t.visibility || "public") != "private"
+  defp match_visibility?(t, "private"), do: t.visibility == "private"
+
+  defp match_assignee?(_t, "all"), do: true
+  defp match_assignee?(t, "unassigned"), do: is_nil(t.assigned_to) or t.assigned_to == ""
+  defp match_assignee?(t, val), do: t.assigned_to == val
+
+  defp match_capability?(_t, "all"), do: true
+  defp match_capability?(t, val), do: t.capability == val
+
+  defp match_tag?(_t, "all"), do: true
+  defp match_tag?(t, val), do: val in Task.parse_tag_list(t.tags || "")
+
+  defp match_query?(_t, ""), do: true
+
+  defp match_query?(t, q) do
+    String.contains?(String.downcase(t.title || ""), q) or
+      String.contains?(String.downcase(t.description || ""), q) or
+      String.contains?(String.downcase(t.capability || ""), q) or
+      String.contains?(String.downcase(t.team || ""), q) or
+      String.contains?(String.downcase(t.assigned_to || ""), q) or
+      String.contains?(String.downcase(t.tags || ""), q)
+  end
+
+  defp group_by_column(tasks) do
+    %{
+      "open" => Enum.filter(tasks, &(&1.status in ["open", "ready", "assigned"])),
+      "in_progress" => Enum.filter(tasks, &(&1.status == "in_progress")),
+      "review" => Enum.filter(tasks, &(&1.status == "review")),
+      "completed" => Enum.filter(tasks, &(&1.status == "completed")),
+      "blocked" => Enum.filter(tasks, &(&1.status in ["blocked", "failed"]))
+    }
+  end
+
+  defp task_stats(tasks) do
+    %{
+      total: length(tasks),
+      open: Enum.count(tasks, &(&1.status in ["open", "ready", "assigned"])),
+      in_progress: Enum.count(tasks, &(&1.status == "in_progress")),
+      review: Enum.count(tasks, &(&1.status == "review")),
+      completed: Enum.count(tasks, &(&1.status == "completed")),
+      blocked: Enum.count(tasks, &(&1.status in ["blocked", "failed"])),
+      public: Enum.count(tasks, &(&1.visibility != "private")),
+      private: Enum.count(tasks, &(&1.visibility == "private"))
+    }
   end
 
   # Güvenli erişim (fonksiyon yoksa boş dön)

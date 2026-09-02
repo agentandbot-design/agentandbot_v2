@@ -71,7 +71,7 @@ defmodule AgentbotWeb.ActivityLogController do
   end
 
   def sync_google(conn, %{"id" => id}) do
-    activity = AgentbotCore.Modules.ActivityLog.get!(id)
+    activity = ActivityLog.get!(id)
 
     case ActivityLog.sync_to_google(activity) do
       {:ok, activity} ->
