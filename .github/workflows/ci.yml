@@ -93,11 +93,9 @@ jobs:
 
       - name: Build PLT (first run / cache miss)
         run: |
-          cd apps/agentbot_core && mix dialyzer --plt
-          cd ../agentbot_web && mix dialyzer --plt
+          mix dialyzer --plt
         continue-on-error: true  # PLT derleme uyarılarını yoksay, asıl dialyzer kontrol eder
 
       - name: Run Dialyzer
         run: |
-          cd apps/agentbot_core && mix dialyzer --no-check
-          cd ../agentbot_web && mix dialyzer --no-check
+          mix dialyzer --no-compile --no-check --ignore-module-dependency --format short
