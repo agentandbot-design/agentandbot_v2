@@ -98,4 +98,4 @@ jobs:
 
       - name: Run Dialyzer
         run: |
-          mix dialyzer --no-compile --no-check --ignore-module-dependency --format short
+          mix dialyzer --no-compile --no-check --format short
