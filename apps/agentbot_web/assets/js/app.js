@@ -44,6 +44,34 @@ const RememberName = {
 }
 
 // Terminal gövdesini alta kaydır (yeni satır geldiğinde)
+
+// SortableKanban — kanban sürükle-bırak hook
+const SortableKanban = {
+  mounted() { this._setupSortable() },
+  updated() { this._setupSortable() },
+  _setupSortable() {
+    if (this._sortable || typeof Sortable === "undefined") return
+    const el = document.getElementById("cards-" + this.el.dataset.roomId + "-" + this.el.dataset.stage)
+    if (!el) return
+    this._sortable = Sortable.create(el, {
+      group: "kanban-" + this.el.dataset.roomId,
+      animation: 150,
+      ghostClass: "opacity-50",
+      chosenClass: "ring-2 ring-blue-500",
+      dragClass: "shadow-xl",
+      handle: ".kanban-card",
+      onEnd: (evt) => {
+        const taskId = evt.item.dataset.taskId
+        const newStage = evt.to.closest("[data-stage]").dataset.stage
+        if (taskId && newStage) {
+          this.pushEvent("drop_task", { task_id: taskId, stage: newStage })
+        }
+      }
+    })
+  },
+  destroyed() { if (this._sortable) { this._sortable.destroy(); this._sortable = null } }
+}
+
 const TermScroll = {
   mounted() {
     this.el.scrollTop = this.el.scrollHeight
@@ -55,7 +83,7 @@ const TermScroll = {
 
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },
-  hooks: { ChatScroll, RememberName, TermScroll },
+  hooks: { ChatScroll, RememberName, TermScroll, SortableKanban },
 })
 
 // Connect

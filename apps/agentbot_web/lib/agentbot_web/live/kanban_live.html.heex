@@ -1,971 +1,153 @@
-<div class="ab-content max-w-full px-4 sm:px-6">
-  <!-- BAŞLIK & ÜST ÇUBUK -->
-  <div class="ab-page-head flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold flex items-center gap-2">
-        <span>📋</span> AgentAndBot Kanban Board
-      </h1>
-      <p class="text-neutral-400 text-sm mt-1">
-        Takımlar için açık/kapalı çalışma, #etiketler, alt görevler ve audit trail ile hermes kanbandan daha zengin bir takip panosu.
-      </p>
+<div class="p-4 max-w-full overflow-x-auto">
+  <%!-- Header --%>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-white">📋 Kanban Board</h1>
+    <div class="flex items-center gap-2 text-sm text-neutral-400">
+      <span class="badge badge-neutral"><%= length(@tasks) %> tasks</span>
     </div>
+  </div>
+
+  <%!-- Filter Bar --%>
+  <div class="flex flex-wrap gap-3 mb-6 p-3 bg-[#1e1e1e] rounded-xl border border-neutral-700">
     <div class="flex items-center gap-2">
-      <button
-        phx-click="open_new_modal"
-        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/20 transition cursor-pointer"
+      <label class="text-xs text-neutral-400 uppercase tracking-wider">Oda</label>
+      <select
+        phx-change="filter_room"
+        name="room"
+        class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm"
       >
-        <span>➕</span> Yeni Kart
-      </button>
-      <button
-        phx-click="toggle_view"
-        class={"px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition cursor-pointer border " <>
-          if @view_mode == "kanban" do
-            "bg-neutral-800 text-neutral-300 border-neutral-700 hover:bg-neutral-700"
-          else
-            "bg-indigo-600 text-white border-indigo-500"
-          end
-        }
-      >
-        <%= case @view_mode do %>
-          <% "kanban" -> %><span>📅</span> Calendar
-          <% "calendar" -> %><span>💬</span> Sohbet
-          <% _ -> %><span>📋</span> Kanban
+        <option value="all" selected={@filter_room == "all"}>Tüm Odalar</option>
+        <%= for room <- @rooms do %>
+          <option value={room.id} selected={to_string(@filter_room) == to_string(room.id)}>
+            <%= room.name %>
+          </option>
         <% end %>
-      </button>
-      <button
-        phx-click="toggle_archive"
-        class={"px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition cursor-pointer " <>
-          if @show_archive do
-            "bg-amber-700/60 text-amber-100 border border-amber-600"
-          else
-            "bg-neutral-800 text-neutral-300 border border-neutral-700 hover:bg-neutral-700"
-          end
-        }
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label class="text-xs text-neutral-400 uppercase tracking-wider">Aşama</label>
+      <select
+        phx-change="filter_stage"
+        name="stage"
+        class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm"
       >
-        <span>🗄️</span> Arşiv
-      </button>
+        <option value="all" selected={@filter_stage == "all"}>Tüm Aşamalar</option>
+        <%= for stage <- @stages do %>
+          <option value={stage} selected={@filter_stage == stage}>
+            <%= @stage_emojis[stage] %> <%= @stage_labels[stage] %>
+          </option>
+        <% end %>
+      </select>
     </div>
-  </div>
 
-  <!-- METRİK KARTLARI -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 mb-5">
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
-      <div class="text-[11px] uppercase tracking-wider text-neutral-400 font-medium">Toplam</div>
-      <div class="text-xl font-bold text-neutral-100 mt-0.5"><%= @stats.total %></div>
+    <div class="flex items-center gap-2">
+      <label class="text-xs text-neutral-400 uppercase tracking-wider">Kişi</label>
+      <select
+        phx-change="filter_assignee"
+        name="assignee"
+        class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm"
+      >
+        <option value="all" selected={@filter_assignee == "all"}>Tümü</option>
+        <option value="unassigned" selected={@filter_assignee == "unassigned"}>Atanmamış</option>
+        <%= for a <- @unique_assignees do %>
+          <option value={a} selected={@filter_assignee == a}><%= a %></option>
+        <% end %>
+      </select>
     </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
-      <div class="text-[11px] uppercase tracking-wider text-sky-400 font-medium">📥 Açık</div>
-      <div class="text-xl font-bold text-sky-300 mt-0.5"><%= @stats.open %></div>
-    </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
-      <div class="text-[11px] uppercase tracking-wider text-amber-400 font-medium">⚙️ Sürüyor</div>
-      <div class="text-xl font-bold text-amber-300 mt-0.5"><%= @stats.in_progress %></div>
-    </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
-      <div class="text-[11px] uppercase tracking-wider text-purple-400 font-medium">🔍 İnceleme</div>
-      <div class="text-xl font-bold text-purple-300 mt-0.5"><%= @stats.review %></div>
-    </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
-      <div class="text-[11px] uppercase tracking-wider text-emerald-400 font-medium">✅ Biten</div>
-      <div class="text-xl font-bold text-emerald-300 mt-0.5"><%= @stats.completed %></div>
-    </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
-      <div class="text-[11px] uppercase tracking-wider text-rose-400 font-medium">⛔ Engelli</div>
-      <div class="text-xl font-bold text-rose-300 mt-0.5"><%= @stats.blocked %></div>
-    </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
-      <div class="text-[11px] uppercase tracking-wider text-emerald-400 font-medium">🌐 Açık</div>
-      <div class="text-xl font-bold text-emerald-400 mt-0.5"><%= @stats.public %></div>
-    </div>
-    <div class="bg-neutral-800/80 border border-neutral-700/60 rounded-xl p-2.5">
-      <div class="text-[11px] uppercase tracking-wider text-amber-400 font-medium">🔒 Kapalı</div>
-      <div class="text-xl font-bold text-amber-400 mt-0.5"><%= @stats.private %></div>
-    </div>
-  </div>
 
-  <%= if @show_archive do %>
-    <!-- ARŞİV GÖRÜNÜMÜ -->
-    <div class="bg-neutral-900/90 border border-amber-800/40 rounded-xl p-5 mb-5">
-      <h2 class="text-lg font-bold text-amber-400 mb-3 flex items-center gap-2">
-        <span>🗄️</span> Arşivlenen Kartlar
-        <span class="text-xs font-normal text-neutral-500">(<%= length(@archived_tasks || []) %> kart)</span>
-      </h2>
-      <%= if Enum.empty?(@archived_tasks || []) do %>
-        <div class="text-neutral-500 text-sm italic py-6 text-center">Arşiv boş.</div>
-      <% else %>
-        <table class="ab-table w-full">
-          <thead>
-            <tr>
-              <th class="text-left">#</th>
-              <th class="text-left">Başlık</th>
-              <th class="text-left">Takım</th>
-              <th class="text-left">Atanan</th>
-              <th class="text-left">Tamamlanma</th>
-              <th class="text-right"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= for t <- (@archived_tasks || []) do %>
-              <tr>
-                <td class="font-mono text-neutral-500">#<%= t.id %></td>
-                <td class="font-medium"><%= t.title %></td>
-                <td class="text-xs"><%= team_label(t.team) %></td>
-                <td class="text-xs"><%= t.assigned_to || "—" %></td>
-                <td class="text-xs"><%= format_date(t.completed_at) %></td>
-                <td class="text-right space-x-1">
-                  <button
-                    phx-click="unarchive_task"
-                    phx-value-id={t.id}
-                    class="px-2 py-0.5 text-xs rounded bg-emerald-900/40 text-emerald-300 border border-emerald-800 hover:bg-emerald-900/60 cursor-pointer"
-                  >
-                    ↩ Geri Al
-                  </button>
-                  <button
-                    phx-click="delete_task"
-                    phx-value-id={t.id}
-                    data-confirm="Bu kartı kalıcı olarak silmek istediğinize emin misiniz?"
-                    class="px-2 py-0.5 text-xs rounded bg-red-900/40 text-red-300 border border-red-800 hover:bg-red-900/60 cursor-pointer"
-                  >
-                    🗑️ Sil
-                  </button>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+    <div class="ml-auto flex items-center gap-3 text-xs text-neutral-500">
+      <%= for stage <- @stages do %>
+        <span>
+          <%= @stage_emojis[stage] %>
+          <%= Enum.count(@tasks, fn t -> t.status == stage end) %>
+        </span>
       <% end %>
     </div>
-  <% else %>
-    <!-- FİLTRE & ARAMA ÇUBUĞU -->
-    <div class="bg-neutral-800/60 border border-neutral-700/50 rounded-xl p-3 mb-5 flex flex-wrap items-center justify-between gap-2.5">
-      <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[300px]">
-        <form phx-change="search" class="relative flex-1 min-w-[180px] max-w-sm">
+  </div>
+
+  <%!-- Kanban per Room --%>
+  <%= for room <- @rooms do %>
+    <% room_tasks = Map.get(@tasks_by_room, to_string(room.id), []) %>
+    <% room_tasks_filtered = if @filter_stage == "all", do: room_tasks, else: Enum.filter(room_tasks, fn t -> t.status == @filter_stage end) %>
+    <% is_collapsed = Map.get(@collapsed, to_string(room.id), false) %>
+
+    <div class="mb-6" id={"room-section-#{room.id}"}>
+      <button
+        phx-click="toggle_section"
+        phx-value-room_id={room.id}
+        class="w-full flex items-center justify-between p-3 bg-[#1e1e1e] rounded-t-xl border border-b-0 border-neutral-700 hover:bg-[#252525] transition-colors cursor-pointer"
+      >
+        <div class="flex items-center gap-3">
+          <span class={"text-lg transition-transform duration-200 #{if is_collapsed, do: "-rotate-90", else: "rotate-0"}"}>▼</span>
+          <h2 class="text-lg font-semibold text-white"><%= room.name %></h2>
+          <span class="badge badge-sm badge-neutral"><%= length(room_tasks) %> task</span>
+        </div>
+        <div class="flex items-center gap-2" phx-click="noop">
           <input
             type="text"
-            name="q"
-            value={@search_query}
-            placeholder="Ara (başlık, açıklama, takım, ajan)..."
-            class="w-full bg-neutral-900/80 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-            autocomplete="off"
+            placeholder="+ Yeni task..."
+            phx-keydown="create_task"
+            phx-key="Enter"
+            phx-value-room_id={room.id}
+            name="title"
+            class="input input-sm input-bordered bg-neutral-800 border-neutral-600 text-white text-xs w-48"
           />
-        </form>
+        </div>
+      </button>
 
-        <form phx-change="filter_team" class="flex items-center gap-1">
-          <span class="text-xs text-neutral-400">Takım:</span>
-          <select
-            name="team"
-            class="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
-          >
-            <option value="all" selected={@filter_team == "all"}>👥 Tümü</option>
-            <%= for team_name <- (@all_teams || []) do %>
-              <option value={team_name} selected={@filter_team == team_name}><%= team_name %></option>
-            <% end %>
-          </select>
-        </form>
-
-        <form phx-change="filter_visibility" class="flex items-center gap-1">
-          <span class="text-xs text-neutral-400">Erişim:</span>
-          <select
-            name="visibility"
-            class="bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
-          >
-            <option value="all" selected={@filter_visibility == "all"}>Tümü</option>
-            <%= for {name, id} <- @visibilities do %>
-              <option value={id} selected={@filter_visibility == id}><%= name %></option>
-            <% end %>
-          </select>
-        </form>
-
-        <form phx-change="filter_assignee" class="flex items-center gap-1">
-          <span class="text-xs text-neutral-400">Atanan:</span>
-          <select
-            name="assignee"
-            class="bg-neutral-900 border border-neutral-700 rounded-lg px-2 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
-          >
-            <option value="all" selected={@filter_assignee == "all"}>Tümü</option>
-            <option value="unassigned" selected={@filter_assignee == "unassigned"}>Atanmamış</option>
-            <%= for {name, id} <- @assignees, id != "" do %>
-              <option value={id} selected={@filter_assignee == id}><%= name %></option>
-            <% end %>
-          </select>
-        </form>
-
-        <form phx-change="filter_capability" class="flex items-center gap-1">
-          <span class="text-xs text-neutral-400">Kategori:</span>
-          <select
-            name="capability"
-            class="bg-neutral-900 border border-neutral-700 rounded-lg px-2 py-1.5 text-xs text-neutral-200 focus:outline-none focus:border-indigo-500"
-          >
-            <option value="all" selected={@filter_capability == "all"}>Tümü</option>
-            <%= for {name, cap} <- @capabilities do %>
-              <option value={cap} selected={@filter_capability == cap}><%= name %></option>
-            <% end %>
-          </select>
-        </form>
-
-        <%= if @filter_tag != "all" do %>
-          <button
-            phx-click="clear_tag_filter"
-            class="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-900/40 text-amber-300 border border-amber-800 text-xs hover:bg-amber-900/60 cursor-pointer"
-          >
-            🏷️ #<%= @filter_tag %> <span class="font-bold">✕</span>
-          </button>
-        <% end %>
-      </div>
-      <div class="text-xs text-neutral-500 flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        Canlı PubSub
-      </div>
-    </div>
-
-    <!-- EKİP YÜKÜ -->
-    <%= if not Enum.empty?(@workload || []) do %>
-      <div class="bg-neutral-900/70 border border-neutral-800 rounded-xl p-3 mb-4 flex flex-wrap items-center gap-2">
-        <span class="text-xs font-semibold text-neutral-300 uppercase tracking-wider">👥 Ekip Yükü:</span>
-        <%= for w <- @workload do %>
-          <span class="text-xs bg-neutral-800 border border-neutral-700 text-neutral-200 px-2 py-1 rounded-lg flex items-center gap-1">
-            🤖 <%= w.assignee || "Atanmamış" %>
-            <span class="font-bold text-amber-300"><%= w.count %></span>
-          </span>
-        <% end %>
-      </div>
-    <% end %>
-
-    <!-- KANBAN SÜTUNLARI (Sortable.js destekli) -->
-    <%= if @view_mode == "kanban" do %>
-    <div id="kanban-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3.5 items-start">
-      <%= for col <- @columns do %>
-        <% tasks = Map.get(@tasks_by_column, col.id, []) %>
-        <div
-          id={"kanban-column-#{col.id}"}
-          data-status={col.id}
-          phx-hook="KanbanSortable"
-          class="bg-neutral-900/90 border border-neutral-800 rounded-xl p-3 flex flex-col min-h-[480px]"
-        >
-          <div class="flex items-center justify-between pb-2.5 mb-3 border-b border-neutral-800">
-            <div class="flex items-center gap-2 font-semibold text-sm text-neutral-200">
-              <span><%= col.icon %></span>
-              <span><%= col.title %></span>
-            </div>
-            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-neutral-800 text-neutral-400 border border-neutral-700">
-              <%= length(tasks) %>
-            </span>
-          </div>
-
-          <div class="flex flex-col gap-2.5 flex-1 kanban-cards">
-            <%= if Enum.empty?(tasks) do %>
-              <div class="flex-1 flex items-center justify-center border border-dashed border-neutral-800/80 p-4 text-center">
-                <span class="text-xs text-neutral-600">Bu aşamada kart yok — sürükle bırak</span>
+      <%= unless is_collapsed do %>
+        <div class="grid grid-cols-7 gap-2 p-3 bg-[#171717] rounded-b-xl border border-t-0 border-neutral-700 overflow-x-auto">
+          <%= for stage <- @stages do %>
+            <% stage_tasks = Enum.filter(room_tasks_filtered, fn t -> t.status == stage end) %>
+            <div
+              class="min-w-[140px]"
+              id={"column-#{room.id}-#{stage}"}
+              phx-hook="SortableKanban"
+              data-stage={stage}
+              data-room-id={room.id}
+            >
+              <div class={"flex items-center justify-between p-2 rounded-lg mb-2 border #{column_border_class(stage)}"}>
+                <span class="text-xs font-medium text-neutral-300">
+                  <%= @stage_emojis[stage] %> <%= @stage_labels[stage] %>
+                </span>
+                <span class="text-[10px] text-neutral-500"><%= length(stage_tasks) %></span>
               </div>
-            <% else %>
-              <%= for task <- tasks do %>
-                <% {p_label, p_class} = priority_badge(task.priority) %>
-                <% is_private = task.visibility == "private" %>
-                <% child_count = safe_length(task.children) %>
-                <% comment_count = safe_length(task.comments) %>
-                <% tag_list = Task.parse_tag_list(task.tags) %>
-                <div
-                  id={"task-#{task.id}"}
-                  data-task-id={task.id}
-                  class="kanban-card bg-neutral-800/90 hover:bg-neutral-800 border border-neutral-700/70 hover:border-indigo-500/50 rounded-xl p-3 shadow-sm transition flex flex-col justify-between group relative cursor-grab active:cursor-grabbing"
-                >
-                  <div>
-                    <div class="flex items-center justify-between gap-1 mb-2">
-                      <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class={"text-[10px] font-semibold px-1.5 py-0.5 rounded border " <> p_class}><%= p_label %></span>
-                        <span class="text-[10px] bg-neutral-900/80 text-neutral-300 border border-neutral-700 px-1.5 py-0.5 rounded">
-                          <%= team_label(task.team) %>
-                        </span>
-                        <button
-                          phx-click="toggle_visibility"
-                          phx-value-id={task.id}
-                          title={if is_private, do: "Kapalı — Tıkla Açık Yap", else: "Açık — Tıkla Kapalı Yap"}
-                          class={"text-[10px] px-1.5 py-0.5 rounded border transition cursor-pointer " <>
-                            if is_private do
-                              "bg-amber-950/60 text-amber-300 border-amber-800"
-                            else
-                              "bg-emerald-950/50 text-emerald-300 border-emerald-800"
-                            end
-                          }
-                        >
-                          <%= if is_private, do: "🔒 Özel", else: "🌐 Açık" %>
-                        </button>
-                        <%= if child_count > 0 do %>
-                          <span class="text-[10px] bg-blue-950/40 text-blue-300 border border-blue-800 px-1.5 py-0.5 rounded" title={"#{child_count} alt görev"}>
-                            🧩 <%= child_count %>
-                          </span>
-                        <% end %>
-                        <%= if comment_count > 0 do %>
-                          <span class="text-[10px] bg-violet-950/40 text-violet-300 border border-violet-800 px-1.5 py-0.5 rounded" title={"#{comment_count} yorum"}>
-                            💬 <%= comment_count %>
-                          </span>
-                        <% end %>
-                      </div>
-                      <span class="text-[11px] font-mono text-neutral-400 bg-neutral-900/80 px-1.5 py-0.5 rounded">
-                        #<%= task.id %>
-                      </span>
+
+              <div class="space-y-2 kanban-column min-h-[60px]" id={"cards-#{room.id}-#{stage}"}>
+                <%= for task <- stage_tasks do %>
+                  <div
+                    class={"kanban-card p-2 rounded-lg border cursor-grab active:cursor-grabbing hover:border-neutral-500 transition-all #{card_border_class(task.status)}"}
+                    draggable="true"
+                    data-task-id={task.id}
+                    id={"task-#{task.id}"}
+                  >
+                    <div class="flex items-start justify-between gap-1">
+                      <p class="text-xs text-white leading-tight line-clamp-2 flex-1"><%= task.title %></p>
+                      <%= if task.priority > 0 do %>
+                        <span class={"text-[10px] font-bold #{priority_color(task.priority)}"}>P<%= task.priority %></span>
+                      <% end %>
                     </div>
-
-                    <h3
-                      phx-click="open_detail"
-                      phx-value-id={task.id}
-                      class="text-sm font-semibold text-neutral-100 hover:text-indigo-400 leading-snug mb-1.5 cursor-pointer transition flex items-center justify-between"
-                    >
-                      <span><%= task.title %></span>
-                      <span class="opacity-0 group-hover:opacity-100 text-neutral-500 text-xs ml-1">🔍</span>
-                    </h3>
-
-                    <%= if task.description && task.description != "" do %>
-                      <p class="text-xs text-neutral-400 line-clamp-2 mb-2 font-normal leading-relaxed">
-                        <%= task.description %>
-                      </p>
-                    <% end %>
-
-                    <%= if tag_list != [] do %>
-                      <div class="flex flex-wrap items-center gap-1 mb-2">
-                        <%= for tag <- tag_list do %>
-                          <button
-                            phx-click="filter_tag"
-                            phx-value-tag={tag}
-                            class="text-[10px] bg-indigo-950/50 text-indigo-300 border border-indigo-800/60 px-1.5 py-0.5 rounded hover:bg-indigo-900/60 transition cursor-pointer"
-                          >
-                            #<%= tag %>
-                          </button>
-                        <% end %>
-                      </div>
-                    <% end %>
-
-                    <% {deadline_label, deadline_class} = deadline_chip(task.deadline_at) || {nil, nil} %>
-
-                    <div class="flex flex-wrap items-center gap-1.5 mb-2 text-[11px]">
-                      <span class="bg-indigo-950/60 text-indigo-300 border border-indigo-800/60 px-2 py-0.5 rounded-md font-mono">
-                        🏷️ <%= task.capability %>
-                      </span>
+                    <div class="flex items-center justify-between mt-1.5">
+                      <span class="text-[10px] text-neutral-500"><%= relative_time(task.updated_at || task.inserted_at) %></span>
                       <%= if task.assigned_to && task.assigned_to != "" do %>
-                        <span class="bg-neutral-900 text-neutral-300 border border-neutral-700 px-2 py-0.5 rounded-md">
-                          🤖 <%= task.assigned_to %>
-                        </span>
-                      <% else %>
-                        <span class="bg-neutral-900/50 text-neutral-500 border border-neutral-800 px-2 py-0.5 rounded-md">
-                          👤 Atanmamış
-                        </span>
-                      <% end %>
-                      <%= if deadline_label do %>
-                        <span class={"px-2 py-0.5 rounded-md border " <> deadline_class}><%= deadline_label %></span>
-                      <% end %>
-                    </div>
-
-                    <div class="text-[11px] mb-2">
-                      <%= if not Enum.empty?(task.artifacts) do %>
-                        <div class="bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 px-2 py-0.5 rounded flex items-center justify-between text-[10px]">
-                          <span>📦 <%= length(task.artifacts) %> Artifact</span>
-                          <span class="opacity-80">Doğrulandı ✓</span>
-                        </div>
-                      <% else %>
-                        <%= if task.status == "completed" do %>
-                          <div class="bg-amber-950/40 border border-amber-800/60 text-amber-400 px-2 py-0.5 rounded text-[10px]">
-                            ⚠️ Artifactsız Tamamlanmış
-                          </div>
-                        <% end %>
+                        <span class="text-[10px] text-neutral-400 bg-neutral-800 px-1.5 py-0.5 rounded"><%= task.assigned_to %></span>
                       <% end %>
                     </div>
                   </div>
-
-                  <div class="pt-2 border-t border-neutral-700/50 flex items-center justify-between gap-1 text-xs">
-                    <div class="flex items-center gap-1 flex-wrap">
-                      <%= if task.status != "open" do %>
-                        <button phx-click="move_status" phx-value-id={task.id} phx-value-status="open" title="Açık" class="p-1 hover:bg-neutral-700 rounded cursor-pointer">📥</button>
-                      <% end %>
-                      <%= if task.status != "in_progress" do %>
-                        <button phx-click="move_status" phx-value-id={task.id} phx-value-status="in_progress" title="Sürüyor" class="p-1 hover:bg-neutral-700 rounded cursor-pointer">⚙️</button>
-                      <% end %>
-                      <%= if task.status != "review" do %>
-                        <button phx-click="move_status" phx-value-id={task.id} phx-value-status="review" title="İnceleme" class="p-1 hover:bg-neutral-700 rounded cursor-pointer">🔍</button>
-                      <% end %>
-                      <%= if task.status != "completed" do %>
-                        <button phx-click="open_artifact_modal" phx-value-id={task.id} title="Artifact ekle & Tamamla" class="p-1 hover:bg-neutral-700 rounded cursor-pointer">✅</button>
-                      <% end %>
-                      <%= if task.status != "blocked" do %>
-                        <button phx-click="move_status" phx-value-id={task.id} phx-value-status="blocked" title="Engelle" class="p-1 hover:bg-neutral-700 rounded cursor-pointer">⛔</button>
-                      <% end %>
-                    </div>
-                    <div class="flex items-center gap-1">
-                      <button phx-click="open_detail" phx-value-id={task.id} title="Detay / Yorumlar" class="p-1 hover:text-indigo-300 hover:bg-neutral-700 rounded cursor-pointer">🔍</button>
-                      <button phx-click="open_edit_modal" phx-value-id={task.id} title="Düzenle" class="p-1 hover:text-indigo-300 hover:bg-neutral-700 rounded cursor-pointer">✏️</button>
-                      <button phx-click="archive_task" phx-value-id={task.id} title="Arşivle" class="p-1 hover:text-amber-300 hover:bg-neutral-700 rounded cursor-pointer">🗄️</button>
-                      <button phx-click="delete_task" phx-value-id={task.id} data-confirm="Bu kartı silmek istediğinize emin misiniz?" title="Sil" class="p-1 text-neutral-500 hover:text-rose-400 hover:bg-neutral-700 rounded cursor-pointer">🗑️</button>
-                    </div>
-                  </div>
-                </div>
-              <% end %>
-            <% end %>
-          </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
         </div>
       <% end %>
     </div>
-    <% end %>
-
-    <%= if @view_mode == "calendar" do %>
-      <.live_component module={AgentbotWeb.KanbanCalendarComponent} id="kanban-calendar" tasks={@calendar_tasks} month={@calendar_month} on_task_click="open_detail" />
-    <% end %>
-
-    <%= if @view_mode == "chat" do %>
-      <div class="mt-4 bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden flex flex-col" style="height: 600px;">
-        <!-- Chat Header -->
-        <div class="px-4 py-3 border-b border-neutral-800 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-lg">💬</span>
-            <span class="font-semibold text-neutral-200">Oda Sohbeti</span>
-            <%= if @room_id do %>
-              <span class="text-xs text-neutral-500 ml-2">Room #<%= @room_id %></span>
-            <% end %>
-          </div>
-          <span class="text-xs text-neutral-500"><%= length(@chat_messages) %> mesaj</span>
-        </div>
-
-        <!-- Messages -->
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3">
-          <%= for msg <- @chat_messages do %>
-            <div id={"msg-#{msg.id}"} class="flex gap-3">
-              <div class={"flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold " <> sender_badge(msg)}>
-                <%= if msg.sender_id == "human", do: "İ", else: "A" %>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="flex items-baseline gap-2 mb-1">
-                  <span class="text-sm font-semibold text-neutral-200"><%= msg.sender_name || "Agent" %></span>
-                  <span class="text-xs text-neutral-500"><%= msg.inserted_at %></span>
-                </div>
-                <div class="text-sm text-neutral-300 whitespace-pre-wrap break-words"><%= msg.content %></div>
-              </div>
-            </div>
-          <% end %>
-        </div>
-
-        <!-- Input -->
-        <div class="p-3 border-t border-neutral-800">
-          <form phx-submit="send_message" class="flex gap-2">
-            <input
-              type="text"
-              name="message[body]"
-              value={@chat_input}
-              placeholder="Mesaj yazın..."
-              class="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-            />
-            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold cursor-pointer transition">
-              Gönder
-            </button>
-          </form>
-        </div>
-      </div>
-    <% end %>
   <% end %>
 
-  <!-- ============================================================== -->
-  <!-- MODAL: YENİ KART -->
-  <!-- ============================================================== -->
-  <%= if @show_modal do %>
-    <div class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between pb-4 mb-4 border-b border-neutral-800">
-          <h2 class="text-lg font-bold text-neutral-100 flex items-center gap-2">
-            <span>➕</span> Yeni Kart
-          </h2>
-          <button phx-click="close_modal" class="text-neutral-400 hover:text-neutral-200 text-lg p-1 cursor-pointer">✕</button>
-        </div>
-
-        <form phx-submit="save_new_task" class="flex flex-col gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Kart Başlığı *</label>
-            <input
-              type="text"
-              name="task[title]"
-              value={@new_task["title"]}
-              required
-              placeholder="Örn: News feed entegrasyonu"
-              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Açıklama</label>
-            <textarea
-              name="task[description]"
-              rows="2"
-              placeholder="Kök neden, hedefler..."
-              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-            ><%= @new_task["description"] %></textarea>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Takım (serbest)</label>
-              <input
-                type="text"
-                name="task[team]"
-                value={@new_task["team"]}
-                placeholder="Örn: SAP AI, Harezmi"
-                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Görünürlük</label>
-              <select
-                name="task[visibility]"
-                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
-              >
-                <%= for {name, id} <- @visibilities do %>
-                  <option value={id} selected={@new_task["visibility"] == id}><%= name %></option>
-                <% end %>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">
-              Etiketler (#hashtag, boşlukla ayrılmış)
-            </label>
-            <input
-              type="text"
-              name="task[tags]"
-              value={@new_task["tags"]}
-              placeholder="#SAP #harezm #agentandbot"
-              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-            />
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Kategori</label>
-              <select
-                name="task[capability]"
-                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
-              >
-                <%= for {name, cap} <- @capabilities do %>
-                  <option value={cap} selected={@new_task["capability"] == cap}><%= name %></option>
-                <% end %>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Öncelik</label>
-              <select
-                name="task[priority]"
-                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
-              >
-                <option value="2">P0 Acil</option>
-                <option value="1" selected>P1 Yüksek</option>
-                <option value="0">P2 Normal</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Bitiş Tarihi</label>
-              <input
-                type="date"
-                name="task[deadline]"
-                value={@new_task["deadline"]}
-                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Atanan</label>
-            <select
-              name="task[assigned_to]"
-              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
-            >
-              <%= for {name, id} <- @assignees do %>
-                <option value={id} selected={@new_task["assigned_to"] == id}><%= name %></option>
-              <% end %>
-            </select>
-          </div>
-
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-neutral-800 mt-2">
-            <button type="button" phx-click="close_modal" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-sm cursor-pointer">Vazgeç</button>
-            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-sm shadow-lg shadow-indigo-600/30 cursor-pointer">Kaydet</button>
-          </div>
-        </form>
-      </div>
+  <%= if @rooms == [] do %>
+    <div class="text-center py-20 text-neutral-500">
+      <p class="text-4xl mb-4">📋</p>
+      <p class="text-lg">Henüz oda yok</p>
     </div>
   <% end %>
-
-  <!-- ============================================================== -->
-  <!-- MODAL: DÜZENLEME -->
-  <!-- ============================================================== -->
-  <%= if @show_edit_modal and @editing_task do %>
-    <div class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-neutral-900 border border-indigo-700/60 rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between pb-4 mb-4 border-b border-neutral-800">
-          <h2 class="text-lg font-bold text-neutral-100 flex items-center gap-2">
-            <span>✏️</span> Düzenle <span class="text-xs font-mono text-neutral-400">#<%= @editing_task["id"] %></span>
-          </h2>
-          <button phx-click="close_modal" class="text-neutral-400 hover:text-neutral-200 text-lg p-1 cursor-pointer">✕</button>
-        </div>
-
-        <form phx-submit="update_existing_task" class="flex flex-col gap-4">
-          <input type="hidden" name="task[id]" value={@editing_task["id"]} />
-
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Kart Başlığı *</label>
-            <input type="text" name="task[title]" value={@editing_task["title"]} required
-              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-indigo-500" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Açıklama</label>
-            <textarea name="task[description]" rows="2"
-              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-indigo-500"
-            ><%= @editing_task["description"] %></textarea>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Takım</label>
-              <input type="text" name="task[team]" value={@editing_task["team"]}
-                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Görünürlük</label>
-              <select name="task[visibility]" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
-                <%= for {name, id} <- @visibilities do %>
-                  <option value={id} selected={@editing_task["visibility"] == id}><%= name %></option>
-                <% end %>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Etiketler</label>
-            <input type="text" name="task[tags]" value={@editing_task["tags"]} placeholder="#SAP #harezm"
-              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500" />
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Kategori</label>
-              <select name="task[capability]" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
-                <%= for {name, cap} <- @capabilities do %>
-                  <option value={cap} selected={@editing_task["capability"] == cap}><%= name %></option>
-                <% end %>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Öncelik</label>
-              <select name="task[priority]" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
-                <option value="2" selected={@editing_task["priority"] == "2"}>P0</option>
-                <option value="1" selected={@editing_task["priority"] == "1"}>P1</option>
-                <option value="0" selected={@editing_task["priority"] == "0"}>P2</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Durum</label>
-              <select name="task[status]" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
-                <option value="open" selected={@editing_task["status"] in ["open", "ready", "assigned"]}>📥 Açık</option>
-                <option value="in_progress" selected={@editing_task["status"] == "in_progress"}>⚙️ Sürüyor</option>
-                <option value="review" selected={@editing_task["status"] == "review"}>🔍 İnceleme</option>
-                <option value="completed" selected={@editing_task["status"] == "completed"}>✅ Bitti</option>
-                <option value="blocked" selected={@editing_task["status"] in ["blocked", "failed"]}>⛔ Engelli</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Bitiş Tarihi</label>
-              <input type="date" name="task[deadline]" value={format_date_input(@editing_task["deadline_at"])}
-                class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500" />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Atanan</label>
-            <select name="task[assigned_to]" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
-              <%= for {name, id} <- @assignees do %>
-                <option value={id} selected={@editing_task["assigned_to"] == id}><%= name %></option>
-              <% end %>
-            </select>
-          </div>
-
-          <div class="flex items-center justify-between pt-4 border-t border-neutral-800 mt-2">
-            <button type="button" phx-click="delete_task" phx-value-id={@editing_task["id"]} data-confirm="Bu kartı silmek istediğinize emin misiniz?"
-              class="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 border border-red-800/60 rounded-lg text-xs cursor-pointer">🗑️ Sil</button>
-            <div class="flex items-center gap-2">
-              <button type="button" phx-click="close_modal" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-sm cursor-pointer">Vazgeç</button>
-              <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg text-sm shadow-lg shadow-indigo-600/30 cursor-pointer">Kaydet</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  <% end %>
-
-  <!-- ============================================================== -->
-  <!-- MODAL: ARTIFACT & TAMAMLAMA -->
-  <!-- ============================================================== -->
-  <%= if @show_artifact_modal do %>
-    <div class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div class="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-        <div class="flex items-center justify-between pb-4 mb-4 border-b border-neutral-800">
-          <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
-            <span>📦</span> Artifact Teslim Et & Tamamla
-          </h2>
-          <button phx-click="close_modal" class="text-neutral-400 hover:text-neutral-200 text-lg p-1 cursor-pointer">✕</button>
-        </div>
-        <p class="text-xs text-neutral-400 mb-4 italic">"Conversation is temporary, Artifact is the product."</p>
-
-        <form phx-submit="submit_artifact_and_complete" class="flex flex-col gap-4">
-          <input type="hidden" name="task_id" value={@show_artifact_modal} />
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Artifact Başlığı</label>
-            <input type="text" name="artifact[title]" placeholder="Örn: Bug Fix Patch"
-              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Tip</label>
-            <select name="artifact[artifact_type]" class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-2 text-xs text-neutral-100 focus:outline-none focus:border-emerald-500">
-              <option value="code">Kod</option>
-              <option value="report" selected>Rapor</option>
-              <option value="diff">Diff</option>
-              <option value="decision">Karar</option>
-              <option value="data">Veri</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-1.5">Çıktı *</label>
-            <textarea name="artifact[content]" rows="4" required placeholder="Teslim edilen çıktı..."
-              class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-emerald-500 font-mono text-xs"></textarea>
-          </div>
-          <div class="flex items-center justify-between pt-4 border-t border-neutral-800 mt-2">
-            <button type="button" phx-click="move_status" phx-value-id={@show_artifact_modal} phx-value-status="completed" phx-value-force="true" class="text-xs text-neutral-500 hover:text-amber-400 underline cursor-pointer">Artifactsız Zorla Tamamla</button>
-            <div class="flex items-center gap-2">
-              <button type="button" phx-click="close_modal" class="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs cursor-pointer">Vazgeç</button>
-              <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-sm shadow-lg shadow-emerald-600/30 cursor-pointer">Teslim Et & Tamamla ✓</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  <% end %>
-
-  <!-- ============================================================== -->
-  <!-- MODAL: KART DETAYI (Yorumlar, Zaman Tüyü, Alt Görevler) -->
-  <!-- ============================================================== -->
-  <%= if @show_detail_modal and @detail_task do %>
-    <div class="fixed inset-0 bg-black/75 backdrop-blur-sm z-40 flex items-center justify-center p-4">
-      <div class="bg-neutral-900 border border-indigo-700/50 rounded-2xl max-w-3xl w-full p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
-        <div class="flex items-start justify-between pb-4 mb-4 border-b border-neutral-800 gap-4">
-          <div class="flex-1 min-w-0">
-            <h2 class="text-xl font-bold text-neutral-100 mb-1 break-words"><%= @detail_task.title %></h2>
-            <div class="flex flex-wrap items-center gap-1.5 text-xs">
-              <span class="font-mono text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded">#<%= @detail_task.id %></span>
-              <span class="bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700"><%= team_label(@detail_task.team) %></span>
-              <span class="bg-indigo-950/40 text-indigo-300 border border-indigo-800/60 px-2 py-0.5 rounded"><%= @detail_task.capability %></span>
-              <span class={"px-2 py-0.5 rounded " <> status_badge_class(@detail_task.status)}><%= @detail_task.status %></span>
-            </div>
-          </div>
-          <button phx-click="close_detail" class="text-neutral-400 hover:text-neutral-200 text-lg p-1 cursor-pointer">✕</button>
-        </div>
-
-        <!-- Description + Tags + Deadline -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-          <div>
-            <h3 class="text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">📝 Açıklama</h3>
-            <div class="bg-neutral-800/70 border border-neutral-700 rounded-lg p-3 text-sm text-neutral-200 min-h-[60px]">
-              <%= if @detail_task.description && @detail_task.description != "" do %>
-                <%= @detail_task.description %>
-              <% else %>
-                <em class="text-neutral-500">Açıklama yok.</em>
-              <% end %>
-            </div>
-            <%= tags = Task.parse_tag_list(@detail_task.tags) %>
-            <%= if tags != [] do %>
-              <div class="flex flex-wrap gap-1 mt-2">
-                <%= for tag <- tags do %>
-                  <span class="text-[10px] bg-indigo-950/50 text-indigo-300 border border-indigo-800/60 px-1.5 py-0.5 rounded">#<%= tag %></span>
-                <% end %>
-              </div>
-            <% end %>
-          </div>
-          <div>
-            <h3 class="text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2">📋 Meta</h3>
-            <table class="text-xs w-full">
-              <tr><td class="text-neutral-400 py-1">Atanan:</td><td class="text-neutral-200"><%= @detail_task.assigned_to || "Atanmamış" %></td></tr>
-              <tr><td class="text-neutral-400 py-1">Öncelik:</td><td class="text-neutral-200"><%= case @detail_task.priority do
-                2 -> "P0 Acil"
-                1 -> "P1 Yüksek"
-                _ -> "P2 Normal"
-              end %></td></tr>
-              <tr><td class="text-neutral-400 py-1">Bitiş:</td><td class="text-neutral-200">
-                <% {dl, dc} = deadline_chip(@detail_task.deadline_at) || {nil, nil} %>
-                <%= if dl do %>
-                  <span class={"px-2 py-0.5 rounded " <> dc}><%= dl %></span>
-                <% else %>
-                  —
-                <% end %>
-              </td></tr>
-              <tr><td class="text-neutral-400 py-1">Oluşturma:</td><td class="text-neutral-200"><%= format_date(@detail_task.inserted_at) %></td></tr>
-              <tr><td class="text-neutral-400 py-1">Güncelleme:</td><td class="text-neutral-200"><%= format_date(@detail_task.updated_at) %></td></tr>
-              <%= if not Enum.empty?(@detail_task.artifacts) do %>
-                <tr><td class="text-neutral-400 py-1">Artifact:</td><td class="text-emerald-300"><%= length(@detail_task.artifacts) %> adet ✓</td></tr>
-              <% end %>
-            </table>
-          </div>
-        </div>
-
-        <!-- ALT GÖREVLER -->
-        <div class="mb-5">
-          <h3 class="text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2 flex items-center gap-2">
-            🧩 Alt Görevler <span class="text-neutral-500">(<%= length(@detail_children) %>)</span>
-          </h3>
-          <%= if Enum.empty?(@detail_children) do %>
-            <div class="text-xs text-neutral-500 italic mb-2">Henüz alt görev yok.</div>
-          <% else %>
-            <div class="space-y-1 mb-2">
-              <%= for child <- @detail_children do %>
-                <div class="flex items-center gap-2 text-xs bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-1.5">
-                  <button
-                    phx-click="toggle_subtask"
-                    phx-value-id={child.id}
-                    phx-value-parent_id={@detail_task.id}
-                    class={"w-4 h-4 rounded border-2 flex items-center justify-center cursor-pointer " <>
-                      if child.status == "in_progress", do: "bg-emerald-500 border-emerald-500", else: "border-neutral-500"
-                    }
-                  >
-                    <%= if child.status == "in_progress" do %>
-                      <span class="text-[10px] font-bold text-neutral-900">✓</span>
-                    <% end %>
-                  </button>
-                  <span class={"flex-1 " <> if child.status == "in_progress", do: "line-through text-neutral-500", else: "text-neutral-200"}>
-                    <%= child.title %>
-                  </span>
-                  <span class="text-neutral-500"><%= child.assigned_to || "—" %></span>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
-
-          <form phx-submit="add_subtask" class="flex gap-2 mt-2">
-            <input type="hidden" name="parent_id" value={@detail_task.id} />
-            <input
-              type="text"
-              name="title"
-              placeholder="Yeni alt görev..."
-              required
-              class="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-            />
-            <select
-              name="assigned_to"
-              class="bg-neutral-800 border border-neutral-700 rounded-lg px-2 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500"
-            >
-              <%= for {name, id} <- @assignees, id != "" do %>
-                <option value={id} selected={id == "hermes-local"}><%= name %></option>
-              <% end %>
-            </select>
-            <button type="submit" class="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-600 text-white text-xs rounded-lg cursor-pointer">+ Ekle</button>
-          </form>
-        </div>
-
-        <!-- YORUMLAR -->
-        <div class="mb-5">
-          <h3 class="text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2 flex items-center gap-2">
-            💬 Yorumlar <span class="text-neutral-500">(<%= length(@detail_comments) %>)</span>
-          </h3>
-          <%= if Enum.empty?(@detail_comments) do %>
-            <div class="text-xs text-neutral-500 italic mb-2">Henüz yorum yok. İlk yorumu sen yaz.</div>
-          <% else %>
-            <div class="space-y-2 mb-2 max-h-60 overflow-y-auto">
-              <%= for c <- @detail_comments do %>
-                <div class="bg-neutral-800/70 border border-neutral-700 rounded-lg p-2.5 text-xs">
-                  <div class="flex items-center gap-2 mb-1 text-[10px] text-neutral-400">
-                    <strong class="text-indigo-300"><%= c.author %></strong>
-                    <span>·</span>
-                    <span><%= format_date(c.inserted_at) %></span>
-                  </div>
-                  <div class="text-neutral-200 whitespace-pre-wrap break-words"><%= c.body %></div>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
-
-          <form phx-submit="add_comment" class="flex flex-col gap-2 mt-2">
-            <input type="hidden" name="task_id" value={@detail_task.id} />
-            <input
-              type="text"
-              name="author"
-              value={@new_comment["author"]}
-              placeholder="Sen"
-              class="bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-            />
-            <div class="flex gap-2">
-              <textarea
-                name="body"
-                rows="2"
-                required
-                placeholder="Yorumun..."
-                class="flex-1 bg-neutral-800 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-indigo-500"
-              ></textarea>
-              <button type="submit" class="px-3 py-1.5 bg-violet-700 hover:bg-violet-600 text-white text-xs rounded-lg self-end cursor-pointer">Yorum Ekle</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- ZAMAN TÜYÜ -->
-        <div>
-          <h3 class="text-xs font-semibold text-neutral-300 uppercase tracking-wider mb-2 flex items-center gap-2">
-            🕐 Zaman Tüyü <span class="text-neutral-500">(son 50)</span>
-          </h3>
-          <%= if Enum.empty?(@detail_events) do %>
-            <div class="text-xs text-neutral-500 italic">Event yok.</div>
-          <% else %>
-            <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-              <%= for e <- @detail_events do %>
-                <div class="flex items-start gap-2 text-xs">
-                  <span class="text-base mt-0.5"><%= event_icon(e.action) %></span>
-                  <div class="flex-1 min-w-0">
-                    <span class="text-neutral-200 font-medium"><%= event_action_label(e.action) %></span>
-                    <span class="text-neutral-400"> — <%= e.actor %></span>
-                    <span class="text-neutral-500 ml-1">· <%= format_rel(e.inserted_at) %></span>
-                  </div>
-                </div>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    </div>
-  <% end %>
-
-  <!-- Sortable.js (13KB, sıfır dependency) + LiveView hook — sürükle bırak -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-  <script>
-    window.KanbanSortable = {
-      mounted() {
-        if (window.Sortable && !this._sortable) {
-          this._sortable = window.Sortable.create(this.el, {
-            group: "kanban",
-            animation: 150,
-            ghostClass: "opacity-30",
-            dragClass: "rotate-1",
-            handle: ".kanban-card",
-            onEnd: (evt) => {
-              const itemEl = evt.item;
-              const targetEl = evt.to;
-              const taskId = itemEl.dataset.taskId;
-              const newStatus = targetEl.dataset.status;
-              const oldStatus = evt.from.dataset.status;
-
-              if (newStatus && oldStatus !== newStatus) {
-                this.pushEvent("move_task_to", {
-                  id: taskId,
-                  target_column: newStatus
-                });
-              }
-            }
-          });
-        }
-      },
-      destroyed() {
-        if (this._sortable) {
-          this._sortable.destroy();
-          this._sortable = null;
-        }
-      }
-    };
-  </script>
 </div>
