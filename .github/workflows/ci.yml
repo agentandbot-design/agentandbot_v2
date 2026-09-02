@@ -39,6 +39,7 @@ jobs:
 
     env:
       MIX_ENV: test
+      DB_HOST: localhost
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:

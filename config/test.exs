@@ -4,7 +4,7 @@ import Config
 config :agentbot_core, AgentbotCore.Repo,
   username: "postgres",
   password: "postgres",
-  hostname: "core-postgres",
+  hostname: System.get_env("DB_HOST", "core-postgres"),
   database: "agentbot_test",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
