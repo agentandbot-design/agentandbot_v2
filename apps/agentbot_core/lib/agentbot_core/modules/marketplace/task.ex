@@ -119,6 +119,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   end
 
   @doc "Task alanlarını güncelle / düzenle + event kaydet"
+  @spec update(integer() | %__MODULE__{}, map()) :: {:ok, %__MODULE__{}} | {:error, term()}
   def update(task_id, attrs) when is_integer(task_id) do
     task = Repo.get!(__MODULE__, task_id)
     update(task, attrs)
@@ -427,7 +428,12 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     |> Repo.all()
   end
 
-  def get!(id), do: preload(Repo.get!(__MODULE__, id), [:artifacts, :comments, :children])
+  @spec get!(integer()) :: %__MODULE__{}
+  def get!(id) do
+    id
+    |> Repo.get!(__MODULE__)
+    |> Repo.preload([:artifacts, :comments, :children])
+  end
 
   defp broadcast_change(event, task) do
     PubSub.broadcast("kanban:tasks", event, %{

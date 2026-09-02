@@ -207,8 +207,9 @@ defmodule AgentbotWeb.FeedLive do
         "#{div(diff, 86_400)}g"
 
       true ->
-        {{y, m, d}, {h, mm, _}} = dt |> DateTime.to_date() |> then(&{&1, {0, 0, 0}})
-        "#{y}-#{pad(m)}-#{pad(d)} #{pad(h)}:#{pad(mm)}"
+        date = DateTime.to_date(dt)
+
+        "#{date.year}-#{pad(date.month)}-#{pad(date.day)} 00:00"
     end
   end
 

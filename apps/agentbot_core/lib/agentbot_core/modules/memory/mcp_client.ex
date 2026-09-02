@@ -12,8 +12,7 @@ defmodule AgentbotCore.Modules.Memory.MCPClient do
         }
 
   @type tool_result :: %{
-          content: [map()],
-          is_error: boolean()
+          required(String.t()) => term()
         }
 
   @doc """

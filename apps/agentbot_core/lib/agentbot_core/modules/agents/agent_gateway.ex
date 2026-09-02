@@ -97,11 +97,11 @@ defmodule AgentbotCore.Modules.Agents.AgentGateway do
   end
 
   # Payload'dan okunabilir content çıkar
+  @spec extract_content(map() | term()) :: String.t()
   defp extract_content(%{"content" => content}) when is_binary(content), do: content
   defp extract_content(%{"text" => text}) when is_binary(text), do: text
   defp extract_content(%{"message" => msg}) when is_binary(msg), do: msg
   defp extract_content(payload) when is_map(payload), do: Jason.encode!(payload)
-  defp extract_content(content) when is_binary(content), do: content
   defp extract_content(_), do: "(boş mesaj)"
 
   @doc """

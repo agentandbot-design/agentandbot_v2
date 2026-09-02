@@ -39,8 +39,6 @@ defmodule AgentbotUmbrella.MixProject do
   defp dialyzer_opts do
     [
       plt_add_apps: [:ex_unit],
-      # Known warnings — follow-up Plan #1 cleanup tracked separately
-      ignore_warnings: ".dialyzer_ignore.exs",
       list_unused_filters: true
     ]
   end

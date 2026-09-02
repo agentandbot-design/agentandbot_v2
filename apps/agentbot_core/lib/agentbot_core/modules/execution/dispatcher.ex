@@ -130,17 +130,17 @@ defmodule AgentbotCore.Modules.Execution.Dispatcher do
   end
 
   defp http_post(url, body) do
+    # inets :httpc.request/4 spec'i `{charlist, [{charlist, iodata}], binary(), iodata}`
+    # ister — Elixir string'leri binary olduğu için anahtarları/değerleri
+    # açıkça charlist'e çeviriyoruz.
     headers = [
-      {"content-type", "application/json"},
-      {"user-agent", "AgentAndBot/1.0"}
+      {~c"content-type", ~c"application/json"},
+      {~c"user-agent", ~c"AgentAndBot/1.0"}
     ]
 
-    case :httpc.request(
-           :post,
-           {String.to_charlist(url), headers, ~c"application/json", body},
-           [{:timeout, 25_000}],
-           []
-         ) do
+    request = {String.to_charlist(url), headers, ~c"application/json", body}
+
+    case :httpc.request(:post, request, [{:timeout, 25_000}], []) do
       {:ok, {{_, status, _}, _resp_headers, resp_body}} ->
         {:ok, %{status: status, body: to_string(resp_body)}}
 

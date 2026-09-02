@@ -163,7 +163,7 @@ defmodule AgentbotWeb.KanbanLive do
              sender_id: "human"
            }) do
         {:ok, msg} ->
-          AgentbotCore.PubSub.broadcast("room:#{room_id}", {:new_message, msg})
+          AgentbotCore.PubSub.broadcast("room:#{room_id}", :new_message, msg)
           {:noreply, assign(socket, :chat_input, "")}
 
         {:error, _} ->
@@ -934,8 +934,6 @@ defmodule AgentbotWeb.KanbanLive do
       s -> Date.from_iso8601(s)
     end
   end
-
-  defp parse_date(_), do: :error
 
   # deadline string -> %DateTime{} | nil
   defp build_deadline_at(nil), do: nil
