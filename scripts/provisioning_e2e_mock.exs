@@ -78,7 +78,8 @@ defmodule TestHelper do
 
     {:ok, deployment} =
       %AgentbotCore.Modules.Provisioning.Deployment{
-        agent_credential_id: 1, # Basit test için hardcoded
+        # Basit test için hardcoded
+        agent_credential_id: 1,
         recipe_id: recipe.id,
         provider_id: recipe.provider_id,
         region: "iad",
@@ -136,7 +137,9 @@ if recipe do
 
   if verified_deployment.status == "live" do
     # Capability sağlandı
-    {:ok, capability} = AgentbotCore.Modules.Provisioning.register_capability_from_deployment(deployment.id)
+    {:ok, capability} =
+      AgentbotCore.Modules.Provisioning.register_capability_from_deployment(deployment.id)
+
     IO.puts("🎉 Capability sağlandı: #{capability.name}")
   end
 
@@ -144,11 +147,13 @@ if recipe do
 
   # Sonuç
   IO.puts("\n" <> String.duplicate("=", 50))
+
   if fulfilled do
     IO.puts("🎉 E2E Test BAŞARILI! Gap→Recipe→Deploy→Verify→Fulfilled döngüsü çalışıyor!")
   else
     IO.puts("⚠️  E2E Test kısmen başarılı, bazı adımlar tamamlanamadı")
   end
+
   IO.puts(String.duplicate("=", 50))
 else
   IO.puts("\n❌ Test başlatılamadı: recipe bulunamadı")
