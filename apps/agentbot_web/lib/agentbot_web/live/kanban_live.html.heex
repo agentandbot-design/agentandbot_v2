@@ -1,23 +1,29 @@
-<div class="p-4 max-w-full overflow-x-auto">
+<div class="p-4 max-w-full">
   <%!-- Header --%>
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-white">📋 Kanban Board</h1>
+  <div class="flex items-center justify-between mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#1e1e1e] to-[#242424] border border-neutral-700" data-agent-view="kanban">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-xl shadow-lg">📋</div>
+      <div>
+        <h1 class="text-2xl font-bold text-white leading-tight">Kanban Board</h1>
+        <p class="text-xs text-neutral-400"><%= length(@rooms) %> oda · <%= length(@tasks) %> task · 7 aşama</p>
+      </div>
+    </div>
     <div class="flex items-center gap-2 text-sm text-neutral-400">
-      <span class="badge badge-neutral" aria-live="polite"><%= length(@tasks) %> tasks</span>
+      <span class="badge badge-ghost badge-lg" aria-live="polite"><%= length(@tasks) %> tasks</span>
     </div>
   </div>
 
   <%!-- Filter Bar --%>
-  <div class="flex flex-wrap gap-3 mb-6 p-3 bg-[#1e1e1e] rounded-xl border border-neutral-700" data-agent-view="kanban">
+  <div class="flex flex-wrap gap-3 mb-6 p-3 bg-[#1a1a1a] rounded-xl border border-neutral-700/60 shadow-lg">
     <div class="flex items-center gap-2">
-      <label class="text-xs text-neutral-400 uppercase tracking-wider" for="filter-room">Oda</label>
+      <label class="text-xs text-neutral-400 uppercase tracking-wider font-medium" for="filter-room">Oda</label>
       <select
         id="filter-room"
         phx-change="filter_room"
         name="room"
         data-agent-action="filter_room"
         aria-label="Oda filtresi"
-        class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm"
+        class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm focus:border-indigo-500"
       >
         <option value="all" selected={@filter_room == "all"}>Tüm Odalar</option>
         <%= for room <- @rooms do %>
@@ -29,14 +35,14 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <label class="text-xs text-neutral-400 uppercase tracking-wider" for="filter-stage">Aşama</label>
+      <label class="text-xs text-neutral-400 uppercase tracking-wider font-medium" for="filter-stage">Aşama</label>
       <select
         id="filter-stage"
         phx-change="filter_stage"
         name="stage"
         data-agent-action="filter_stage"
         aria-label="Aşama filtresi"
-        class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm"
+        class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm focus:border-indigo-500"
       >
         <option value="all" selected={@filter_stage == "all"}>Tüm Aşamalar</option>
         <%= for stage <- @stages do %>
@@ -48,14 +54,14 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <label class="text-xs text-neutral-400 uppercase tracking-wider" for="filter-assignee">Kişi</label>
+      <label class="text-xs text-neutral-400 uppercase tracking-wider font-medium" for="filter-assignee">Kişi</label>
       <select
         id="filter-assignee"
         phx-change="filter_assignee"
         name="assignee"
         data-agent-action="filter_assignee"
         aria-label="Kişi filtresi"
-        class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm"
+        class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm focus:border-indigo-500"
       >
         <option value="all" selected={@filter_assignee == "all"}>Tümü</option>
         <option value="unassigned" selected={@filter_assignee == "unassigned"}>Atanmamış</option>
@@ -65,11 +71,10 @@
       </select>
     </div>
 
-    <div class="ml-auto flex items-center gap-3 text-xs text-neutral-500" aria-live="polite">
+    <div class="ml-auto flex items-center gap-2 text-xs font-medium" aria-live="polite">
       <%= for stage <- @stages do %>
-        <span>
-          <%= @stage_emojis[stage] %>
-          <%= Enum.count(@tasks, fn t -> t.status == stage end) %>
+        <span class="px-2 py-1 rounded-md bg-neutral-800/80 border border-neutral-700/50 text-neutral-300" title={@stage_labels[stage]}>
+          <%= @stage_emojis[stage] %> <%= Enum.count(@tasks, fn t -> t.status == stage end) %>
         </span>
       <% end %>
     </div>
@@ -82,24 +87,24 @@
     <% is_collapsed = Map.get(@collapsed, to_string(room.id), false) %>
 
     <div class="mb-6" id={"room-section-#{room.id}"} data-agent-room={room.id} data-agent-room-name={room.name}>
-      <button
-        phx-click="toggle_section"
-        phx-value-room_id={room.id}
-        data-agent-action="toggle_section"
-        data-agent-room-id={room.id}
-        aria-expanded={to_string(!is_collapsed)}
-        aria-controls={"cards-wrap-#{room.id}"}
-        class="w-full flex items-center justify-between p-3 bg-[#1e1e1e] rounded-t-xl border border-b-0 border-neutral-700 hover:bg-[#252525] transition-colors cursor-pointer"
-      >
-        <div class="flex items-center gap-3">
-          <span class={"text-lg transition-transform duration-200 #{if is_collapsed, do: "-rotate-90", else: "rotate-0"}"}>▼</span>
-          <h2 class="text-lg font-semibold text-white"><%= room.name %></h2>
-          <span class="badge badge-sm badge-neutral"><%= length(room_tasks) %> task</span>
-        </div>
+      <div class="flex items-center justify-between p-3 bg-[#1d1d1d] rounded-t-2xl border border-b-0 border-neutral-700/60">
+        <button
+          phx-click="toggle_section"
+          phx-value-room_id={room.id}
+          data-agent-action="toggle_section"
+          data-agent-room-id={room.id}
+          aria-expanded={to_string(!is_collapsed)}
+          aria-controls={"cards-wrap-#{room.id}"}
+          class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity group"
+        >
+          <span class={"text-base transition-transform duration-200 text-neutral-400 group-hover:text-white #{if is_collapsed, do: "-rotate-90", else: "rotate-0"}"}>▼</span>
+          <h2 class="text-lg font-bold text-white tracking-wide"><%= room.name %></h2>
+          <span class="badge badge-sm badge-neutral gap-1"><%= length(room_tasks) %> task</span>
+        </button>
         <div class="flex items-center gap-2" phx-click="noop">
           <input
             type="text"
-            placeholder="+ Yeni task..."
+            placeholder="+ Yeni task…"
             phx-keydown="create_task"
             phx-key="Enter"
             phx-value-room_id={room.id}
@@ -107,17 +112,17 @@
             data-agent-action="create_task"
             data-agent-room-id={room.id}
             aria-label={"Yeni task ekle (oda: #{room.name})"}
-            class="input input-sm input-bordered bg-neutral-800 border-neutral-600 text-white text-xs w-48"
+            class="input input-sm input-bordered bg-neutral-800 border-neutral-600 text-white text-xs w-52 focus:border-indigo-500 focus:outline-none rounded-lg"
           />
         </div>
-      </button>
+      </div>
 
       <%= unless is_collapsed do %>
-        <div class="grid grid-cols-7 gap-2 p-3 bg-[#171717] rounded-b-xl border border-t-0 border-neutral-700 overflow-x-auto" id={"cards-wrap-#{room.id}"}>
+        <div class="grid grid-cols-7 gap-3 p-3 bg-[#131313] rounded-b-2xl border border-t-0 border-neutral-700/60" id={"cards-wrap-#{room.id}"}>
           <%= for stage <- @stages do %>
             <% stage_tasks = Enum.filter(room_tasks_filtered, fn t -> t.status == stage end) %>
             <div
-              class="min-w-[140px]"
+              class="min-w-[150px] flex flex-col"
               id={"column-#{room.id}-#{stage}"}
               phx-hook="SortableKanban"
               data-stage={stage}
@@ -125,17 +130,20 @@
               data-agent-column={stage}
               aria-label={"#{@stage_labels[stage]} sütunu"}
             >
-              <div class={"flex items-center justify-between p-2 rounded-lg mb-2 border #{column_border_class(stage)}"}>
-                <span class="text-xs font-medium text-neutral-300">
+              <%!-- Sütun başlığı --%>
+              <div class={"flex items-center justify-between p-2 rounded-t-xl mb-0 border-b-0 border #{column_border_class(stage)}"}>
+                <span class="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
+                  <span class={"w-1.5 h-1.5 rounded-full #{column_dot_class(stage)}"}></span>
                   <%= @stage_emojis[stage] %> <%= @stage_labels[stage] %>
                 </span>
-                <span class="text-[10px] text-neutral-500" aria-live="polite"><%= length(stage_tasks) %></span>
+                <span class="badge badge-sm badge-neutral font-semibold" aria-live="polite"><%= length(stage_tasks) %></span>
               </div>
 
-              <div class="space-y-2 kanban-column min-h-[60px]" id={"cards-#{room.id}-#{stage}"}>
+              <%!-- Kart listesi --%>
+              <div class="space-y-2 kanban-column min-h-[70px] p-1.5 rounded-b-xl bg-neutral-900/40 border border-t-0 border-neutral-800/60 flex-1" id={"cards-#{room.id}-#{stage}"}>
                 <%= for task <- stage_tasks do %>
                   <div
-                    class={"kanban-card p-2 rounded-lg border cursor-grab active:cursor-grabbing hover:border-neutral-500 transition-all #{card_border_class(task.status)}"}
+                    class={"group kanban-card p-2.5 rounded-lg border bg-[#1c1c1c] shadow-md hover:shadow-xl hover:border-neutral-500 hover:bg-[#222] transition-all duration-150 cursor-grab active:cursor-grabbing #{card_border_class(task.status)} #{if is_done(task.status), do: "opacity-70"}"}
                     draggable="true"
                     data-task-id={task.id}
                     data-agent-action="move_task"
@@ -147,18 +155,56 @@
                     id={"task-#{task.id}"}
                     role="listitem"
                   >
+                    <%!-- Üst satır: öncelik + kaldır ---%>
                     <div class="flex items-start justify-between gap-1">
-                      <p class="text-xs text-white leading-tight line-clamp-2 flex-1" data-agent-task-title={task.title}><%= task.title %></p>
                       <%= if task.priority > 0 do %>
-                        <span class={"text-[10px] font-bold #{priority_color(task.priority)}"}>P<%= task.priority %></span>
+                        <span class={"text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-neutral-800 #{priority_color(task.priority)}"} title={priority_label(task.priority)}><%= priority_label(task.priority) %></span>
+                      <% else %>
+                        <span></span>
+                      <% end %>
+                      <button
+                        phx-click="delete_task"
+                        phx-value-task_id={task.id}
+                        data-agent-action="delete_task"
+                        data-agent-task-id={task.id}
+                        aria-label={"#{task.title} kartını kaldır"}
+                        title="Kartı kaldır"
+                        class="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-500 hover:text-red-400 text-sm leading-none px-1"
+                      >✕</button>
+                    </div>
+
+                    <%!-- Başlık --%>
+                    <p class={"text-xs #{title_class(task.status)} leading-snug line-clamp-2 mt-0.5"} data-agent-task-title={task.title}><%= task.title %></p>
+
+                    <%!-- Metadata: capability + team --%>
+                    <div class="flex flex-wrap gap-1 mt-1.5">
+                      <%= if task.capability do %>
+                        <span class={"text-[9px] font-medium px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/20"}>
+                          <span class="font-bold">cap</span> <%= task.capability %>
+                        </span>
+                      <% end %>
+                      <%= if task.team && task.team != "Core" do %>
+                        <span class="text-[9px] font-medium px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700/50">👥 <%= task.team %></span>
                       <% end %>
                     </div>
-                    <div class="flex items-center justify-between mt-1.5">
-                      <span class="text-[10px] text-neutral-500"><%= relative_time(task.updated_at || task.inserted_at) %></span>
-                      <%= if task.assigned_to && task.assigned_to != "" do %>
-                        <span class="text-[10px] text-neutral-400 bg-neutral-800 px-1.5 py-0.5 rounded" data-agent-assignee-label={task.assigned_to}><%= task.assigned_to %></span>
-                      <% end %>
+
+                    <%!-- Alt satır: assignee avatar + zaman --%>
+                    <div class="flex items-center justify-between mt-2">
+                      <div class="flex items-center gap-1.5 min-w-0">
+                        <%= if task.assigned_to && task.assigned_to != "" do %>
+                          <span class={"w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 #{assignee_color(task.assigned_to)}"} data-agent-assignee-label={task.assigned_to}><%= assignee_initial(task.assigned_to) %></span>
+                        <% end %>
+                        <span class={"text-[10px] text-neutral-500 truncate #{assigned_class(task.assigned_to)}"}><%= task.assigned_to || "atanmamış" %></span>
+                      </div>
+                      <span class="text-[10px] text-neutral-600 shrink-0" title="Son güncelleme"><%= relative_time(task.updated_at || task.inserted_at) %></span>
                     </div>
+                  </div>
+                <% end %>
+
+                <%= if stage_tasks == [] do %>
+                  <div class="text-center py-5 text-neutral-700 border border-dashed border-neutral-800 rounded-lg">
+                    <p class="text-xl mb-1 opacity-50">·</p>
+                    <p class="text-[10px] uppercase tracking-wider">kart yok</p>
                   </div>
                 <% end %>
               </div>
@@ -170,9 +216,10 @@
   <% end %>
 
   <%= if @rooms == [] do %>
-    <div class="text-center py-20 text-neutral-500">
+    <div class="text-center py-20 text-neutral-500 border border-dashed border-neutral-700 rounded-2xl">
       <p class="text-4xl mb-4">📋</p>
-      <p class="text-lg">Henüz oda yok</p>
+      <p class="text-lg font-medium">Henüz oda yok</p>
+      <p class="text-sm text-neutral-600 mt-1">Yeni bir oda oluşturduğunda kanban burada görünecek.</p>
     </div>
   <% end %>
 </div>
