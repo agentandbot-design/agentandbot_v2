@@ -249,6 +249,20 @@ defmodule AgentbotCore.Modules.Provisioning do
     generate_attribution_code()
   end
 
+  @doc """
+  Deployment live olduktan sonra verified referral event'i kaydet
+  """
+  def record_verified_referral(deployment_id) do
+    deployment = Repo.preload(Repo.get(Deployment, deployment_id), [:provider])
+
+    if deployment && deployment.provider && deployment.attribution_code do
+      link = build_referral_link(deployment.provider, deployment.attribution_code)
+      create_referral_event(deployment, "deploy_verified", link)
+    else
+      :ok
+    end
+  end
+
   defp create_referral_event(%Deployment{} = deployment, event_type, referral_link) do
     %ReferralEvent{
       provider_id: deployment.provider_id,

@@ -42,6 +42,8 @@ defmodule AgentbotCore.Modules.Provisioning.DeploymentVerifier do
       {:ok, :healthy} ->
         Logger.info("Deployment #{deployment_id} verified: healthy")
         Provisioning.update_deployment_status(deployment_id, "live")
+        Provisioning.register_capability_from_deployment(deployment_id)
+        Provisioning.record_verified_referral(deployment_id)
         {:noreply, state}
 
       {:error, reason} ->
