@@ -60,9 +60,17 @@ const SortableKanban = {
       chosenClass: "ring-2 ring-blue-500",
       dragClass: "shadow-xl",
       handle: ".kanban-card",
+      // Fallback pointer engine: required for touch/mobile (native HTML5 DnD
+      // does not fire dragstart on touch devices), also works on desktop.
+      forceFallback: true,
+      fallbackOnBody: true,
+      fallbackTolerance: 0,
+      touchStartThreshold: 4,
+      delay: 0,
       onEnd: (evt) => {
         const taskId = evt.item.dataset.taskId
-        const newStage = evt.to.closest("[data-stage]").dataset.stage
+        const stageEl = evt.to ? evt.to.closest("[data-stage]") : null
+        const newStage = stageEl ? stageEl.dataset.stage : null
         if (taskId && newStage) {
           this.pushEvent("drop_task", { task_id: taskId, stage: newStage })
         }
