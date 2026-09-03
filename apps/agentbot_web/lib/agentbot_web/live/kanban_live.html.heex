@@ -1,10 +1,10 @@
-<div class="p-4 max-w-full">
+<div class="p-4 max-w-full overflow-x-hidden">
   <%!-- Header --%>
-  <div class="flex items-center justify-between mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#1e1e1e] to-[#242424] border border-neutral-700" data-agent-view="kanban">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#1e1e1e] to-[#242424] border border-neutral-700" data-agent-view="kanban">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-xl shadow-lg">📋</div>
       <div>
-        <h1 class="text-2xl font-bold text-white leading-tight">Kanban Board</h1>
+        <h1 class="text-xl sm:text-2xl font-bold text-white leading-tight">Kanban Board</h1>
         <p class="text-xs text-neutral-400"><%= length(@rooms) %> oda · <%= length(@tasks) %> task · 7 aşama</p>
       </div>
     </div>
@@ -87,7 +87,7 @@
     <% is_collapsed = Map.get(@collapsed, to_string(room.id), false) %>
 
     <div class="mb-6" id={"room-section-#{room.id}"} data-agent-room={room.id} data-agent-room-name={room.name}>
-      <div class="flex items-center justify-between p-3 bg-[#1d1d1d] rounded-t-2xl border border-b-0 border-neutral-700/60">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 bg-[#1d1d1d] rounded-t-2xl border border-b-0 border-neutral-700/60">
         <button
           phx-click="toggle_section"
           phx-value-room_id={room.id}
@@ -112,17 +112,17 @@
             data-agent-action="create_task"
             data-agent-room-id={room.id}
             aria-label={"Yeni task ekle (oda: #{room.name})"}
-            class="input input-sm input-bordered bg-neutral-800 border-neutral-600 text-white text-xs w-52 focus:border-indigo-500 focus:outline-none rounded-lg"
+            class="input input-sm input-bordered bg-neutral-800 border-neutral-600 text-white text-xs w-32 sm:w-52 focus:border-indigo-500 focus:outline-none rounded-lg"
           />
         </div>
       </div>
 
       <%= unless is_collapsed do %>
-        <div class="grid grid-cols-7 gap-3 p-3 bg-[#131313] rounded-b-2xl border border-t-0 border-neutral-700/60" id={"cards-wrap-#{room.id}"}>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 gap-3 p-3 bg-[#131313] rounded-b-2xl border border-t-0 border-neutral-700/60" id={"cards-wrap-#{room.id}"}>
           <%= for stage <- @stages do %>
             <% stage_tasks = Enum.filter(room_tasks_filtered, fn t -> t.status == stage end) %>
             <div
-              class="min-w-[150px] flex flex-col"
+              class="min-w-0 flex flex-col"
               id={"column-#{room.id}-#{stage}"}
               phx-hook="SortableKanban"
               data-stage={stage}
