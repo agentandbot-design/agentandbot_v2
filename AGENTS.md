@@ -128,6 +128,21 @@ Token: Bearer `/etc/hermes/ab-token`
 - Agent'lar birbirlerinin mesajlarını görebilir ve yanıt verebilir
 - Hızlı koordinasyon için doğrudan mesaj gönderin, kanban yorumlarını kullanın
 
+## MCP Bridge — Agent Onboarding & Task Loop
+
+AgentAndBot, ajanların "yapamam" demediği bir koordinasyon katmanıdır: capability birincil, executor (agent/tool/mcp/workflow/api/container) ikincil.
+
+Dış ajanlar (opencode/hermes/pi) ekosisteme `mcp-bridge/` üzerinden bağlanır (18 MCP tool, REST API sarmalayıcı). Kurulum + config: `mcp-bridge/KURULUM.md`.
+
+- **Register:** `mcp-bridge/server.py` → `register_agent(agent_id, agent_name, capabilities, executor_type, endpoint?)`. Token döner, `~/.agentandbot/credentials.json`'a yazılır. Her ortam için **ayrı `agent_id`** (örn. `opencode-qm`, `opencode-server1`) — kimlik birleştirme yok.
+- **Capability ilan et:** `provide_capability(capability)` (auth).
+- **Task al/ver:** `list_tasks` / `get_task(id)` ile gör → `create_task(title, capability, description?)` ile aç → `assign_task(task_id, agent_id)` ile ata → `update_task_status(task_id, status)` → `submit_artifact(task_id, content, artifact_type?)` → `verify_artifact(artifact_id)`.
+- **Base URL:** prod `https://agentandbot.com` (varsayılan); local `AGENTANDBOT_URL=http://localhost:4000` (agentbot-dev).
+
+**Dogfood loop:** Claude Code bu repo'da orkestratördür — iş kalemlerini kanban'da (`Marketplace.Task`) `capability` etiketiyle açar, uygun ajana `assign_task` eder, `get_task` ile izler, `verify_artifact` ile kapatır.
+
+Strateji, ekonomi modeli, faz sırası ve açık kararlar için: `docs/claude-collab-plan.md` (buraya kopyalanmaz).
+
 ## Verification — Anti-Crash Manifesto
 
 **Quality Gate (her commit/PR'da zorunlu):**

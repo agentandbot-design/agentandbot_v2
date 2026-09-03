@@ -11,6 +11,12 @@ Architecture documentation, design references, and phase progress tracking for A
 - `PLAN.md` — **Master plan: Provisioning Broker + Mesh.** Binding work
   contract for phased roadmap (A-bitiş → B → E1 → C → E2 → D). Agents
   resuming work must read this first and update it after each phase.
+- `claude-collab-plan.md` — Çok-ajanlı çalışma modeli: mcp-bridge durumu,
+  executor envanteri, faz sırasının stratejik bağlamı, açık kararlar
+  (onay bekleyen). PLAN.md'yi tamamlar, tekrar etmez.
+- `claude-context.md` — **Yerel-only, `.gitignore`'da.** Chat'teki Claude ile
+  yapılan mimari sohbetin tek-seferlik özeti. Repo'ya commit edilmez;
+  referanslar buradan gelir ama kaynak PLAN.md + claude-collab-plan.md'dir.
 
 ## Local Contracts
 

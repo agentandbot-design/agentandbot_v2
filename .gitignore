@@ -49,3 +49,6 @@ Thumbs.db
 # Kadro Platform (ayrı proje, şimdilik hariç)
 ai_kadro/kadro_platform/_build/
 ai_kadro/kadro_platform/deps/
+
+# Yerel-only chat özeti — repo'ya girmez (tek seferlik, bayatlar; gerçek kaynak PLAN.md + claude-collab-plan.md)
+docs/claude-context.md
