@@ -7,7 +7,7 @@ defmodule AgentbotWebTest do
     card = WellKnown.skill_card()
 
     assert card.name == "AgentAndBot"
-    assert card.tagline != nil
+    assert is_binary(card.tagline)
     assert is_list(card.quickstart)
     assert is_map(card.api)
     assert is_list(card.executor_types)

@@ -90,7 +90,7 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   def handle_event("filter_room", %{"room" => room}, socket) do
-    {:noreply, assign(socket, :filter_room, room) |> load_data()}
+    {:noreply, load_data(assign(socket, filter_room: room))}
   end
 
   def handle_event("filter_stage", %{"stage" => stage}, socket) do
@@ -109,7 +109,9 @@ defmodule AgentbotWeb.KanbanLive do
     mapped = Map.get(@status_map, stage, stage)
 
     case Repo.get(Task, task_id) do
-      nil -> nil
+      nil ->
+        nil
+
       task ->
         task
         |> Task.changeset(%{status: mapped})
@@ -130,7 +132,9 @@ defmodule AgentbotWeb.KanbanLive do
     mapped = Map.get(@status_map, stage, stage)
 
     case Repo.get(Task, task_id) do
-      nil -> nil
+      nil ->
+        nil
+
       task ->
         task
         |> Task.changeset(%{status: mapped})
@@ -183,7 +187,7 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   defp load_data(socket) do
-    rooms = Repo.all(Room) |> Enum.filter(& &1.is_active)
+    rooms = Enum.filter(Repo.all(Room), & &1.is_active)
     filter_room = socket.assigns.filter_room
     filter_assignee = socket.assigns.filter_assignee
 
@@ -205,9 +209,7 @@ defmodule AgentbotWeb.KanbanLive do
       |> Enum.map(fn t -> %{t | status: normalize_status(t.status)} end)
       |> maybe_filter_assignee(filter_assignee)
 
-    tasks_by_room =
-      tasks
-      |> Enum.group_by(fn t -> to_string(t.room_id) end)
+    tasks_by_room = Enum.group_by(tasks, fn t -> to_string(t.room_id) end)
 
     unique_assignees = unique_assignees(tasks)
 
@@ -222,23 +224,21 @@ defmodule AgentbotWeb.KanbanLive do
   defp normalize_status(status), do: Map.get(@status_map, status, "triage")
 
   defp maybe_filter_assignee(tasks, "all"), do: tasks
+
   defp maybe_filter_assignee(tasks, "unassigned") do
     Enum.reject(tasks, fn t -> t.assigned_to != nil and t.assigned_to != "" end)
   end
+
   defp maybe_filter_assignee(tasks, assignee) do
     Enum.filter(tasks, fn t -> t.assigned_to == assignee end)
   end
 
-
   defp unique_assignees(tasks) do
     tasks
     |> Enum.map(& &1.assigned_to)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.reject(&(&1 == ""))
+    |> Enum.reject(&(is_nil(&1) or &1 == ""))
     |> Enum.uniq()
     |> Enum.sort()
-  end
-
   end
 
   defp column_border_class("triage"), do: "border-purple-500/50 bg-purple-500/5"
@@ -256,8 +256,6 @@ defmodule AgentbotWeb.KanbanLive do
   defp card_border_class("running"), do: "border-green-500/30 bg-green-500/5"
   defp card_border_class("blocked"), do: "border-red-500/30 bg-red-500/5"
   defp card_border_class("done"), do: "border-neutral-500/30 bg-neutral-500/5"
-
-  end
 
   defp priority_color(priority) do
     cond do
@@ -277,8 +275,8 @@ defmodule AgentbotWeb.KanbanLive do
       diff < 1 -> "şimdi"
       diff < 60 -> "#{diff}dk"
       diff < 1440 -> "#{div(diff, 60)}s"
-      diff < 10080 -> "#{div(diff, 1440)}g"
-      true -> "#{div(diff, 10080)}hft"
+      diff < 10_080 -> "#{div(diff, 1440)}g"
+      true -> "#{div(diff, 10_080)}hft"
     end
   end
 end
