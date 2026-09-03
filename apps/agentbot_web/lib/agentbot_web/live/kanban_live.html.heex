@@ -3,17 +3,20 @@
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold text-white">📋 Kanban Board</h1>
     <div class="flex items-center gap-2 text-sm text-neutral-400">
-      <span class="badge badge-neutral"><%= length(@tasks) %> tasks</span>
+      <span class="badge badge-neutral" aria-live="polite"><%= length(@tasks) %> tasks</span>
     </div>
   </div>
 
   <%!-- Filter Bar --%>
-  <div class="flex flex-wrap gap-3 mb-6 p-3 bg-[#1e1e1e] rounded-xl border border-neutral-700">
+  <div class="flex flex-wrap gap-3 mb-6 p-3 bg-[#1e1e1e] rounded-xl border border-neutral-700" data-agent-view="kanban">
     <div class="flex items-center gap-2">
-      <label class="text-xs text-neutral-400 uppercase tracking-wider">Oda</label>
+      <label class="text-xs text-neutral-400 uppercase tracking-wider" for="filter-room">Oda</label>
       <select
+        id="filter-room"
         phx-change="filter_room"
         name="room"
+        data-agent-action="filter_room"
+        aria-label="Oda filtresi"
         class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm"
       >
         <option value="all" selected={@filter_room == "all"}>Tüm Odalar</option>
@@ -26,10 +29,13 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <label class="text-xs text-neutral-400 uppercase tracking-wider">Aşama</label>
+      <label class="text-xs text-neutral-400 uppercase tracking-wider" for="filter-stage">Aşama</label>
       <select
+        id="filter-stage"
         phx-change="filter_stage"
         name="stage"
+        data-agent-action="filter_stage"
+        aria-label="Aşama filtresi"
         class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm"
       >
         <option value="all" selected={@filter_stage == "all"}>Tüm Aşamalar</option>
@@ -42,10 +48,13 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <label class="text-xs text-neutral-400 uppercase tracking-wider">Kişi</label>
+      <label class="text-xs text-neutral-400 uppercase tracking-wider" for="filter-assignee">Kişi</label>
       <select
+        id="filter-assignee"
         phx-change="filter_assignee"
         name="assignee"
+        data-agent-action="filter_assignee"
+        aria-label="Kişi filtresi"
         class="select select-sm select-bordered bg-neutral-800 border-neutral-600 text-white text-sm"
       >
         <option value="all" selected={@filter_assignee == "all"}>Tümü</option>
@@ -56,7 +65,7 @@
       </select>
     </div>
 
-    <div class="ml-auto flex items-center gap-3 text-xs text-neutral-500">
+    <div class="ml-auto flex items-center gap-3 text-xs text-neutral-500" aria-live="polite">
       <%= for stage <- @stages do %>
         <span>
           <%= @stage_emojis[stage] %>
@@ -72,10 +81,14 @@
     <% room_tasks_filtered = if @filter_stage == "all", do: room_tasks, else: Enum.filter(room_tasks, fn t -> t.status == @filter_stage end) %>
     <% is_collapsed = Map.get(@collapsed, to_string(room.id), false) %>
 
-    <div class="mb-6" id={"room-section-#{room.id}"}>
+    <div class="mb-6" id={"room-section-#{room.id}"} data-agent-room={room.id} data-agent-room-name={room.name}>
       <button
         phx-click="toggle_section"
         phx-value-room_id={room.id}
+        data-agent-action="toggle_section"
+        data-agent-room-id={room.id}
+        aria-expanded={to_string(!is_collapsed)}
+        aria-controls={"cards-wrap-#{room.id}"}
         class="w-full flex items-center justify-between p-3 bg-[#1e1e1e] rounded-t-xl border border-b-0 border-neutral-700 hover:bg-[#252525] transition-colors cursor-pointer"
       >
         <div class="flex items-center gap-3">
@@ -91,13 +104,16 @@
             phx-key="Enter"
             phx-value-room_id={room.id}
             name="title"
+            data-agent-action="create_task"
+            data-agent-room-id={room.id}
+            aria-label={"Yeni task ekle (oda: #{room.name})"}
             class="input input-sm input-bordered bg-neutral-800 border-neutral-600 text-white text-xs w-48"
           />
         </div>
       </button>
 
       <%= unless is_collapsed do %>
-        <div class="grid grid-cols-7 gap-2 p-3 bg-[#171717] rounded-b-xl border border-t-0 border-neutral-700 overflow-x-auto">
+        <div class="grid grid-cols-7 gap-2 p-3 bg-[#171717] rounded-b-xl border border-t-0 border-neutral-700 overflow-x-auto" id={"cards-wrap-#{room.id}"}>
           <%= for stage <- @stages do %>
             <% stage_tasks = Enum.filter(room_tasks_filtered, fn t -> t.status == stage end) %>
             <div
@@ -106,12 +122,14 @@
               phx-hook="SortableKanban"
               data-stage={stage}
               data-room-id={room.id}
+              data-agent-column={stage}
+              aria-label={"#{@stage_labels[stage]} sütunu"}
             >
               <div class={"flex items-center justify-between p-2 rounded-lg mb-2 border #{column_border_class(stage)}"}>
                 <span class="text-xs font-medium text-neutral-300">
                   <%= @stage_emojis[stage] %> <%= @stage_labels[stage] %>
                 </span>
-                <span class="text-[10px] text-neutral-500"><%= length(stage_tasks) %></span>
+                <span class="text-[10px] text-neutral-500" aria-live="polite"><%= length(stage_tasks) %></span>
               </div>
 
               <div class="space-y-2 kanban-column min-h-[60px]" id={"cards-#{room.id}-#{stage}"}>
@@ -120,10 +138,17 @@
                     class={"kanban-card p-2 rounded-lg border cursor-grab active:cursor-grabbing hover:border-neutral-500 transition-all #{card_border_class(task.status)}"}
                     draggable="true"
                     data-task-id={task.id}
+                    data-agent-action="move_task"
+                    data-agent-task-id={task.id}
+                    data-agent-status={task.status}
+                    data-agent-room-id={room.id}
+                    data-agent-priority={task.priority}
+                    data-agent-assignee={task.assigned_to || ""}
                     id={"task-#{task.id}"}
+                    role="listitem"
                   >
                     <div class="flex items-start justify-between gap-1">
-                      <p class="text-xs text-white leading-tight line-clamp-2 flex-1"><%= task.title %></p>
+                      <p class="text-xs text-white leading-tight line-clamp-2 flex-1" data-agent-task-title={task.title}><%= task.title %></p>
                       <%= if task.priority > 0 do %>
                         <span class={"text-[10px] font-bold #{priority_color(task.priority)}"}>P<%= task.priority %></span>
                       <% end %>
@@ -131,7 +156,7 @@
                     <div class="flex items-center justify-between mt-1.5">
                       <span class="text-[10px] text-neutral-500"><%= relative_time(task.updated_at || task.inserted_at) %></span>
                       <%= if task.assigned_to && task.assigned_to != "" do %>
-                        <span class="text-[10px] text-neutral-400 bg-neutral-800 px-1.5 py-0.5 rounded"><%= task.assigned_to %></span>
+                        <span class="text-[10px] text-neutral-400 bg-neutral-800 px-1.5 py-0.5 rounded" data-agent-assignee-label={task.assigned_to}><%= task.assigned_to %></span>
                       <% end %>
                     </div>
                   </div>

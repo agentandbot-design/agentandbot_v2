@@ -1,4 +1,4 @@
-<div class="max-w-7xl mx-auto p-4">
+<div class="max-w-7xl mx-auto p-4" data-agent-view="room">
   <div class="flex items-center justify-between mb-4">
     <div>
       <h1 class="text-2xl font-bold">
@@ -18,9 +18,9 @@
 
       <!-- Pause / Resume -->
       <%= if @room_status == :active do %>
-        <button phx-click="pause_room" class="btn btn-warning btn-sm">⏸ Duraklat</button>
+        <button phx-click="pause_room" data-agent-action="pause_room" class="btn btn-warning btn-sm">⏸ Duraklat</button>
       <% else %>
-        <button phx-click="resume_room" class="btn btn-success btn-sm">▶ Devam</button>
+        <button phx-click="resume_room" data-agent-action="resume_room" class="btn btn-success btn-sm">▶ Devam</button>
       <% end %>
 
       <.link href={~p"/rooms"} class="btn btn-ghost btn-sm">← Odalar</.link>
@@ -31,12 +31,12 @@
     <!-- ═══ Mesaj Alanı ═══ -->
     <div>
       <!-- Messages -->
-      <div id="messages" phx-hook="ChatScroll" class="flex flex-col gap-2 mb-24 min-h-[400px]" phx-update="stream">
+      <div id="messages" phx-hook="ChatScroll" class="flex flex-col gap-2 mb-24 min-h-[400px]" phx-update="stream" aria-live="polite">
         <div :for={{dom_id, msg} <- @streams.messages} id={dom_id}>
           <%= case msg_type(msg) do %>
             <% :agent -> %>
               <!-- Agent mesajı — sağ taraf, mavi -->
-              <div class="chat chat-end">
+              <div class="chat chat-end" data-agent-message="agent" data-agent-sender={msg.sender_id}>
                 <div class="chat-header text-xs opacity-60 mb-1">
                   🤖 <%= msg.sender_name || msg.sender_id %>
                 </div>
@@ -50,7 +50,7 @@
 
             <% :system -> %>
               <!-- Sistem mesajı — ortalanmış, gri -->
-              <div class="text-center py-2">
+              <div class="text-center py-2" data-agent-message="system">
                 <span class="badge badge-ghost">
                   <%= msg.content %>
                 </span>
@@ -58,7 +58,7 @@
 
             <% :human -> %>
               <!-- İnsan mesajı — sol taraf, nötr -->
-              <div class="chat chat-start">
+              <div class="chat chat-start" data-agent-message="human" data-agent-sender={msg.sender_id}>
                 <div class="chat-header text-xs opacity-60 mb-1">
                   👤 <%= msg.sender_name || msg.sender_id %>
                 </div>
@@ -73,7 +73,7 @@
         </div>
       </div>
 
-      <div :if={@message_count == 0} class="text-center py-12 opacity-50">
+      <div :if={@message_count == 0} class="text-center py-12 opacity-50" aria-live="polite">
         <p class="text-xl">📭 Henüz mesaj yok</p>
       </div>
     </div>
@@ -88,7 +88,7 @@
             Çevrimiçi agent yok
           </div>
           <ul class="space-y-1">
-            <li :for={agent <- @online_agents} class="flex items-center gap-2 text-sm">
+            <li :for={agent <- @online_agents} class="flex items-center gap-2 text-sm" data-agent-online={agent.agent_id}>
               <span class="inline-block w-2 h-2 rounded-full bg-success animate-pulse"></span>
               <%= agent.agent_name || agent.agent_id %>
             </li>
@@ -107,7 +107,7 @@
             Bekleyen onay yok
           </div>
           <div class="space-y-3">
-            <div :for={approval <- @approvals} class="border border-neutral-700 rounded-lg p-3">
+            <div :for={approval <- @approvals} class="border border-neutral-700 rounded-lg p-3" data-agent-approval={approval.id}>
               <div class="font-semibold text-sm"><%= approval.title %></div>
               <div :if={approval.description} class="text-xs opacity-60 mt-1">
                 <%= approval.description %>
@@ -116,10 +116,10 @@
                 İsteyen: <%= approval.requester_name || approval.requester_id %>
               </div>
               <div class="flex gap-2 mt-2">
-                <button phx-click="approve" phx-value-id={approval.id} class="btn btn-success btn-xs">
+                <button phx-click="approve" phx-value-id={approval.id} data-agent-action="approve" data-agent-approval-id={approval.id} class="btn btn-success btn-xs">
                   ✅ Onayla
                 </button>
-                <button phx-click="reject" phx-value-id={approval.id} class="btn btn-error btn-xs">
+                <button phx-click="reject" phx-value-id={approval.id} data-agent-action="reject" data-agent-approval-id={approval.id} class="btn btn-error btn-xs">
                   ❌ Reddet
                 </button>
               </div>
@@ -134,10 +134,10 @@
 <!-- Input — sticky bottom -->
 <div class="fixed bottom-0 left-0 right-0 bg-neutral-800 border-t border-neutral-700 p-4 z-40">
   <div class="max-w-7xl mx-auto">
-    <.form for={@form} phx-submit="send_message" class="flex gap-2">
-      <input id="sender_name_input" type="text" name="sender_name" value={@sender_name} phx-hook="RememberName" class="input input-bordered input-sm w-28" placeholder="Adın" />
-      <input type="text" name="content" placeholder="Mesajını yaz... (Shift+Enter yeni satır)" class="input input-bordered flex-1" required autocomplete="off" />
-      <button type="submit" class="btn btn-primary">Gönder</button>
+    <.form for={@form} phx-submit="send_message" class="flex gap-2" data-agent-form="send_message">
+      <input id="sender_name_input" type="text" name="sender_name" value={@sender_name} phx-hook="RememberName" class="input input-bordered input-sm w-28" placeholder="Adın" data-agent-action="set_sender_name" />
+      <input type="text" name="content" placeholder="Mesajını yaz... (Shift+Enter yeni satır)" class="input input-bordered flex-1" required autocomplete="off" data-agent-action="send_message" aria-label="Mesaj" />
+      <button type="submit" class="btn btn-primary" data-agent-action="send_message">Gönder</button>
     </.form>
   </div>
 </div>

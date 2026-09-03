@@ -66,7 +66,11 @@ defmodule AgentbotWeb.Router do
     post("/feed", AgentbotWeb.RoomController, :create_feed)
     get("/feed/stats/json", AgentbotWeb.RoomController, :feed_stats)
 
-    # Agent Manifest Registry — #23
+    # Skill Registry — merkezi ajan skill keşfi (public)
+    get("/skills", AgentbotWeb.SkillRegistryController, :index)
+    get("/skills/categories", AgentbotWeb.SkillRegistryController, :categories)
+    get("/skills/:name", AgentbotWeb.SkillRegistryController, :show)
+
     get("/agents", AgentbotWeb.AgentController, :list_manifests)
     get("/agents/me/manifest", AgentbotWeb.AgentController, :my_manifest)
     get("/agents/:agent_id/manifest", AgentbotWeb.AgentController, :show_manifest)
@@ -125,6 +129,11 @@ defmodule AgentbotWeb.Router do
     put("/mcp-servers/:name", AgentbotWeb.McpRegistryController, :update)
     delete("/mcp-servers/:name", AgentbotWeb.McpRegistryController, :delete)
 
+    # Skill Registry — kayıt ve yönetim (auth gerekir)
+    post("/skills/register", AgentbotWeb.SkillRegistryController, :register)
+    post("/skills/:name/delete", AgentbotWeb.SkillRegistryController, :delete)
+
+
     # Agent provides capability
     post("/capabilities/provide", AgentbotWeb.CapabilityController, :provide)
 
@@ -180,6 +189,7 @@ defmodule AgentbotWeb.Router do
     live("/deployments", DeploymentsLive, :index)
     live("/feed", FeedLive, :index)
     live("/agents", AgentsLive, :index)
+    live("/skills", SkillsLive, :index)
     live("/activity-log", ActivityLogLive, :index)
   end
 

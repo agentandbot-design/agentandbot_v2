@@ -29,7 +29,7 @@ defmodule AgentbotWeb.KanbanLive do
     "done" => "✅"
   }
 
-  # Mevcut task statülerini 7 aşamaya map et
+  # Mevcut task statülerini 7 aşamaya map et (DB status → kanban aşaması, görüntüleme)
   @status_map %{
     "open" => "triage",
     "in_progress" => "running",
@@ -41,6 +41,17 @@ defmodule AgentbotWeb.KanbanLive do
     "ready" => "ready",
     "running" => "running",
     "done" => "done"
+  }
+
+  # Kanban aşaması → gerçek Task DB status'ü (yazma yönü)
+  @kanban_to_status %{
+    "triage" => "open",
+    "running" => "in_progress",
+    "done" => "completed",
+    "todo" => "todo",
+    "scheduled" => "scheduled",
+    "ready" => "ready",
+    "blocked" => "blocked"
   }
 
   @impl true
@@ -106,20 +117,17 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   def handle_event("drop_task", %{"task_id" => task_id, "stage" => stage}, socket) do
-    mapped = Map.get(@status_map, stage, stage)
+    db_status = Map.get(@kanban_to_status, stage, stage)
 
-    case Repo.get(Task, task_id) do
-      nil ->
-        nil
-
-      task ->
-        task
-        |> Task.changeset(%{status: mapped})
-        |> Repo.update()
-    end
+    res =
+      case Repo.get(Task, task_id) do
+        nil -> {:error, :not_found}
+        _task -> Task.update_status(task_id, db_status)
+      end
 
     {:noreply,
      socket
+     |> maybe_flash_move_error(res)
      |> assign(:moving_task, nil)
      |> load_data()}
   end
@@ -129,19 +137,15 @@ defmodule AgentbotWeb.KanbanLive do
   end
 
   def handle_event("update_stage", %{"task_id" => task_id, "stage" => stage}, socket) do
-    mapped = Map.get(@status_map, stage, stage)
+    db_status = Map.get(@kanban_to_status, stage, stage)
 
-    case Repo.get(Task, task_id) do
-      nil ->
-        nil
+    res =
+      case Repo.get(Task, task_id) do
+        nil -> {:error, :not_found}
+        _task -> Task.update_status(task_id, db_status)
+      end
 
-      task ->
-        task
-        |> Task.changeset(%{status: mapped})
-        |> Repo.update()
-    end
-
-    {:noreply, load_data(socket)}
+    {:noreply, socket |> maybe_flash_move_error(res) |> load_data()}
   end
 
   def handle_event("create_task", %{"title" => title, "room_id" => room_id}, socket) do
@@ -152,7 +156,7 @@ defmodule AgentbotWeb.KanbanLive do
       |> Task.changeset(%{
         title: trimmed,
         room_id: String.to_integer(room_id),
-        status: "triage",
+        status: "open",
         created_by: "user",
         source_type: "manual"
       })
@@ -222,6 +226,15 @@ defmodule AgentbotWeb.KanbanLive do
 
   defp normalize_status(status) when status in @stages, do: status
   defp normalize_status(status), do: Map.get(@status_map, status, "triage")
+
+  defp maybe_flash_move_error(socket, {:ok, _task}), do: socket
+  defp maybe_flash_move_error(socket, {:error, :artifact_required}) do
+    put_flash(socket, :error, "Artifact zorunludur: Task'ı 'done' yapmadan önce artifact üretilmelidir.")
+  end
+  defp maybe_flash_move_error(socket, {:error, :not_found}) do
+    put_flash(socket, :error, "Task bulunamadı.")
+  end
+  defp maybe_flash_move_error(socket, _), do: socket
 
   defp maybe_filter_assignee(tasks, "all"), do: tasks
 
