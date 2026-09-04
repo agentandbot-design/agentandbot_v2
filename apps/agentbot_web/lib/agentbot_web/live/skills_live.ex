@@ -176,7 +176,7 @@ defmodule AgentbotWeb.SkillsLive do
       diff < 3600 -> "#{div(diff, 60)}dk"
       diff < 86_400 -> "#{div(diff, 3600)}sa"
       diff < 604_800 -> "#{div(diff, 86_400)}g"
-      true -> DateTime.to_date(dt) |> to_string()
+      true -> to_string(DateTime.to_date(dt))
     end
   end
 end

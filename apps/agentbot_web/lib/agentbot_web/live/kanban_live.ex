@@ -180,7 +180,7 @@ defmodule AgentbotWeb.KanbanLive do
   def handle_event("delete_task", %{"task_id" => task_id}, socket) do
     case Repo.get(Task, task_id) do
       nil -> :ok
-      task -> Task.changeset(task, %{archived: true}) |> Repo.update()
+      task -> Repo.update(Task.changeset(task, %{archived: true}))
     end
 
     {:noreply, load_data(socket)}
@@ -335,19 +335,19 @@ defmodule AgentbotWeb.KanbanLive do
       "bg-pink-600 text-white"
     ]
 
-    index = :erlang.phash2(name) |> rem(length(palette))
+    index = rem(:erlang.phash2(name), length(palette))
     Enum.at(palette, index)
   end
 
-  defp is_done("done"), do: true
-  defp is_done(_), do: false
+  defp done?("done"), do: true
+  defp done?(_), do: false
 
   defp assigned_class(nil), do: "italic"
   defp assigned_class(""), do: "italic"
   defp assigned_class(_), do: ""
 
   defp title_class(status) do
-    if is_done(status), do: "line-through text-neutral-500", else: "text-white"
+    if done?(status), do: "line-through text-neutral-500", else: "text-white"
   end
 
   defp column_dot_class("triage"), do: "bg-purple-400"

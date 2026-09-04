@@ -430,8 +430,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
 
   @spec get!(integer()) :: %__MODULE__{}
   def get!(id) do
-    Repo.get!(__MODULE__, id)
-    |> Repo.preload([:artifacts, :comments, :children])
+    Repo.preload(Repo.get!(__MODULE__, id), [:artifacts, :comments, :children])
   end
 
   defp broadcast_change(event, task) do
