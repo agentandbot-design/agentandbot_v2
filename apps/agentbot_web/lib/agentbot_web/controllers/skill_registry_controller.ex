@@ -47,8 +47,13 @@ defmodule AgentbotWeb.SkillRegistryController do
 
     skill =
       case Skill.get_by_name(name) do
-        nil -> nil
-        s -> if s.is_active and (s.visibility == "public" or s.owner_agent_id == agent_id), do: s, else: nil
+        nil ->
+          nil
+
+        s ->
+          if s.is_active and (s.visibility == "public" or s.owner_agent_id == agent_id),
+            do: s,
+            else: nil
       end
 
     case skill do

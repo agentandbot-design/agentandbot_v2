@@ -133,7 +133,6 @@ defmodule AgentbotWeb.Router do
     post("/skills/register", AgentbotWeb.SkillRegistryController, :register)
     post("/skills/:name/delete", AgentbotWeb.SkillRegistryController, :delete)
 
-
     # Agent provides capability
     post("/capabilities/provide", AgentbotWeb.CapabilityController, :provide)
 

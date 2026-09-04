@@ -129,7 +129,8 @@ defmodule AgentbotCore.Modules.Registry.Skill do
   def list_for_agent(agent_id) do
     Repo.all(
       from(s in __MODULE__,
-        where: s.is_active == true and (s.visibility == "public" or s.owner_agent_id == ^agent_id),
+        where:
+          s.is_active == true and (s.visibility == "public" or s.owner_agent_id == ^agent_id),
         order_by: [asc: s.category, asc: s.name]
       )
     )

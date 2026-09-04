@@ -228,12 +228,19 @@ defmodule AgentbotWeb.KanbanLive do
   defp normalize_status(status), do: Map.get(@status_map, status, "triage")
 
   defp maybe_flash_move_error(socket, {:ok, _task}), do: socket
+
   defp maybe_flash_move_error(socket, {:error, :artifact_required}) do
-    put_flash(socket, :error, "Artifact zorunludur: Task'ı 'done' yapmadan önce artifact üretilmelidir.")
+    put_flash(
+      socket,
+      :error,
+      "Artifact zorunludur: Task'ı 'done' yapmadan önce artifact üretilmelidir."
+    )
   end
+
   defp maybe_flash_move_error(socket, {:error, :not_found}) do
     put_flash(socket, :error, "Task bulunamadı.")
   end
+
   defp maybe_flash_move_error(socket, _), do: socket
 
   defp maybe_filter_assignee(tasks, "all"), do: tasks
