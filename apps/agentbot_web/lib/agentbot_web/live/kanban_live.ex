@@ -177,6 +177,15 @@ defmodule AgentbotWeb.KanbanLive do
     {:noreply, assign(socket, :new_task_room, room_id)}
   end
 
+  def handle_event("delete_task", %{"task_id" => task_id}, socket) do
+    case Repo.get(Task, task_id) do
+      nil -> :ok
+      task -> Task.changeset(task, %{archived: true}) |> Repo.update()
+    end
+
+    {:noreply, load_data(socket)}
+  end
+
   @impl true
   def handle_info({:task_updated, _task}, socket) do
     {:noreply, load_data(socket)}
@@ -297,6 +306,62 @@ defmodule AgentbotWeb.KanbanLive do
       diff < 1440 -> "#{div(diff, 60)}s"
       diff < 10_080 -> "#{div(diff, 1440)}g"
       true -> "#{div(diff, 10_080)}hft"
+    end
+  end
+
+  defp assignee_initial(nil), do: "?"
+  defp assignee_initial(""), do: "?"
+  defp assignee_initial(name) do
+    name
+    |> String.split(~r/[-_ ]/, trim: true)
+    |> List.first()
+    |> String.slice(0, 1)
+    |> String.upcase()
+  end
+
+  # Assignee adına sabit bir renk atamak için hash kullan
+  defp assignee_color(nil), do: "bg-neutral-700 text-neutral-300"
+  defp assignee_color(name) do
+    palette = [
+      "bg-indigo-600 text-white",
+      "bg-emerald-600 text-white",
+      "bg-rose-600 text-white",
+      "bg-sky-600 text-white",
+      "bg-orange-600 text-white",
+      "bg-violet-600 text-white",
+      "bg-teal-600 text-white",
+      "bg-pink-600 text-white"
+    ]
+
+    index = :erlang.phash2(name) |> rem(length(palette))
+    Enum.at(palette, index)
+  end
+
+  defp is_done("done"), do: true
+  defp is_done(_), do: false
+
+  defp assigned_class(nil), do: "italic"
+  defp assigned_class(""), do: "italic"
+  defp assigned_class(_), do: ""
+
+  defp title_class(status) do
+    if is_done(status), do: "line-through text-neutral-500", else: "text-white"
+  end
+
+  defp column_dot_class("triage"), do: "bg-purple-400"
+  defp column_dot_class("todo"), do: "bg-blue-400"
+  defp column_dot_class("scheduled"), do: "bg-amber-400"
+  defp column_dot_class("ready"), do: "bg-cyan-400"
+  defp column_dot_class("running"), do: "bg-green-400"
+  defp column_dot_class("blocked"), do: "bg-red-400"
+  defp column_dot_class("done"), do: "bg-neutral-400"
+
+  defp priority_label(priority) do
+    cond do
+      priority >= 10 -> "Yüksek"
+      priority >= 5 -> "Orta"
+      priority >= 1 -> "Düşük"
+      true -> ""
     end
   end
 end
