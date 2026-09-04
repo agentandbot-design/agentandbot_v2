@@ -28,6 +28,33 @@
 - **No Elixir on host**: All mix commands run inside `sudo docker exec agentbot-dev bash -c "cd /app && ..."`
 - **Git author**: `Ilker Kaan İpcioğlu <ilkerkaanipcioglu@gmail.com>`
 
+## Coding Style — Ponytail (always-on)
+
+Source: https://github.com/DietrichGebert/ponytail — lazy senior dev mode, applied permanently to every edit in this repo, on top of (never instead of) the DOX contract above.
+
+Before writing code, stop at the first rung that holds:
+
+1. Does this need to exist at all? (YAGNI) — if not, skip it
+2. Already in this codebase? — reuse the existing helper/pattern, don't rewrite it
+3. Elixir/Erlang stdlib or Phoenix/Ecto already does it? — use it
+4. An already-installed dep solves it? — use it
+5. Can it be one line? — one line
+6. Only then: the minimum code that works
+
+The ladder runs after understanding the problem, not instead of it: read the code the change touches and trace the real flow first.
+
+Bug fix = root cause, not symptom: grep every caller of the touched function and fix the shared function once, not the one call site the report named.
+
+Rules:
+
+- No abstractions that weren't explicitly requested
+- No new dependency (in `mix.exs`) if it can be avoided
+- No boilerplate nobody asked for
+- Deletion over addition, boring over clever, fewest files possible
+- Shortest correct diff wins — but only once the problem is understood
+- Never cut: input validation at trust boundaries, error handling that prevents data loss, security (see security priority above), accessibility
+- Mark a deliberate corner-cut (naive scan, global lock, hardcoded limit) with a `# ponytail:` comment naming the ceiling and upgrade path
+
 ## Read Before Editing
 
 1. Read this root AGENTS.md

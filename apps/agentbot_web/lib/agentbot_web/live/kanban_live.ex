@@ -180,7 +180,7 @@ defmodule AgentbotWeb.KanbanLive do
   def handle_event("delete_task", %{"task_id" => task_id}, socket) do
     case Repo.get(Task, task_id) do
       nil -> :ok
-      task -> Task.changeset(task, %{archived: true}) |> Repo.update()
+      task -> Repo.update(Task.changeset(task, %{archived: true}))
     end
 
     {:noreply, load_data(socket)}
@@ -237,12 +237,19 @@ defmodule AgentbotWeb.KanbanLive do
   defp normalize_status(status), do: Map.get(@status_map, status, "triage")
 
   defp maybe_flash_move_error(socket, {:ok, _task}), do: socket
+
   defp maybe_flash_move_error(socket, {:error, :artifact_required}) do
-    put_flash(socket, :error, "Artifact zorunludur: Task'ı 'done' yapmadan önce artifact üretilmelidir.")
+    put_flash(
+      socket,
+      :error,
+      "Artifact zorunludur: Task'ı 'done' yapmadan önce artifact üretilmelidir."
+    )
   end
+
   defp maybe_flash_move_error(socket, {:error, :not_found}) do
     put_flash(socket, :error, "Task bulunamadı.")
   end
+
   defp maybe_flash_move_error(socket, _), do: socket
 
   defp maybe_filter_assignee(tasks, "all"), do: tasks
@@ -304,6 +311,7 @@ defmodule AgentbotWeb.KanbanLive do
 
   defp assignee_initial(nil), do: "?"
   defp assignee_initial(""), do: "?"
+
   defp assignee_initial(name) do
     name
     |> String.split(~r/[-_ ]/, trim: true)
@@ -314,6 +322,7 @@ defmodule AgentbotWeb.KanbanLive do
 
   # Assignee adına sabit bir renk atamak için hash kullan
   defp assignee_color(nil), do: "bg-neutral-700 text-neutral-300"
+
   defp assignee_color(name) do
     palette = [
       "bg-indigo-600 text-white",
@@ -326,19 +335,19 @@ defmodule AgentbotWeb.KanbanLive do
       "bg-pink-600 text-white"
     ]
 
-    index = :erlang.phash2(name) |> rem(length(palette))
+    index = rem(:erlang.phash2(name), length(palette))
     Enum.at(palette, index)
   end
 
-  defp is_done("done"), do: true
-  defp is_done(_), do: false
+  defp done?("done"), do: true
+  defp done?(_), do: false
 
   defp assigned_class(nil), do: "italic"
   defp assigned_class(""), do: "italic"
   defp assigned_class(_), do: ""
 
   defp title_class(status) do
-    if is_done(status), do: "line-through text-neutral-500", else: "text-white"
+    if done?(status), do: "line-through text-neutral-500", else: "text-white"
   end
 
   defp column_dot_class("triage"), do: "bg-purple-400"

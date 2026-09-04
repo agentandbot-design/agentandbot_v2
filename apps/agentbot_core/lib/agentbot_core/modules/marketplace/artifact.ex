@@ -68,11 +68,11 @@ defmodule AgentbotCore.Modules.Marketplace.Artifact do
     |> Repo.insert()
   end
 
-  @doc "Artifact doğrula (human verification)"
-  def verify(id, verified_by) do
+  @doc "Artifact doğrula ya da reddet (human/agent verification)"
+  def verify(id, verified_by, verified \\ true) do
     __MODULE__
     |> Repo.get!(id)
-    |> changeset(%{verified: true, verified_by: verified_by, verified_at: DateTime.utc_now()})
+    |> changeset(%{verified: verified, verified_by: verified_by, verified_at: DateTime.utc_now()})
     |> Repo.update()
   end
 

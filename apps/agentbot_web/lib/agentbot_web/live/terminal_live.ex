@@ -139,6 +139,18 @@ defmodule AgentbotWeb.TerminalLive do
         </div>
 
         <div class="term-input-area">
+          <div class="term-cat" aria-hidden="true">
+            <svg viewBox="0 0 160 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+              <path d="M138,22 C155,26 162,42 156,58 C151,70 140,68 142,80 C143,90 152,92 150,98"
+                    fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round" />
+              <rect x="46" y="26" width="8" height="46" rx="4" />
+              <rect x="60" y="26" width="8" height="52" rx="4" />
+              <rect x="122" y="24" width="9" height="34" rx="4.5" />
+              <path d="M8,26 L14,4 L21,22 L27,8 L34,24 C40,27 44,28 50,28
+                       C70,10 100,6 120,12 C132,16 138,20 140,24
+                       C130,30 90,30 50,30 C30,30 16,29 8,26 Z" />
+            </svg>
+          </div>
           <form phx-submit="key" class="term-input-line">
             <input type="hidden" name="key" value="Enter" />
             <span class="p-user">agent</span><span class="p-sep">@aab:~$</span>
