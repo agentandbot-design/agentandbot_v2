@@ -52,6 +52,11 @@ jobs:
           elixir-version: "1.19.5"
           otp-version: "27"
 
+      - name: Setup Node (for impeccable detect)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - name: Restore deps cache
         uses: actions/cache@v4
         with:
@@ -67,6 +72,18 @@ jobs:
 
       - name: Check formatted
         run: mix format --check-formatted
+
+      - name: Detect AI slop (impeccable)
+        run: |
+          # Tasarım anti-pattern'lerini (AI slop) engelle: gradient text, mor palet,
+          # iç içe kartlar, aşırı kullanılan fontlar, side-tab, kontrast vs.
+          # Kaynak CSS/şablonları tara; priv/static (build çıktısı) hariç tutulur.
+          # exit 0 = temiz, exit 2 = anti-pattern bulundu (fail), çıktı JSON.
+          npx -y impeccable detect \
+            apps/agentbot_web/lib/agentbot_web/live \
+            apps/agentbot_web/lib/agentbot_web/templates \
+            apps/agentbot_web/assets/css \
+            --json
 
       - name: Compile (warnings as errors)
         run: mix compile --warnings-as-errors
