@@ -118,8 +118,14 @@ defmodule AgentbotWeb.AgentsLive do
                   <h3><%= m.agent_name %></h3>
                   <code class="ab-mono"><%= m.agent_id %></code>
                 </div>
-                <span class={exec_class}>
-                  <%= m.executor_type %>
+                <span class="ab-agent-card__badges">
+                  <span class={"ab-char " <> if(m.executor_type == "agent", do: "ab-char--agent", else: "ab-char--bot")}>
+                    <span class="ab-char__dot"><%= if m.executor_type == "agent", do: "🤖", else: "🔧" %></span>
+                    <%= if m.executor_type == "agent", do: "agent", else: "bot/tool" %>
+                  </span>
+                  <span class={exec_class}>
+                    <%= m.executor_type %>
+                  </span>
                 </span>
               </header>
 

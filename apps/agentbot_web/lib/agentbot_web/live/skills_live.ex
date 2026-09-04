@@ -108,23 +108,20 @@ defmodule AgentbotWeb.SkillsLive do
           <code class="ab-mono">POST /api/skills/register</code> ile skill kaydedebilir.
         </div>
       <% else %>
-        <div class="ab-feed-grid">
+        <div class="ab-loot-grid">
           <%= for s <- @skills do %>
-            <article class="ab-feed-card">
-              <header class="ab-feed-card__head">
-                <%= if s.category do %>
-                  <span class="ab-type-badge"><%= s.category %></span>
-                <% end %>
-                <%= if s.source do %>
-                  <span class="ab-site-tag"><%= s.source %></span>
-                <% end %>
-                <span class="ab-mono ab-feed-card__id">v<%= s.version || "1.0.0" %></span>
+            <% loot = loot_info(s.category) %>
+            <article class={"ab-loot-card ab-loot-card--#{loot.rarity}"}>
+              <header class="ab-loot-card__head">
+                <span class="ab-loot-icon"><%= loot.icon %></span>
+                <div>
+                  <h3 class="ab-loot-card__name"><%= s.name %></h3>
+                  <span class="ab-loot-rarity"><%= loot.label %> · <%= loot.rarity %></span>
+                </div>
               </header>
 
-              <h3 class="ab-feed-card__title"><%= s.name %></h3>
-
-              <p class="ab-feed-card__excerpt">
-                <%= s.description || "Açıklama yok" %>
+              <p class="ab-loot-card__flavor">
+                "<%= s.description || "Açıklama yok" %>"
               </p>
 
               <%= if s.tags && s.tags != "" do %>
@@ -135,11 +132,11 @@ defmodule AgentbotWeb.SkillsLive do
                 </div>
               <% end %>
 
-              <footer class="ab-feed-card__foot">
-                <span>👤 <%= s.owner_agent_id || "system" %></span>
-                <span class="ab-feed-card__id">
-                  <%= format_time(s.updated_at) %>
+              <footer class="ab-loot-card__foot">
+                <span class="ab-char ab-char--agent">
+                  <span class="ab-char__dot">🤖</span><%= s.owner_agent_id || "system" %>
                 </span>
+                <span class="ab-loot-acquired">✦ edinildi · <%= format_time(s.updated_at) %></span>
               </footer>
             </article>
           <% end %>
@@ -147,6 +144,27 @@ defmodule AgentbotWeb.SkillsLive do
       <% end %>
     </div>
     """
+  end
+
+  # Kategoriye göre "eşya" ikonu, adı ve nadirlik seviyesi — skill kazanmak
+  # bir oyunda kalkan/kılıç/ejderha almak gibi görünsün.
+  @loot_by_category %{
+    "software-development" => {"⚔️", "Kılıç", "epic"},
+    "devops" => {"🔧", "Çekiç", "rare"},
+    "security" => {"🛡️", "Kalkan", "epic"},
+    "research" => {"📜", "Parşömen", "rare"},
+    "data" => {"💎", "Mücevher", "rare"},
+    "automation" => {"🐉", "Ejderha", "legendary"},
+    "workflow" => {"🐉", "Ejderha", "legendary"},
+    "communication" => {"📯", "Boru", "common"},
+    "design" => {"🎨", "Fırça", "rare"}
+  }
+
+  defp loot_info(category) do
+    {icon, label, rarity} =
+      Map.get(@loot_by_category, category, {"📦", "Eşya", "common"})
+
+    %{icon: icon, label: label, rarity: rarity}
   end
 
   defp format_time(dt) do

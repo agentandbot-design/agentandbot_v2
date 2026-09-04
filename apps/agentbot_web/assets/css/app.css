@@ -6,6 +6,16 @@
 /* Custom */
 :root {
   --a-color: #6366f1;
+
+  /* ═══ Karakter paleti — insan / agent / bot&tool ═══
+     İnsan agent'ını yönetir, agent'ın botları ve tool'ları vardır.
+     Her varlık sitede bu üç karakterden birine boyanır. */
+  --c-human: #fb923c;
+  --c-human-soft: rgba(251, 146, 60, .16);
+  --c-agent: #6366f1;
+  --c-agent-soft: rgba(99, 102, 241, .16);
+  --c-bot: #22c55e;
+  --c-bot-soft: rgba(34, 197, 94, .16);
 }
 
 html, body {
@@ -202,6 +212,12 @@ body {
   font-size: 0.7rem;
   opacity: 0.7;
 }
+.ab-agent-card__badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+}
 .ab-executor-badge {
   font-size: 0.7rem;
   padding: 0.2rem 0.5rem;
@@ -244,6 +260,125 @@ body {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
+}
+
+/* ============ AB Karakter sistemi ============
+   İnsan → agent'ını yönetir → agent'ın botları/tool'ları vardır.
+   Üç karakter, tek görsel dil: yuvarlak rozet + renk + parıltı. */
+.ab-char {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem 0.15rem 0.35rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.ab-char__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  border-radius: 50%;
+  font-size: 0.9em;
+  line-height: 1;
+}
+.ab-char--human { background: var(--c-human-soft); color: var(--c-human); border-color: rgba(251, 146, 60, .3); }
+.ab-char--human .ab-char__dot { background: rgba(251, 146, 60, .25); box-shadow: 0 0 8px var(--c-human-soft); }
+.ab-char--agent { background: var(--c-agent-soft); color: rgb(165, 180, 252); border-color: rgba(99, 102, 241, .3); }
+.ab-char--agent .ab-char__dot { background: rgba(99, 102, 241, .25); box-shadow: 0 0 8px var(--c-agent-soft); }
+.ab-char--bot { background: var(--c-bot-soft); color: rgb(134, 239, 172); border-color: rgba(34, 197, 94, .3); }
+.ab-char--bot .ab-char__dot { background: rgba(34, 197, 94, .25); box-shadow: 0 0 8px var(--c-bot-soft); }
+
+.chat-bubble-human {
+  background: rgba(251, 146, 60, .14);
+  color: rgb(254, 215, 170);
+  border: 1px solid rgba(251, 146, 60, .22);
+}
+
+/* ============ AB Loot — skiller birer eşya ============
+   Kazanılan her skill bir envanter eşyası: kategoriye göre
+   ikon + nadir seviye rengi. */
+.ab-loot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.ab-loot-card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .02));
+  border: 1px solid var(--loot-border, rgba(255, 255, 255, .1));
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  transition: transform .15s, box-shadow .15s;
+}
+.ab-loot-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px var(--loot-border, rgba(255, 255, 255, .15)), 0 8px 24px var(--loot-glow, rgba(0, 0, 0, .3));
+}
+.ab-loot-card--common    { --loot-border: rgba(148, 163, 184, .35); --loot-glow: rgba(148, 163, 184, .12); }
+.ab-loot-card--rare      { --loot-border: rgba(59, 130, 246, .45);  --loot-glow: rgba(59, 130, 246, .18); }
+.ab-loot-card--epic      { --loot-border: rgba(168, 85, 247, .5);   --loot-glow: rgba(168, 85, 247, .2); }
+.ab-loot-card--legendary { --loot-border: rgba(234, 179, 8, .55);   --loot-glow: rgba(234, 179, 8, .22); }
+.ab-loot-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.ab-loot-icon {
+  width: 2.3rem;
+  height: 2.3rem;
+  min-width: 2.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  border-radius: 8px;
+  background: var(--loot-border, rgba(255, 255, 255, .1));
+  background: color-mix(in srgb, var(--loot-border, #fff) 22%, transparent);
+}
+.ab-loot-card__name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.ab-loot-rarity {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  opacity: .8;
+}
+.ab-loot-card__flavor {
+  font-size: 0.82rem;
+  opacity: .75;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.4;
+}
+.ab-loot-card__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  opacity: .65;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, .06);
+}
+.ab-loot-acquired {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: rgb(134, 239, 172);
 }
 
 /* ============ AB Modal ============ */

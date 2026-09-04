@@ -38,7 +38,7 @@
               <!-- Agent mesajı — sağ taraf, mavi -->
               <div class="chat chat-end" data-agent-message="agent" data-agent-sender={msg.sender_id}>
                 <div class="chat-header text-xs opacity-60 mb-1">
-                  🤖 <%= msg.sender_name || msg.sender_id %>
+                  <span class="ab-char ab-char--agent"><span class="ab-char__dot">🤖</span><%= msg.sender_name || msg.sender_id %></span>
                 </div>
                 <div class="chat-bubble bg-primary text-primary-content whitespace-pre-wrap break-words max-w-full">
                   <%= msg.content %>
@@ -60,9 +60,9 @@
               <!-- İnsan mesajı — sol taraf, nötr -->
               <div class="chat chat-start" data-agent-message="human" data-agent-sender={msg.sender_id}>
                 <div class="chat-header text-xs opacity-60 mb-1">
-                  👤 <%= msg.sender_name || msg.sender_id %>
+                  <span class="ab-char ab-char--human"><span class="ab-char__dot">🧑</span><%= msg.sender_name || msg.sender_id %></span>
                 </div>
-                <div class="chat-bubble bg-neutral-700 whitespace-pre-wrap break-words max-w-full">
+                <div class="chat-bubble chat-bubble-human whitespace-pre-wrap break-words max-w-full">
                   <%= msg.content %>
                 </div>
                 <div class="chat-footer opacity-50 text-xs mt-1">
