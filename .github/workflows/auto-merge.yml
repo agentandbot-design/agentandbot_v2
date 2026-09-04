@@ -2,13 +2,17 @@
 #
 # Tetikleyiciler:
 #   - pull_request opened/synchronize/reopened/ready_for_review
-#   - workflow_run "CI" completed  (CI bittiğinde, PR'ları tara)
+#   - workflow_run "CI" completed  (CI bittiğinde, beklemedeki PR'ları tara)
 #   - workflow_dispatch            (manuel)
 #
+# Strateji: Poll döngüsü YOK. GitHub'ın yerleşik auto-merge'ini (gh pr merge --auto)
+# kullanır — PR mergeable olduğunda ve required check'ler geçtiğinde GitHub kendisi
+# merge eder. Workflow sadece PR'lara --auto bayrağını takar; gerisini GitHub halleder.
+#
 # Davranış:
-#   - PR draft değilse ve birleştirme engeli yoksa, CI (quality-gate) yeşil
-#     olunca --merge ile main'e birleştirir, kaynak branch'i siler.
-#   - "NO_AUTO_MERGE" / "WIP" etiketi taşıyan PR'a dokunmaz.
+#   - PR draft değilse ve "NO_AUTO_MERGE"/"WIP" etiketi yoksa --auto takılır.
+#   - Kaynak branch merge sonrası otomatik silinir (--delete-branch).
+#   - Manuel "Run workflow" düğmesiyle de tüm açık PR'lara --auto takılır.
 
 name: Auto-Merge to Main
 
@@ -23,7 +27,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  checks: read
+  actions: read
 
 concurrency:
   group: auto-merge
@@ -31,7 +35,7 @@ concurrency:
 
 jobs:
   auto-merge:
-    name: Merge green PRs
+    name: Enable auto-merge on eligible PRs
     runs-on: ubuntu-latest
     if: >
       github.event_name != 'pull_request' ||
@@ -42,13 +46,13 @@ jobs:
         with:
           ref: main
 
-      - name: Merge eligible PRs
+      - name: Enable auto-merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -u
 
-          # Hedef PR kümesi: trigger'dan gelen PR + CI bitince tüm açık PR'lar
+          # Hedef set: trigger'dan gelen PR (+ CI bitince tüm açık PR'lar)
           TARGETS=""
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             TARGETS="${{ github.event.pull_request.number }}"
@@ -57,12 +61,11 @@ jobs:
           for PR in $TARGETS $(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 40 --json number --jq '.[].number'); do
             echo "===== PR #$PR ====="
 
-            # Draft / kapalı / merge edilemezse atla
-            META=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json state,isDraft,mergeable \
-              --jq '{s:.state,d:.isDraft,m:.mergeable}')
+            # Draft / kapalı ise atla
+            META=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json state,isDraft \
+              --jq '{s:.state,d:.isDraft}')
             S=$(echo "$META" | jq -r '.s')
             D=$(echo "$META" | jq -r '.d')
-            M=$(echo "$META" | jq -r '.m')
             if [ "$S" != "OPEN" ] || [ "$D" = "true" ]; then
               echo "PR #$PR state=$S draft=$D — atlandı"
               continue
@@ -72,36 +75,21 @@ jobs:
             LABELS=$(gh pr view "$PR" --repo "$GITHUB_REPOSITORY" --json labels \
               --jq '[.labels[].name] | join(",")')
             if echo "$LABELS" | grep -qE "NO_AUTO_MERGE|WIP|wip"; then
-              echo "PR #$PR '$LABELS' etiketli — otomatik merge yok"
+              echo "PR #$PR '$LABELS' etiketli — auto-merge kapatıldı/yok"
               continue
             fi
 
-            # CI'nin PR için başarılı olduğundan emin ol (poll, ~4 dk)
-            echo "CI check bekleniyor: #$PR"
-            CI_OK=""
-            for i in $(seq 1 20); do
-              CHECKS=$(gh pr checks "$PR" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true)
-              # Başarısız/kayıp bir check varsa devam etme
-              if echo "$CHECKS" | grep -qiE "fail|error|timeout|cancel"; then
-                echo "PR #$PR başarısız check var — merge edilmedi"
-                CI_OK="fail"
-                break
-              fi
-              # En az bir check geçtiyse ve beklemede yoksa tamam
-              if echo "$CHECKS" | grep -qE "pass" && ! echo "$CHECKS" | grep -qE "pending|expected|queued"; then
-                CI_OK="ok"
-                break
-              fi
-              echo "  (CI sürüyor... $i)"
-              sleep 12
-            done
-            [ "$CI_OK" = "ok" ] || { echo "PR #$PR CI yeşil değil — atlandı"; continue; }
-
-            sleep 2
-            echo "==> Merging PR #$PR"
-            if ! gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" \
-                 --merge --delete-branch \
-                 --subject "Auto-merge PR #$PR (green CI)"; then
-              echo "PR #$PR merge girişimi başarısız (çakışma/enge) — atlandı"
+            # Auto-merge zaten açık mı kontrol et, değilse aç
+            AUTO=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" --jq '.auto_merge')
+            if [ "$AUTO" = "null" ]; then
+              echo "==> PR #$PR için auto-merge açılıyor (merge + delete-branch)"
+              gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" \
+                --auto --merge --delete-branch || {
+                echo "PR #$PR --auto talebi başarısız (mergeable değil?) — GitHub bekleyecek"
+              }
+            else
+              echo "PR #$PR auto-merge zaten açık — atlandı"
             fi
           done
+
+          echo "Done. GitHub, required check'ler geçen PR'ları kendisi merge edecek."
