@@ -311,6 +311,7 @@ defmodule AgentbotWeb.KanbanLive do
 
   defp assignee_initial(nil), do: "?"
   defp assignee_initial(""), do: "?"
+
   defp assignee_initial(name) do
     name
     |> String.split(~r/[-_ ]/, trim: true)
@@ -321,6 +322,7 @@ defmodule AgentbotWeb.KanbanLive do
 
   # Assignee adına sabit bir renk atamak için hash kullan
   defp assignee_color(nil), do: "bg-neutral-700 text-neutral-300"
+
   defp assignee_color(name) do
     palette = [
       "bg-indigo-600 text-white",
