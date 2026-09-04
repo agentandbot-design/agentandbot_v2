@@ -181,13 +181,14 @@ defmodule AgentbotWeb.TaskController do
 
   # ── VERIFY ARTIFACT ───────────────────────────────
 
-  @doc "Artifact'ı doğrula (human verification)"
-  def verify_artifact(conn, %{"id" => artifact_id}) do
+  @doc "Artifact'ı doğrula ya da reddet (human/agent verification)"
+  def verify_artifact(conn, %{"id" => artifact_id} = params) do
     verified_by = Map.get(conn.assigns, :agent_id, "human")
+    verified = Map.get(params, "verified", true)
 
-    case Artifact.verify(artifact_id, verified_by) do
+    case Artifact.verify(artifact_id, verified_by, verified) do
       {:ok, artifact} ->
-        json(conn, %{artifact: artifact, status: "verified"})
+        json(conn, %{artifact: artifact, status: if(verified, do: "verified", else: "rejected")})
 
       {:error, _} ->
         conn |> put_status(422) |> json(%{error: "Doğrulama başarısız"})
