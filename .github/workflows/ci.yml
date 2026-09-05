@@ -79,7 +79,8 @@ jobs:
           # iç içe kartlar, aşırı kullanılan fontlar, side-tab, kontrast vs.
           # Kaynak CSS/şablonları tara; priv/static (build çıktısı) hariç tutulur.
           # exit 0 = temiz, exit 2 = anti-pattern bulundu (fail), çıktı JSON.
-          npx -y impeccable detect \
+          # Sürüm pinli: npx son sürümü çekmemesi için @3.6.1 ile sabitlendi.
+          npx -y impeccable@3.6.1 detect \
             apps/agentbot_web/lib/agentbot_web/live \
             apps/agentbot_web/lib/agentbot_web/templates \
             apps/agentbot_web/assets/css \
