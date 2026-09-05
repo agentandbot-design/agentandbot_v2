@@ -32,7 +32,13 @@ defmodule AgentbotWeb.ServicesLive do
       Python ve TypeScript SDK'ları mevcut. MCP server ile framework entegrasyonu.
       3 ücretsiz inbox (3.000 email/ay). Multi-tenant "Pods" ile platform entegrasyonu.
       """,
-      features: ["API-first inbox", "Webhook & WebSocket", "Custom domain", "MCP Server", "Python/TS SDK"],
+      features: [
+        "API-first inbox",
+        "Webhook & WebSocket",
+        "Custom domain",
+        "MCP Server",
+        "Python/TS SDK"
+      ],
       tags: ["email", "inbox", "api", "mcp"]
     },
     %{
@@ -57,7 +63,13 @@ defmodule AgentbotWeb.ServicesLive do
       Self-hosted (LLM maliyeti) veya managed cloud. Browser Use 2.0 model:
       $0.006/step — 10-step task ~$0.07. Composio/Firecrawl ile entegrasyon.
       """,
-      features: ["89.1% success rate", "Vision-based", "Self-hosted", "MIT License", "Form automation"],
+      features: [
+        "89.1% success rate",
+        "Vision-based",
+        "Self-hosted",
+        "MIT License",
+        "Form automation"
+      ],
       tags: ["browser", "automation", "scraping", "web"]
     },
     %{
@@ -83,7 +95,13 @@ defmodule AgentbotWeb.ServicesLive do
       Firecrawl Browser Sandbox: yönetilen headless Chromium oturumları.
       LLM pipeline'ları için doğrudan kullanılabilir clean markdown çıktısı.
       """,
-      features: ["Scrape/Crawl/Map", "MCP 13 tools", "Browser Sandbox", "Clean markdown", "Token-optimized"],
+      features: [
+        "Scrape/Crawl/Map",
+        "MCP 13 tools",
+        "Browser Sandbox",
+        "Clean markdown",
+        "Token-optimized"
+      ],
       tags: ["scraping", "crawling", "data", "mcp", "rag"]
     },
     %{
@@ -111,7 +129,13 @@ defmodule AgentbotWeb.ServicesLive do
       LangChain, CrewAI, LlamaIndex doğrudan entegre.
       Plugin mimarisi: custom action eklemek için extension API.
       """,
-      features: ["1000+ integrations", "Managed OAuth", "MCP support", "Triggers", "LangChain/CrewAI"],
+      features: [
+        "1000+ integrations",
+        "Managed OAuth",
+        "MCP support",
+        "Triggers",
+        "LangChain/CrewAI"
+      ],
       tags: ["integration", "oauth", "saas", "tools"]
     },
     %{
@@ -136,7 +160,13 @@ defmodule AgentbotWeb.ServicesLive do
       bidirectional voice agent ( Speech-to-Speech ). Studio: çoklu sesli
       sahne prodüksiyonu. WebSocket streaming ile low-latency entegrasyon.
       """,
-      features: ["30+ languages", "Voice cloning", "Streaming TTS", "Conversational AI", "Sound FX"],
+      features: [
+        "30+ languages",
+        "Voice cloning",
+        "Streaming TTS",
+        "Conversational AI",
+        "Sound FX"
+      ],
       tags: ["tts", "voice", "audio", "speech"]
     },
     %{
@@ -186,7 +216,13 @@ defmodule AgentbotWeb.ServicesLive do
       ajanlar arası koordinasyon. REST API + SDK. Built-in LLM routing.
       Execute asynchronously: background task execution.
       """,
-      features: ["Session state", "Persistent memory", "Task scheduling", "Multi-agent", "Async exec"],
+      features: [
+        "Session state",
+        "Persistent memory",
+        "Task scheduling",
+        "Multi-agent",
+        "Async exec"
+      ],
       tags: ["state", "memory", "session", "orchestration"]
     },
     %{
