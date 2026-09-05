@@ -189,6 +189,7 @@ defmodule AgentbotWeb.Router do
     live("/feed", FeedLive, :index)
     live("/agents", AgentsLive, :index)
     live("/skills", SkillsLive, :index)
+    live("/services", ServicesLive, :index)
     live("/activity-log", ActivityLogLive, :index)
   end
 

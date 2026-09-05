@@ -381,6 +381,96 @@ body {
   color: rgb(134, 239, 172);
 }
 
+
+/* ============ AB Services ============ */
+.ab-loot-card--service {
+  --loot-border: rgba(34, 197, 94, .35);
+  --loot-glow: rgba(34, 197, 94, .12);
+}
+.ab-loot-card--service.ab-loot-card--expanded {
+  border-color: rgba(34, 197, 94, .55);
+}
+.ab-badge {
+  margin-left: auto;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, .15);
+  color: rgb(134, 239, 172);
+  white-space: nowrap;
+}
+.ab-chip--toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.65);
+  transition: background .15s, color .15s;
+}
+.ab-chip--toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+.ab-agent-detail {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  animation: ab-slide-down .2s ease;
+}
+.ab-agent-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+.ab-agent-detail__icon { font-size: 0.85rem; }
+.ab-agent-detail__title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: rgba(255, 255, 255, 0.7);
+}
+.ab-agent-detail__text {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 0.5rem;
+  white-space: pre-line;
+}
+.ab-agent-detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+.ab-btn--primary {
+  background: rgb(34, 197, 94);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ab-btn--primary:hover { background: rgb(22, 163, 74); }
+@keyframes ab-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ============ AB Modal ============ */
 .ab-modal-backdrop {
   position: fixed;
