@@ -12,6 +12,7 @@ defmodule AgentbotWeb.TaskController do
   alias AgentbotCore.Modules.Execution.Dispatcher
   alias AgentbotCore.Modules.Marketplace.Artifact
   alias AgentbotCore.Modules.Marketplace.Task
+  alias AgentbotCore.Modules.Marketplace.TaskView
   alias AgentbotCore.Modules.Registry.AgentCapability
   alias AgentbotCore.Modules.Registry.Capability
   alias AgentbotCore.Modules.Registry.CapabilityGap
@@ -39,15 +40,33 @@ defmodule AgentbotWeb.TaskController do
           Task |> order_by([t], desc: t.inserted_at) |> Repo.all()
       end
 
-    json(conn, %{tasks: tasks})
+    render_tasks(conn, tasks, params)
   end
 
   @doc "Task detayı + artifact'ları"
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"id" => id} = params) do
     task = Task.get!(id)
     artifacts = Artifact.list_by_task(id)
-    json(conn, %{task: task, artifacts: artifacts})
+
+    task_data =
+      case params["view"] do
+        "agent" -> TaskView.agent(task, task.children || [])
+        _ -> TaskView.human(task, task.children || [])
+      end
+
+    json(conn, %{task: task_data, artifacts: artifacts})
   end
+
+  # Görünüm katmanı: tek kaynak, iki projeksiyon (insan / agent)
+  defp render_tasks(conn, tasks, params) do
+    view = if params["view"] == "agent", do: &TaskView.agent/2, else: &TaskView.human/2
+
+    data = Enum.map(tasks, fn task -> view.(task, children_if_loaded(task)) end)
+    json(conn, %{tasks: data})
+  end
+
+  defp children_if_loaded(%{children: children}) when is_list(children), do: children
+  defp children_if_loaded(_task), do: []
 
   # ── CREATE + AUTO-DISCOVER + AUTO-DELEGATE ─────────
 

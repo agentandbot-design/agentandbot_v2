@@ -32,6 +32,7 @@ Core domain logic of AgentAndBot — protocol envelopes, chat rooms, agent gatew
 - `modules/chat/` — Room, Message, ApprovalRequest, RoomServer, RoomSupervisor, RoomRegistry
 - `modules/security/` — AuthGate, AgentCredential, CapabilityCheck, Account (insan hesabı), QmSession (qm.agentandbot.com ortak giriş doğrulaması)
 - `modules/registry/` — Capability, AgentCapability, CapabilityGap, ExecutorResource, McpServer
+- `modules/sync/` — Universal kanban sync (Adapter behaviour + GitHub/Hermes adapter'ları, SyncEngine, SyncLog, SyncTarget); AgentAndBot tek kaynak
 
 ### QM ortak giriş (shared login)
 - `QmSession.verify/1` portal_session cookie'sini doğrular: HMAC-SHA256, key = HMAC(PORTAL_SESSION_SECRET, "portal.session.v1"); secret runtime'da `QM_PORTAL_SESSION_SECRET` env'inden okunur
@@ -45,4 +46,5 @@ Core domain logic of AgentAndBot — protocol envelopes, chat rooms, agent gatew
 
 ## Child DOX Index
 
-- No child AGENTS.md files needed yet. Module-level docs are in `lib/agentbot_core/modules/` source files via @moduledoc.
+- `lib/agentbot_core/modules/sync/AGENTS.md` — sync adapter sözleşmeleri ve çakışma kuralları
+- Other modules: docs live in source @moduledoc.
