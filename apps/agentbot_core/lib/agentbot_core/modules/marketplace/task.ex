@@ -77,6 +77,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     field(:summary, :string)
     # Agent görünümü: bağımlılıklar, log/commit ref'leri, teknik notlar
     field(:technical_context, :map, default: %{})
+
     # Son güncelleyici — çakışma çözümü için: "human:ilker" | "agent:hermes" | "sync:github"
     field(:updated_by, :string)
     # Her entegrasyon için: %{system => %{external_id, last_synced_at, direction, field_map}}
@@ -458,7 +459,9 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   # Aktif sync_targets yoksa no-op (tek SELECT,Oban insert yalnız dirty'de).
   defp maybe_sync(task) do
     case AgentbotCore.Modules.Sync.active_targets("outbound") do
-      [] -> :ok
+      [] ->
+        :ok
+
       _ ->
         AgentbotCore.Modules.Sync.mark_dirty(task.id)
         Oban.insert(AgentbotCore.Workers.SyncWorker.new(%{task_id: task.id}))

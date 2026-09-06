@@ -8,7 +8,11 @@ defmodule AgentbotCore.Workers.SyncWorker do
 
   use Oban.Worker,
     queue: :sync,
-    unique: [period: 30, fields: [:args], states: [:available, :scheduled, :executing, :retryable]]
+    unique: [
+      period: 30,
+      fields: [:args],
+      states: [:available, :scheduled, :executing, :retryable]
+    ]
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"task_id" => task_id}}) do
