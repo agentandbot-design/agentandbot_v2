@@ -42,6 +42,9 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
              :completed_at,
              :external_url,
              :source_type,
+             :summary,
+             :sync_state,
+             :updated_by,
              :inserted_at,
              :updated_at
            ]}
@@ -70,6 +73,16 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
     field(:completed_at, :utc_datetime)
     field(:external_url, :string)
     field(:source_type, :string, default: "manual")
+    # Dual view: insan görünümü tek satır özeti (ajan üretir)
+    field(:summary, :string)
+    # Agent görünümü: bağımlılıklar, log/commit ref'leri, teknik notlar
+    field(:technical_context, :map, default: %{})
+    # Son güncelleyici — çakışma çözümü için: "human:ilker" | "agent:hermes" | "sync:github"
+    field(:updated_by, :string)
+    # Her entegrasyon için: %{system => %{external_id, last_synced_at, direction, field_map}}
+    field(:sync_metadata, :map, default: %{})
+    # Outbound sync durumu: "in_sync" | "dirty" | "conflict"
+    field(:sync_state, :string, default: "in_sync")
 
     timestamps(type: :utc_datetime)
   end
@@ -94,7 +107,12 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
       :deadline_at,
       :completed_at,
       :external_url,
-      :source_type
+      :source_type,
+      :summary,
+      :technical_context,
+      :updated_by,
+      :sync_metadata,
+      :sync_state
     ])
     |> validate_required([:created_by, :capability, :title])
   end
@@ -110,6 +128,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
           capability: task.capability
         })
 
+        maybe_sync(task)
         broadcast_change("task_created", task)
         {:ok, task}
 
@@ -142,6 +161,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
           changes: Map.keys(changes)
         })
 
+        maybe_sync(updated)
         broadcast_change("task_updated", updated)
         {:ok, updated}
 
@@ -224,6 +244,7 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
             to: status
           })
 
+          maybe_sync(updated)
           broadcast_change("task_updated", updated)
           {:ok, updated}
 
@@ -431,6 +452,19 @@ defmodule AgentbotCore.Modules.Marketplace.Task do
   @spec get!(integer()) :: %__MODULE__{}
   def get!(id) do
     Repo.preload(Repo.get!(__MODULE__, id), [:artifacts, :comments, :children])
+  end
+
+  # Sync kancası: her yazma sonrası dirty işaretle + Oban job kuyruğa.
+  # Aktif sync_targets yoksa no-op (tek SELECT,Oban insert yalnız dirty'de).
+  defp maybe_sync(task) do
+    case AgentbotCore.Modules.Sync.active_targets("outbound") do
+      [] -> :ok
+      _ ->
+        AgentbotCore.Modules.Sync.mark_dirty(task.id)
+        Oban.insert(AgentbotCore.Workers.SyncWorker.new(%{task_id: task.id}))
+    end
+  rescue
+    _ -> :ok
   end
 
   defp broadcast_change(event, task) do
