@@ -25,7 +25,10 @@ defmodule AgentbotCore.Modules.Sync.GithubAdapter do
     config = Keyword.get(opts, :config, %{})
     repo = Map.get(config, "repo") || raise ArgumentError, "github adapter: config.repo gerekli"
     token = github_token()
-    status_map = Map.get(config, "status_map") || AgentbotCore.Modules.Sync.SyncTarget.default_status_map("github")
+
+    status_map =
+      Map.get(config, "status_map") ||
+        AgentbotCore.Modules.Sync.SyncTarget.default_status_map("github")
 
     body =
       task.summary ||
@@ -89,10 +92,15 @@ defmodule AgentbotCore.Modules.Sync.GithubAdapter do
       "labels" => ["agentandbot"]
     }
 
-    case Req.post("#{@github_base}/repos/#{repo}/issues", json: payload, headers: auth_headers(token)) do
+    case Req.post("#{@github_base}/repos/#{repo}/issues",
+           json: payload,
+           headers: auth_headers(token)
+         ) do
       {:ok, %Req.Response{status: 201, body: issue}} ->
         sync_labels(repo, token, issue["number"], task.status, status_map)
-        {:ok, Integer.to_string(issue["number"]), %{"issue" => %{"number" => issue["number"], "url" => issue["html_url"]}}}
+
+        {:ok, Integer.to_string(issue["number"]),
+         %{"issue" => %{"number" => issue["number"], "url" => issue["html_url"]}}}
 
       {:ok, %Req.Response{status: s, body: b}} ->
         {:error, "HTTP #{s}: #{inspect(b, limit: 200)}"}
@@ -103,17 +111,23 @@ defmodule AgentbotCore.Modules.Sync.GithubAdapter do
   end
 
   defp update_issue(repo, token, number, task, body, status_map) do
-    gh_state = case Map.get(status_map, task.status, "open") do
-      "closed" -> "closed"
-      _ -> "open"
-    end
+    gh_state =
+      case Map.get(status_map, task.status, "open") do
+        "closed" -> "closed"
+        _ -> "open"
+      end
 
     payload = %{"title" => task.title, "body" => body, "state" => gh_state}
 
-    case Req.patch("#{@github_base}/repos/#{repo}/issues/#{number}", json: payload, headers: auth_headers(token)) do
+    case Req.patch("#{@github_base}/repos/#{repo}/issues/#{number}",
+           json: payload,
+           headers: auth_headers(token)
+         ) do
       {:ok, %Req.Response{status: 200, body: issue}} ->
         sync_labels(repo, token, number, task.status, status_map)
-        {:ok, Integer.to_string(number), %{"issue" => %{"number" => number, "url" => issue["html_url"]}}}
+
+        {:ok, Integer.to_string(number),
+         %{"issue" => %{"number" => number, "url" => issue["html_url"]}}}
 
       {:ok, %Req.Response{status: s, body: b}} ->
         {:error, "HTTP #{s}: #{inspect(b, limit: 200)}"}
@@ -125,6 +139,7 @@ defmodule AgentbotCore.Modules.Sync.GithubAdapter do
 
   defp sync_labels(repo, token, number, ab_status, status_map) do
     gh_label = Map.get(status_map, ab_status, "open")
+
     # ponytail: tek durum label'ı — history label setleri GitHub'ın replace endpoint'iyle temiz yazılır
     Req.put("#{@github_base}/repos/#{repo}/issues/#{number}/labels",
       json: ["agentandbot", gh_label],
@@ -146,7 +161,9 @@ defmodule AgentbotCore.Modules.Sync.GithubAdapter do
   defp gh_labels(issue), do: Enum.map(issue["labels"] || [], & &1["name"])
 
   defp first_paragraph(nil), do: nil
-  defp first_paragraph(body), do: body |> String.split("\n\n") |> List.first() |> String.slice(0, 280)
+
+  defp first_paragraph(body),
+    do: body |> String.split("\n\n") |> List.first() |> String.slice(0, 280)
 
   defp external_id_from_task(task) do
     case get_in(task.sync_metadata || %{}, ["github", "external_id"]) do
@@ -160,5 +177,6 @@ defmodule AgentbotCore.Modules.Sync.GithubAdapter do
     System.get_env("GITHUB_SYNC_TOKEN") || raise ArgumentError, "GITHUB_SYNC_TOKEN env gerekli"
   end
 
-  defp auth_headers(token), do: [{"authorization", "Bearer #{token}"}, {"accept", "application/vnd.github+json"}]
+  defp auth_headers(token),
+    do: [{"authorization", "Bearer #{token}"}, {"accept", "application/vnd.github+json"}]
 end

@@ -31,6 +31,7 @@ defmodule AgentbotCore.Modules.Sync do
   def mark_dirty(task_id) do
     from(t in Task, where: t.id == ^task_id and t.sync_state != "conflict")
     |> Repo.update_all(set: [sync_state: "dirty"])
+
     :ok
   end
 
@@ -43,7 +44,10 @@ defmodule AgentbotCore.Modules.Sync do
       Enum.reduce(targets, %{meta: task.sync_metadata || %{}, ok: true}, fn target, acc ->
         adapter = @adapters[target.system]
 
-        case adapter && adapter.push(Map.get(target.state || %{}, "adapter", %{}), task, config: target.config) do
+        case adapter &&
+               adapter.push(Map.get(target.state || %{}, "adapter", %{}), task,
+                 config: target.config
+               ) do
           {:ok, ext_id, new_adapter_state} ->
             meta =
               Map.put(acc.meta, target.system, %{
@@ -57,7 +61,12 @@ defmodule AgentbotCore.Modules.Sync do
             )
 
             state = Map.put(target.state || %{}, "adapter", new_adapter_state)
-            Repo.update_all(from(s in AgentbotCore.Modules.Sync.SyncTarget, where: s.id == ^target.id), set: [state: state])
+
+            Repo.update_all(
+              from(s in AgentbotCore.Modules.Sync.SyncTarget, where: s.id == ^target.id),
+              set: [state: state]
+            )
+
             %{acc | meta: meta}
 
           {:skip, reason} ->
@@ -65,7 +74,10 @@ defmodule AgentbotCore.Modules.Sync do
             acc
 
           {:error, err} ->
-            SyncLog.log(task.id, target.system, "outbound", "error", detail: inspect(err, limit: 200))
+            SyncLog.log(task.id, target.system, "outbound", "error",
+              detail: inspect(err, limit: 200)
+            )
+
             %{acc | ok: false}
 
           nil ->
@@ -75,7 +87,11 @@ defmodule AgentbotCore.Modules.Sync do
       end)
 
     sync_state = if results.ok, do: "in_sync", else: "conflict"
-    task |> Ecto.Changeset.change(sync_state: sync_state, sync_metadata: results.meta) |> Repo.update!()
+
+    task
+    |> Ecto.Changeset.change(sync_state: sync_state, sync_metadata: results.meta)
+    |> Repo.update!()
+
     {:ok, sync_state}
   end
 
@@ -117,8 +133,7 @@ defmodule AgentbotCore.Modules.Sync do
     ext_id = to_string(external_id)
 
     from(t in Task,
-      where:
-        fragment("? -> ? ->> 'external_id' = ?", t.sync_metadata, ^system, ^ext_id),
+      where: fragment("? -> ? ->> 'external_id' = ?", t.sync_metadata, ^system, ^ext_id),
       order_by: [desc: t.updated_at],
       limit: 1
     )

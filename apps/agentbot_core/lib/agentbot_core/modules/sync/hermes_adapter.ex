@@ -23,7 +23,11 @@ defmodule AgentbotCore.Modules.Sync.HermesAdapter do
   def push(state, task, opts) do
     config = Keyword.get(opts, :config, %{})
     kanban = Map.get(config, "kanban_bin", "hermes")
-    status_map = Map.get(config, "status_map") || AgentbotCore.Modules.Sync.SyncTarget.default_status_map("hermes")
+
+    status_map =
+      Map.get(config, "status_map") ||
+        AgentbotCore.Modules.Sync.SyncTarget.default_status_map("hermes")
+
     body = build_body(task)
     hermes_id = get_in(state, ["hermes_id"]) || hermes_id_from_task(task)
 
@@ -123,9 +127,15 @@ defmodule AgentbotCore.Modules.Sync.HermesAdapter do
   defp card_to_change(card) do
     case fetch_ab_id(card) do
       {:ok, ab_id} ->
-        %{"system" => "hermes", "external_id" => card["id"], "ab_id" => ab_id, "decoded" => decode(%{"card" => card})}
+        %{
+          "system" => "hermes",
+          "external_id" => card["id"],
+          "ab_id" => ab_id,
+          "decoded" => decode(%{"card" => card})
+        }
 
-      _ -> nil
+      _ ->
+        nil
     end
   end
 
